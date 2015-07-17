@@ -50,6 +50,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Zongsoft.Security.mapping">
+      <Link>Zongsoft.Security.mapping</Link>
+    </None>
     <None Include="..\Zongsoft.Security.plugin">
       <Link>Zongsoft.Security.plugin</Link>
     </None>
