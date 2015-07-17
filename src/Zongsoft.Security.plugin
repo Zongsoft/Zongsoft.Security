@@ -10,10 +10,6 @@
 		<assemblies>
 			<assembly name="Zongsoft.Security" />
 		</assemblies>
-
-		<dependencies>
-			<dependency name="Main"/>
-		</dependencies>
 	</manifest>
 
 	<!-- 挂载服务提供程序 -->
