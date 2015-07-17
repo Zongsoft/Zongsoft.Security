@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<plugin name="Security"
+        title="Zongsoft Security Plugin"
+        author="Popeye Zhong(zongsoft@gmail.com)"
+        version="1.0.1507.0"
+        copyright="Copyright (C) 2010-2015 Zongsoft Corporation. All rights reserved."
+        description="Created Date: 2015-07-17 by Popeye Zhong, Modified Date: 2015-07 by Popeye Zhong.">
+
+	<manifest>
+		<assemblies>
+			<assembly name="Zongsoft.Security" />
+		</assemblies>
+
+		<dependencies>
+			<dependency name="Main"/>
+		</dependencies>
+	</manifest>
+
+	<!-- 挂载服务提供程序 -->
+	<extension path="/Workspace/Services/Providers">
+		<serviceProvider name="Security" path="/Workspace/Services/Security" />
+	</extension>
+
+	<!-- 挂载安全业务 -->
+	<extension path="/Workspace/Security">
+		<object name="IsAuthenticated" type="Zongsoft.Security.Plugins.IsAuthenticatedPredication, Zongsoft.Plugins" />
+		<object name="IsUnauthenticated" type="Zongsoft.Security.Plugins.IsUnauthenticatedPredication, Zongsoft.Plugins" />
+		<object name="IsAuthorized" type="Zongsoft.Security.Plugins.IsAuthorizedPredication, Zongsoft.Plugins" />
+		<object name="IsUnauthorized" type="Zongsoft.Security.Plugins.IsUnauthorizedPredication, Zongsoft.Plugins" />
+
+		<object name="CertificationProvider"
+		        type="Zongsoft.Security.CertificationProvider, Zongsoft.CoreLibrary" />
+
+		<object name="RoleProvider"
+		        dataAccess="{srv:Security@Data}"
+		        type="Zongsoft.Security.Membership.RoleProvider, Zongsoft.CoreLibrary" />
+
+		<object name="UserProvider"
+		        dataAccess="{srv:Security@Data}"
+		        type="Zongsoft.Security.Membership.UserProvider, Zongsoft.CoreLibrary" />
+
+		<object name="PermissionProvider"
+		        dataAccess="{srv:Security@Data}"
+		        type="Zongsoft.Security.Membership.PermissionProvider, Zongsoft.CoreLibrary" />
+
+		<object name="Authentication"
+		        dataAccess="{srv:Security@Data}"
+		        type="Zongsoft.Security.Membership.Authentication, Zongsoft.CoreLibrary" />
+
+		<object name="Authorization"
+		        permissionProvider="{path:../PermissionProvider}"
+		        roleProvider="{path:../RoleProvider}"
+		        type="Zongsoft.Security.Membership.Authorization, Zongsoft.CoreLibrary" />
+	</extension>
+
+	<!-- 挂载“安全”相关的各种服务 -->
+	<extension path="/Workspace/Services/Security">
+		<object name="IsAuthenticated" value="{path:/Workspace/Security/IsAuthenticated}" />
+		<object name="IsUnauthenticated" value="{path:/Workspace/Security/IsUnauthenticated}" />
+		<object name="IsAuthorized" value="{path:/Workspace/Security/IsAuthorized}" />
+		<object name="IsUnauthorized" value="{path:/Workspace/Security/IsUnauthorized}" />
+
+		<object name="CertificationProvider" value="{path:/Workspace/Security/CertificationProvider}" />
+		<object name="RoleProvider" value="{path:/Workspace/Security/RoleProvider}" />
+		<object name="UserProvider" value="{path:/Workspace/Security/UserProvider}" />
+		<object name="PermissionProvider" value="{path:/Workspace/Security/PermissionProvider}" />
+		<object name="Authentication" value="{path:/Workspace/Security/Authentication}" />
+		<object name="Authorization" value="{path:/Workspace/Security/Authorization}" />
+	</extension>
+</plugin>
