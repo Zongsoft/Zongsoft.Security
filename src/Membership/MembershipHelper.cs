@@ -39,11 +39,8 @@ namespace Zongsoft.Security.Membership
 		#region 常量定义
 		internal const string DATA_CONTAINER_NAME = "Security";
 
-		internal const string DATA_COMMAND_SETPASSWORD = DATA_CONTAINER_NAME + ".SetPassword";
-		internal const string DATA_COMMAND_GETPASSWORD = DATA_CONTAINER_NAME + ".GetPassword";
-		internal const string DATA_COMMAND_GETPASSWORDBYNAME = DATA_CONTAINER_NAME + ".GetPasswordByName";
-		internal const string DATA_COMMAND_GETPASSWORDBYEMAIL = DATA_CONTAINER_NAME + ".GetPasswordByEmail";
-		internal const string DATA_COMMAND_GETPASSWORDBYPHONE = DATA_CONTAINER_NAME + ".GetPasswordByPhone";
+		internal const string DATA_COMMAND_GETROLES = DATA_CONTAINER_NAME + ".GetRoles";
+		internal const string DATA_COMMAND_GETMEMBERS = DATA_CONTAINER_NAME + ".GetMembers";
 
 		internal const string DATA_ENTITY_USER = DATA_CONTAINER_NAME + ".User";
 		internal const string DATA_ENTITY_ROLE = DATA_CONTAINER_NAME + ".Role";
@@ -53,58 +50,15 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共方法
-		public static UserIdentityType GetUserIdentityType(string identity)
-		{
-			if(string.IsNullOrWhiteSpace(identity))
-				throw new ArgumentNullException("identity");
-
-			if(Zongsoft.Text.TextRegular.Web.Email.IsMatch(identity))
-				return UserIdentityType.Email;
-
-			if(Zongsoft.Text.TextRegular.Chinese.Cellphone.IsMatch(identity))
-				return UserIdentityType.PhoneNumber;
-
-			return UserIdentityType.Name;
-		}
-
-		public static string TrimNamespace(string @namespace)
-		{
-			return string.IsNullOrWhiteSpace(@namespace) ? null : @namespace.Trim();
-		}
-
 		public static bool GetPassword(IDataAccess dataAccess, int userId, out byte[] password, out byte[] passwordSalt)
 		{
-			return ExecuteGetPasswordCommand(dataAccess, DATA_COMMAND_GETPASSWORD, new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
-				{
-					{"UserId", userId},
-				}, out password, out passwordSalt) != 0;
+			return GetPasswordCore(dataAccess, new Condition("UserId", userId), out password, out passwordSalt) != 0;
 		}
 
-		public static int? GetPasswordByName(IDataAccess dataAccess, string @namespace, string userName, out byte[] password, out byte[] passwordSalt)
+		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt)
 		{
-			return ExecuteGetPasswordCommand(dataAccess, DATA_COMMAND_GETPASSWORDBYNAME, new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
-				{
-					{"Namespace", TrimNamespace(@namespace)},
-					{"UserName", userName},
-				}, out password, out passwordSalt);
-		}
-
-		public static int? GetPasswordByEmail(IDataAccess dataAccess, string @namespace, string email, out byte[] password, out byte[] passwordSalt)
-		{
-			return ExecuteGetPasswordCommand(dataAccess, DATA_COMMAND_GETPASSWORDBYEMAIL, new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
-				{
-					{"Namespace", TrimNamespace(@namespace)},
-					{"Email", email},
-				}, out password, out passwordSalt);
-		}
-
-		public static int? GetPasswordByPhone(IDataAccess dataAccess, string @namespace, string phoneNumber, out byte[] password, out byte[] passwordSalt)
-		{
-			return ExecuteGetPasswordCommand(dataAccess, DATA_COMMAND_GETPASSWORDBYPHONE, new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
-				{
-					{"Namespace", TrimNamespace(@namespace)},
-					{"PhoneNumber", phoneNumber},
-				}, out password, out passwordSalt);
+			var conditions = new ConditionCollection(ConditionCombine.And, MembershipHelper.GetUserIdentityConditions(identity, @namespace));
+			return GetPasswordCore(dataAccess, conditions, out password, out passwordSalt);
 		}
 
 		public static User GetUser(IDataAccess dataAccess, int userId)
@@ -112,46 +66,79 @@ namespace Zongsoft.Security.Membership
 			if(dataAccess == null)
 				throw new ArgumentNullException("dataAccess");
 
-			return dataAccess.Select<User>(DATA_ENTITY_USER, new ConditionCollection(ConditionCombine.And)
-			{
-				new Condition("UserId", userId),
-			}).FirstOrDefault();
+			return dataAccess.Select<User>(DATA_ENTITY_USER, new Condition("UserId", userId)).FirstOrDefault();
+		}
+		#endregion
+
+		#region 内部方法
+		internal static Condition[] GetUserIdentityConditions(string identity, string @namespace)
+		{
+			if(string.IsNullOrWhiteSpace(identity))
+				throw new ArgumentNullException("identity");
+
+			var conditions = new Condition[2];
+			conditions[0] = new Condition("Namespace", TrimNamespace(@namespace));
+
+			if(Zongsoft.Text.TextRegular.Web.Email.IsMatch(identity, out identity))
+				conditions[1] = new Condition("Email", identity);
+			else if(Zongsoft.Text.TextRegular.Chinese.Cellphone.IsMatch(identity, out identity))
+				conditions[1] = new Condition("PhoneNumber", identity);
+			else
+				conditions[1] = new Condition("Name", identity);
+
+			return conditions;
+		}
+
+		internal static string TrimNamespace(string @namespace)
+		{
+			return string.IsNullOrWhiteSpace(@namespace) ? null : @namespace.Trim();
+		}
+
+		internal static void EnsureName(string name)
+		{
+			if(string.IsNullOrWhiteSpace(name))
+				throw new InvalidOperationException("The value of 'Name' property cann't is null or empty.");
+
+			name = name.Trim();
+
+			if(name.Length < 2)
+				throw new InvalidOperationException("The value of 'Name' property length must greater than 1.");
+
+			if(!((name[1] >= 'A' && name[1] <= 'Z') || (name[1] >= 'a' && name[1] <= 'z')))
+				throw new InvalidOperationException("The value of 'Name' property first character must is letters of an alphabet");
 		}
 		#endregion
 
 		#region 私有方法
-		private static int? ExecuteGetPasswordCommand(IDataAccess dataAccess, string commandName, IDictionary<string, object> parameters, out byte[] password, out byte[] passwordSalt)
+		private static int? GetPasswordCore(IDataAccess dataAccess, ICondition condition, out byte[] password, out byte[] passwordSalt)
 		{
 			if(dataAccess == null)
 				throw new ArgumentNullException("dataAccess");
 
-			if(string.IsNullOrWhiteSpace(commandName))
-				throw new ArgumentNullException("commandName");
+			if(condition == null)
+				throw new ArgumentNullException("condition");
 
 			password = null;
 			passwordSalt = null;
 
-			//定义数据殷勤的返回参数字典
-			IDictionary<string, object> outParameters;
+			//从数据引擎中获取指定条件的用户密码数据
+			var dictionary = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "UserId, Password, PasswordSalt").FirstOrDefault();
 
-			//从数据引擎中获取指定应用下的指定用户的密码数据
-			dataAccess.Execute(commandName, parameters, out outParameters);
-
-			if(outParameters == null || outParameters.Count < 1)
+			if(dictionary == null)
 				return null;
 
 			object storedPassword;
 			object storedPasswordSalt;
 
-			outParameters.TryGetValue("Password", out storedPassword);
-			outParameters.TryGetValue("PasswordSalt", out storedPasswordSalt);
+			dictionary.TryGetValue("Password", out storedPassword);
+			dictionary.TryGetValue("PasswordSalt", out storedPasswordSalt);
 
 			password = storedPassword as byte[];
 			passwordSalt = storedPasswordSalt as byte[];
 
 			object result;
 
-			if(outParameters.TryGetValue("UserId", out result))
+			if(dictionary.TryGetValue("UserId", out result))
 				return Zongsoft.Common.Convert.ConvertValue<int?>(result, () => null);
 
 			return null;

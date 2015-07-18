@@ -51,25 +51,8 @@ namespace Zongsoft.Security.Membership
 
 		public User GetUser(string identity, string @namespace)
 		{
-			var identityType = MembershipHelper.GetUserIdentityType(identity);
-
-			var conditions = new ConditionCollection(ConditionCombine.And);
-			conditions.Add(new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)));
-
-			switch(identityType)
-			{
-				case UserIdentityType.Email:
-					conditions.Add(new Condition("Email", identity));
-					break;
-				case UserIdentityType.PhoneNumber:
-					conditions.Add(new Condition("PhoneNumber", identity));
-					break;
-				default:
-					conditions.Add(new Condition("Name", identity));
-					break;
-			}
-
 			var dataAccess = this.EnsureDataAccess();
+			var conditions = new ConditionCollection(ConditionCombine.And, MembershipHelper.GetUserIdentityConditions(identity, @namespace));
 			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, conditions).FirstOrDefault();
 		}
 
@@ -97,22 +80,44 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Delete(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userIds, ConditionOperator.In));
 		}
 
-		public void CreateUsers(IEnumerable<User> users)
+		public int CreateUsers(params User[] users)
 		{
-			if(users == null)
-				return;
-
-			var dataAccess = this.EnsureDataAccess();
-			dataAccess.Insert(MembershipHelper.DATA_ENTITY_USER, users);
+			return this.CreateUsers((IEnumerable<User>)users);
 		}
 
-		public void UpdateUsers(IEnumerable<User> users)
+		public int CreateUsers(IEnumerable<User> users)
 		{
 			if(users == null)
-				return;
+				return 0;
+
+			foreach(var user in users)
+			{
+				//确保所有用户名是有效的
+				MembershipHelper.EnsureName(user.Name);
+			}
 
 			var dataAccess = this.EnsureDataAccess();
-			dataAccess.Update(MembershipHelper.DATA_ENTITY_USER, users);
+			return dataAccess.Insert(MembershipHelper.DATA_ENTITY_USER, users);
+		}
+
+		public int UpdateUsers(params User[] users)
+		{
+			return this.UpdateUsers((IEnumerable<User>)users);
+		}
+
+		public int UpdateUsers(IEnumerable<User> users)
+		{
+			if(users == null)
+				return 0;
+
+			foreach(var user in users)
+			{
+				//确保所有用户名是有效的
+				MembershipHelper.EnsureName(user.Name);
+			}
+
+			var dataAccess = this.EnsureDataAccess();
+			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER, users);
 		}
 		#endregion
 
@@ -133,14 +138,12 @@ namespace Zongsoft.Security.Membership
 			//重新生成密码随机数
 			storedPasswordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
 
-			dataAccess.Execute(MembershipHelper.DATA_COMMAND_SETPASSWORD, new Dictionary<string, object>
-			{
-				{"UserId", userId},
-				{"Password", PasswordUtility.HashPassword(newPassword, storedPasswordSalt)},
-				{"PasswordSalt", storedPasswordSalt},
-			});
-
-			return true;
+			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				new
+				{
+					Password = PasswordUtility.HashPassword(newPassword, storedPasswordSalt),
+					PasswordSalt = storedPasswordSalt,
+				}, new Condition("UserId", userId)) > 0;
 		}
 
 		public bool ForgetPassword(string identity, string @namespace, out int userId, out string secret, out string token)
@@ -197,22 +200,17 @@ namespace Zongsoft.Security.Membership
 
 		public string[] GetPasswordQuestions(string identity, string @namespace)
 		{
-			//var dataAccess = this.EnsureDataAccess();
-			//var certification = this.GetCertification(certificationId);
+			var dataAccess = this.EnsureDataAccess();
+			var conditions = new ConditionCollection(ConditionCombine.And, MembershipHelper.GetUserIdentityConditions(identity, @namespace));
+			var dictionary = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, conditions, "PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
 
-			//IDictionary<string, object> outParameters;
+			var result = new string[] {
+				dictionary["PasswordQuestion1"] as string,
+				dictionary["PasswordQuestion2"] as string,
+				dictionary["PasswordQuestion3"] as string,
+			};
 
-			//dataAccess.Execute("Security.User.GetPasswordQuestion", new Dictionary<string, object>
-			//{
-			//	{"UserId", certification.User.UserId},
-			//}, out outParameters);
-
-			//object questionValue;
-
-			//if(outParameters.TryGetValue("PasswordQuestion", out questionValue))
-			//	return questionValue as string;
-
-			return null;
+			return result;
 		}
 
 		public void SetPasswordQuestionsAndAnswers(int userId, string password, string[] passwordQuestions, string[] passwordAnswers)

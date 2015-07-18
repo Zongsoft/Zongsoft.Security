@@ -93,23 +93,10 @@ namespace Zongsoft.Security.Membership
 		#region 虚拟方法
 		protected virtual int? GetPassword(string identity, string @namespace, out byte[] password, out byte[] passwordSalt)
 		{
-			password = null;
-			passwordSalt = null;
-
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
 
-			var identityType = MembershipHelper.GetUserIdentityType(identity);
-
-			switch(identityType)
-			{
-				case UserIdentityType.Email:
-					return MembershipHelper.GetPasswordByEmail(this.EnsureDataAccess(), @namespace, identity, out password, out passwordSalt);
-				case UserIdentityType.PhoneNumber:
-					return MembershipHelper.GetPasswordByPhone(this.EnsureDataAccess(), @namespace, identity, out password, out passwordSalt);
-				default:
-					return MembershipHelper.GetPasswordByName(this.EnsureDataAccess(), @namespace, identity, out password, out passwordSalt);
-			}
+			return MembershipHelper.GetPassword(this.EnsureDataAccess(), identity, @namespace, out password, out passwordSalt);
 		}
 		#endregion
 

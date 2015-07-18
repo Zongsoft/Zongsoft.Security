@@ -45,7 +45,7 @@
 
 		<object name="Authorization"
 		        permissionProvider="{path:../PermissionProvider}"
-		        roleProvider="{path:../RoleProvider}"
+		        memberProvider="{path:../RoleProvider}"
 		        type="Zongsoft.Security.Membership.Authorization, Zongsoft.Security" />
 	</extension>
 

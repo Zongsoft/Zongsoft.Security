@@ -55,24 +55,6 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)));
 		}
 
-		public IEnumerable<Role> GetRoles(int memberId, MemberType memberType)
-		{
-			var dataAccess = this.EnsureDataAccess();
-
-			var roles = dataAccess.Execute(MembershipHelper.DATA_ENTITY_ROLE, new Dictionary<string, object>
-			{
-				{"MemberId", memberId},
-				{"MemberType", memberType},
-			}) as IEnumerable<Role>;
-
-			return roles;
-		}
-
-		public IEnumerable<Role> GetRoles(int memberId, MemberType memberType, int depth)
-		{
-			throw new NotImplementedException();
-		}
-
 		public int DeleteRoles(params int[] roleIds)
 		{
 			if(roleIds == null || roleIds.Length < 1)
@@ -82,22 +64,44 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Delete(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleIds, ConditionOperator.In));
 		}
 
-		public void CreateRoles(IEnumerable<Role> roles)
+		public int CreateRoles(params Role[] roles)
 		{
-			if(roles == null)
-				return;
-
-			var dataAccess = this.EnsureDataAccess();
-			dataAccess.Insert(MembershipHelper.DATA_ENTITY_ROLE, roles);
+			return this.CreateRoles((IEnumerable<Role>)roles);
 		}
 
-		public void UpdateRoles(IEnumerable<Role> roles)
+		public int CreateRoles(IEnumerable<Role> roles)
 		{
 			if(roles == null)
-				return;
+				return 0;
+
+			foreach(var role in roles)
+			{
+				//确保所有角色名是有效的
+				MembershipHelper.EnsureName(role.Name);
+			}
 
 			var dataAccess = this.EnsureDataAccess();
-			dataAccess.Update(MembershipHelper.DATA_ENTITY_ROLE, roles);
+			return dataAccess.Insert(MembershipHelper.DATA_ENTITY_ROLE, roles);
+		}
+
+		public int UpdateRoles(params Role[] roles)
+		{
+			return this.UpdateRoles((IEnumerable<Role>)roles);
+		}
+
+		public int UpdateRoles(IEnumerable<Role> roles)
+		{
+			if(roles == null)
+				return 0;
+
+			foreach(var role in roles)
+			{
+				//确保所有角色名是有效的
+				MembershipHelper.EnsureName(role.Name);
+			}
+
+			var dataAccess = this.EnsureDataAccess();
+			return dataAccess.Update(MembershipHelper.DATA_ENTITY_ROLE, roles);
 		}
 		#endregion
 
@@ -105,6 +109,23 @@ namespace Zongsoft.Security.Membership
 		public bool InRole(int userId, int roleId)
 		{
 			return this.GetRoles(userId, MemberType.User, -1).Any(role => role.RoleId == roleId);
+		}
+
+		public IEnumerable<Role> GetRoles(int memberId, MemberType memberType)
+		{
+			var dataAccess = this.EnsureDataAccess();
+
+			var members = dataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER, new ConditionCollection(ConditionCombine.And, new Condition[] {
+				new Condition("MemberId", memberId),
+				new Condition("MemberType", memberType),
+			}), "Role");
+
+			return members.Select(m => m.Role);
+		}
+
+		public IEnumerable<Role> GetRoles(int memberId, MemberType memberType, int depth)
+		{
+			throw new NotImplementedException();
 		}
 
 		public IEnumerable<Member> GetMembers(int roleId)
@@ -116,24 +137,6 @@ namespace Zongsoft.Security.Membership
 		public IEnumerable<Member> GetMembers(int roleId, int depth)
 		{
 			throw new NotImplementedException();
-		}
-
-		public void DeleteMember(int roleId, int memberId, MemberType memberType)
-		{
-			var dataAccess = this.EnsureDataAccess();
-
-			dataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER, new ConditionCollection(ConditionCombine.And)
-			{
-				new Condition("RoleId", roleId),
-				new Condition("MemberId", memberId),
-				new Condition("MemberType", memberType),
-			});
-		}
-
-		public void CreateMember(int roleId, int memberId, MemberType memberType)
-		{
-			var dataAccess = this.EnsureDataAccess();
-			dataAccess.Insert(MembershipHelper.DATA_ENTITY_MEMBER, new Member(roleId, memberId, memberType));
 		}
 
 		public void SetMembers(int roleId, IEnumerable<Member> members)
@@ -159,6 +162,53 @@ namespace Zongsoft.Security.Membership
 				//提交事务
 				transaction.Commit();
 			}
+		}
+
+		public int DeleteMembers(params Member[] members)
+		{
+			return this.DeleteMembers((IEnumerable<Member>)members);
+		}
+
+		public int DeleteMembers(IEnumerable<Member> members)
+		{
+			if(members == null)
+				return 0;
+
+			var dataAccess = this.EnsureDataAccess();
+
+			using(var transaction = new Zongsoft.Transactions.Transaction())
+			{
+				var count = 0;
+
+				foreach(var member in members)
+				{
+					if(member == null)
+						continue;
+
+					count += dataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER, new ConditionCollection(ConditionCombine.And)
+					{
+						new Condition("RoleId", member.RoleId),
+						new Condition("MemberId", member.MemberId),
+						new Condition("MemberType", member.MemberType),
+					});
+				}
+
+				return count;
+			}
+		}
+
+		public int CreateMembers(params Member[] members)
+		{
+			return this.CreateMembers((IEnumerable<Member>)members);
+		}
+
+		public int CreateMembers(IEnumerable<Member> members)
+		{
+			if(members == null)
+				return 0;
+
+			var dataAccess = this.EnsureDataAccess();
+			return dataAccess.Insert(MembershipHelper.DATA_ENTITY_MEMBER, members);
 		}
 		#endregion
 	}
