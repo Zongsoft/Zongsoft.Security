@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<ClassInfo>
+	<Security.Role Table="Security_Role" Assembly="Zongsoft.Security.Membership.Role, Zongsoft.CoreLibrary">
+		<RoleId PKColumn="RoleId" />
+		<Name Column="Name" ConstructorName="name" />
+		<Namespace Column="Namespace" ConstructorName="namespace" />
+		<CreatorId Column="CreatorId" Join="Security.User.UserId" Set="Creator" Nullable="true" />
+	</Security.Role>
+
+	<Security.User Table="Security_User" Assembly="Zongsoft.Security.Membership.User, Zongsoft.CoreLibrary">
+		<UserId PKColumn="UserId" ConstructorName="userId"  />
+		<Name Column="Name" ConstructorName="name" />
+		<Namespace Column="Namespace" ConstructorName="namespace" />
+	</Security.User>
+
+	<Security.Member Table="Security_Member" Assembly="Zongsoft.Security.Membership.Member, Zongsoft.CoreLibrary">
+		<RoleId PKColumn="RoleId" ConstructorName="roleId" Join="Security.Role.RoleId" Set="Role" />
+		<MemberId PKColumn="MemberId" ConstructorName="memberId" />
+		<MemberType PKColumn="MemberType" ConstructorName="memberType" />
+	</Security.Member>
+
+	<Security.Permission Table="Security_Permission" Assembly="Zongsoft.Security.Membership.Permission, Zongsoft.CoreLibrary">
+		<MemberId PKColumn="MemberId" ConstructorName="memberId" />
+		<MemberType PKColumn="MemberType" ConstructorName="memberType" />
+		<SchemaId PKColumn="SchemaId" ConstructorName="schemaId" />
+		<ActionId PKColumn="ActionId" ConstructorName="actionId" />
+		<Granted Column="Granted" ConstructorName="granted" />
+	</Security.Permission>
+
+	<Security.PermissionFilter Table="Security_PermissionFilter" Assembly="Zongsoft.Security.Membership.PermissionFilter, Zongsoft.CoreLibrary">
+		<MemberId PKColumn="MemberId" ConstructorName="memberId" />
+		<MemberType PKColumn="MemberType" ConstructorName="memberType" />
+		<SchemaId PKColumn="SchemaId" ConstructorName="schemaId" />
+		<ActionId PKColumn="ActionId" ConstructorName="actionId" />
+		<Granted Column="Filter" ConstructorName="filter" />
+	</Security.PermissionFilter>
+</ClassInfo>
