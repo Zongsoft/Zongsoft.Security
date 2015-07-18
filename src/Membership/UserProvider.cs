@@ -202,7 +202,7 @@ namespace Zongsoft.Security.Membership
 		{
 			var dataAccess = this.EnsureDataAccess();
 			var conditions = new ConditionCollection(ConditionCombine.And, MembershipHelper.GetUserIdentityConditions(identity, @namespace));
-			var dictionary = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, conditions, "PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
+			var dictionary = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, conditions, "!, UserId, PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
 
 			var result = new string[] {
 				dictionary["PasswordQuestion1"] as string,

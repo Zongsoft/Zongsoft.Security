@@ -122,7 +122,7 @@ namespace Zongsoft.Security.Membership
 			passwordSalt = null;
 
 			//从数据引擎中获取指定条件的用户密码数据
-			var dictionary = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "UserId, Password, PasswordSalt").FirstOrDefault();
+			var dictionary = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, Password, PasswordSalt").FirstOrDefault();
 
 			if(dictionary == null)
 				return null;
