@@ -56,10 +56,10 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, conditions).FirstOrDefault();
 		}
 
-		public IEnumerable<User> GetAllUsers(string @namespace)
+		public IEnumerable<User> GetAllUsers(string @namespace, Paging paging = null)
 		{
 			var dataAccess = this.EnsureDataAccess();
-			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)));
+			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)), null, paging ?? new Paging(1, 20));
 		}
 
 		public bool SetPrincipal(int userId, string principal)

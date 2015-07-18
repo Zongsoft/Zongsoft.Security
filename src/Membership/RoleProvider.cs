@@ -49,10 +49,10 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleId)).FirstOrDefault();
 		}
 
-		public IEnumerable<Role> GetAllRoles(string @namespace)
+		public IEnumerable<Role> GetAllRoles(string @namespace, Paging paging = null)
 		{
 			var dataAccess = this.EnsureDataAccess();
-			return dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)));
+			return dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)), null, paging ?? new Paging(1, 20));
 		}
 
 		public int DeleteRoles(params int[] roleIds)
