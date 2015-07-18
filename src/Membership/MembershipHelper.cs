@@ -67,6 +67,11 @@ namespace Zongsoft.Security.Membership
 			return UserIdentityType.Name;
 		}
 
+		public static string TrimNamespace(string @namespace)
+		{
+			return string.IsNullOrWhiteSpace(@namespace) ? null : @namespace.Trim();
+		}
+
 		public static bool GetPassword(IDataAccess dataAccess, int userId, out byte[] password, out byte[] passwordSalt)
 		{
 			return ExecuteGetPasswordCommand(dataAccess, DATA_COMMAND_GETPASSWORD, new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
@@ -79,7 +84,7 @@ namespace Zongsoft.Security.Membership
 		{
 			return ExecuteGetPasswordCommand(dataAccess, DATA_COMMAND_GETPASSWORDBYNAME, new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
 				{
-					{"Namespace", @namespace},
+					{"Namespace", TrimNamespace(@namespace)},
 					{"UserName", userName},
 				}, out password, out passwordSalt);
 		}
@@ -88,7 +93,7 @@ namespace Zongsoft.Security.Membership
 		{
 			return ExecuteGetPasswordCommand(dataAccess, DATA_COMMAND_GETPASSWORDBYEMAIL, new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
 				{
-					{"Namespace", @namespace},
+					{"Namespace", TrimNamespace(@namespace)},
 					{"Email", email},
 				}, out password, out passwordSalt);
 		}
@@ -97,17 +102,13 @@ namespace Zongsoft.Security.Membership
 		{
 			return ExecuteGetPasswordCommand(dataAccess, DATA_COMMAND_GETPASSWORDBYPHONE, new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
 				{
-					{"Namespace", @namespace},
+					{"Namespace", TrimNamespace(@namespace)},
 					{"PhoneNumber", phoneNumber},
 				}, out password, out passwordSalt);
 		}
 
 		public static User GetUser(IDataAccess dataAccess, int userId)
 		{
-			#region 测试代码
-			return new User(1, "Administrator");
-			#endregion
-
 			if(dataAccess == null)
 				throw new ArgumentNullException("dataAccess");
 

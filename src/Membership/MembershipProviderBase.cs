@@ -36,18 +36,11 @@ namespace Zongsoft.Security.Membership
 	{
 		#region 成员字段
 		private IDataAccess _dataAccess;
-		private ISettingsProvider _settings;
-		private string _namespace;
 		#endregion
 
 		#region 构造函数
 		protected MembershipProviderBase()
 		{
-		}
-
-		protected MembershipProviderBase(ISettingsProvider settings)
-		{
-			_settings = settings;
 		}
 		#endregion
 
@@ -64,41 +57,6 @@ namespace Zongsoft.Security.Membership
 					throw new ArgumentNullException();
 
 				_dataAccess = value;
-			}
-		}
-
-		public string Namespace
-		{
-			get
-			{
-				if(string.IsNullOrWhiteSpace(_namespace))
-				{
-					var settings = _settings;
-
-					if(settings != null)
-						_namespace = settings.GetValue("Namespace") as string;
-				}
-
-				return _namespace;
-			}
-			set
-			{
-				if(value == null)
-					_namespace = null;
-				else
-					_namespace = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-			}
-		}
-
-		public ISettingsProvider Settings
-		{
-			get
-			{
-				return _settings;
-			}
-			set
-			{
-				_settings = value;
 			}
 		}
 		#endregion

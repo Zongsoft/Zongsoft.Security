@@ -37,7 +37,7 @@ namespace Zongsoft.Security.Membership
 	public class UserProvider : MembershipProviderBase, IUserProvider
 	{
 		#region 构造函数
-		public UserProvider(ISettingsProvider settings) : base(settings)
+		public UserProvider()
 		{
 		}
 		#endregion
@@ -49,12 +49,12 @@ namespace Zongsoft.Security.Membership
 			return MembershipHelper.GetUser(dataAccess, userId);
 		}
 
-		public User GetUser(string identity)
+		public User GetUser(string identity, string @namespace)
 		{
 			var identityType = MembershipHelper.GetUserIdentityType(identity);
 
 			var conditions = new ConditionCollection(ConditionCombine.And);
-			conditions.Add(new Condition("Namespace", this.Namespace));
+			conditions.Add(new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)));
 
 			switch(identityType)
 			{
@@ -73,10 +73,10 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, conditions).FirstOrDefault();
 		}
 
-		public IEnumerable<User> GetAllUsers()
+		public IEnumerable<User> GetAllUsers(string @namespace)
 		{
 			var dataAccess = this.EnsureDataAccess();
-			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, new Condition("Namespace", this.Namespace));
+			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)));
 		}
 
 		public bool SetPrincipal(int userId, string principal)
@@ -143,7 +143,7 @@ namespace Zongsoft.Security.Membership
 			return true;
 		}
 
-		public bool ForgetPassword(string identity, out int userId, out string secret, out string token)
+		public bool ForgetPassword(string identity, string @namespace, out int userId, out string secret, out string token)
 		{
 			userId = 0;
 			secret = null;
@@ -157,12 +157,12 @@ namespace Zongsoft.Security.Membership
 			return false;
 		}
 
-		public bool ResetPassword(string identity, string secret, string newPassword = null)
+		public bool ResetPassword(string identity, string @namespace, string secret, string newPassword = null)
 		{
 			return false;
 		}
 
-		public bool ResetPassword(string identity, string[] passwordAnswers, string newPassword = null)
+		public bool ResetPassword(string identity, string @namespace, string[] passwordAnswers, string newPassword = null)
 		{
 			//var objectAccess = this.EnsureDataAccess();
 			//var certification = this.GetCertification(certificationId);
@@ -195,7 +195,7 @@ namespace Zongsoft.Security.Membership
 			return true;
 		}
 
-		public string[] GetPasswordQuestions(string identity)
+		public string[] GetPasswordQuestions(string identity, string @namespace)
 		{
 			//var dataAccess = this.EnsureDataAccess();
 			//var certification = this.GetCertification(certificationId);

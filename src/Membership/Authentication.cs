@@ -40,13 +40,13 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 构造函数
-		public Authentication(ISettingsProvider settings) : base(settings)
+		public Authentication()
 		{
 		}
 		#endregion
 
 		#region 验证方法
-		public AuthenticationResult Authenticate(string identity, string password, string scene)
+		public AuthenticationResult Authenticate(string identity, string password, string scene, string @namespace = null)
 		{
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
@@ -55,12 +55,12 @@ namespace Zongsoft.Security.Membership
 			byte[] storedPasswordSalt;
 
 			//获取当前用户的密码及密码向量
-			var userId = this.GetPassword(identity, out storedPassword, out storedPasswordSalt);
+			var userId = this.GetPassword(identity, @namespace, out storedPassword, out storedPasswordSalt);
 
 			if(userId == null)
 			{
 				//激发“Authenticated”事件
-				this.OnAuthenticated(new AuthenticatedEventArgs(identity, this.Namespace, scene, false));
+				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene, false));
 
 				//指定的用户名如果不存在则抛出验证异常
 				throw new AuthenticationException(AuthenticationException.InvalidIdentity);
@@ -73,7 +73,7 @@ namespace Zongsoft.Security.Membership
 				var user = MembershipHelper.GetUser(this.EnsureDataAccess(), userId.Value);
 
 				//创建“Authenticated”事件参数
-				var eventArgs = new AuthenticatedEventArgs(identity, this.Namespace, scene, true, user);
+				var eventArgs = new AuthenticatedEventArgs(identity, @namespace, scene, true, user);
 
 				//激发“Authenticated”事件
 				this.OnAuthenticated(eventArgs);
@@ -83,7 +83,7 @@ namespace Zongsoft.Security.Membership
 			}
 
 			//激发“Authenticated”事件
-			this.OnAuthenticated(new AuthenticatedEventArgs(identity, this.Namespace, scene, false));
+			this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene, false));
 
 			//密码校验失败则抛出验证异常
 			throw new AuthenticationException(AuthenticationException.InvalidPassword);
@@ -91,13 +91,10 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 虚拟方法
-		protected virtual int? GetPassword(string identity, out byte[] password, out byte[] passwordSalt)
+		protected virtual int? GetPassword(string identity, string @namespace, out byte[] password, out byte[] passwordSalt)
 		{
-			#region 测试代码
 			password = null;
 			passwordSalt = null;
-			return 1;
-			#endregion
 
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
@@ -107,11 +104,11 @@ namespace Zongsoft.Security.Membership
 			switch(identityType)
 			{
 				case UserIdentityType.Email:
-					return MembershipHelper.GetPasswordByEmail(this.EnsureDataAccess(), this.Namespace, identity, out password, out passwordSalt);
+					return MembershipHelper.GetPasswordByEmail(this.EnsureDataAccess(), @namespace, identity, out password, out passwordSalt);
 				case UserIdentityType.PhoneNumber:
-					return MembershipHelper.GetPasswordByPhone(this.EnsureDataAccess(), this.Namespace, identity, out password, out passwordSalt);
+					return MembershipHelper.GetPasswordByPhone(this.EnsureDataAccess(), @namespace, identity, out password, out passwordSalt);
 				default:
-					return MembershipHelper.GetPasswordByName(this.EnsureDataAccess(), this.Namespace, identity, out password, out passwordSalt);
+					return MembershipHelper.GetPasswordByName(this.EnsureDataAccess(), @namespace, identity, out password, out passwordSalt);
 			}
 		}
 		#endregion

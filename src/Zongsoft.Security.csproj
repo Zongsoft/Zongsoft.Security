@@ -40,8 +40,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CertificationProvider.cs" />
     <Compile Include="Membership\Authentication.cs" />
+    <Compile Include="Membership\AuthenticationPredications.cs" />
     <Compile Include="Membership\Authorization.cs" />
+    <Compile Include="Membership\AuthorizationPredications.cs" />
     <Compile Include="Membership\MembershipHelper.cs" />
     <Compile Include="Membership\PermissionProvider.cs" />
     <Compile Include="Membership\MembershipProviderBase.cs" />

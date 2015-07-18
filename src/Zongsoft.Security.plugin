@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<plugin name="Security"
+<plugin name="Zongsoft.Security"
         title="Zongsoft Security Plugin"
         author="Popeye Zhong(zongsoft@gmail.com)"
         version="1.0.1507.0"
@@ -19,34 +19,34 @@
 
 	<!-- 挂载安全业务 -->
 	<extension path="/Workspace/Security">
-		<object name="IsAuthenticated" type="Zongsoft.Security.Plugins.IsAuthenticatedPredication, Zongsoft.Plugins" />
-		<object name="IsUnauthenticated" type="Zongsoft.Security.Plugins.IsUnauthenticatedPredication, Zongsoft.Plugins" />
-		<object name="IsAuthorized" type="Zongsoft.Security.Plugins.IsAuthorizedPredication, Zongsoft.Plugins" />
-		<object name="IsUnauthorized" type="Zongsoft.Security.Plugins.IsUnauthorizedPredication, Zongsoft.Plugins" />
+		<object name="IsAuthenticated" type="Zongsoft.Security.Membership.IsAuthenticatedPredication, Zongsoft.Security" />
+		<object name="IsUnauthenticated" type="Zongsoft.Security.Membership.IsUnauthenticatedPredication, Zongsoft.Security" />
+		<object name="IsAuthorized" type="Zongsoft.Security.Membership.IsAuthorizedPredication, Zongsoft.Security" />
+		<object name="IsUnauthorized" type="Zongsoft.Security.Membership.IsUnauthorizedPredication, Zongsoft.Security" />
 
 		<object name="CertificationProvider"
-		        type="Zongsoft.Security.CertificationProvider, Zongsoft.CoreLibrary" />
+		        type="Zongsoft.Security.CertificationProvider, Zongsoft.Security" />
 
 		<object name="RoleProvider"
 		        dataAccess="{srv:Security@Data}"
-		        type="Zongsoft.Security.Membership.RoleProvider, Zongsoft.CoreLibrary" />
+		        type="Zongsoft.Security.Membership.RoleProvider, Zongsoft.Security" />
 
 		<object name="UserProvider"
 		        dataAccess="{srv:Security@Data}"
-		        type="Zongsoft.Security.Membership.UserProvider, Zongsoft.CoreLibrary" />
+		        type="Zongsoft.Security.Membership.UserProvider, Zongsoft.Security" />
 
 		<object name="PermissionProvider"
 		        dataAccess="{srv:Security@Data}"
-		        type="Zongsoft.Security.Membership.PermissionProvider, Zongsoft.CoreLibrary" />
+		        type="Zongsoft.Security.Membership.PermissionProvider, Zongsoft.Security" />
 
 		<object name="Authentication"
 		        dataAccess="{srv:Security@Data}"
-		        type="Zongsoft.Security.Membership.Authentication, Zongsoft.CoreLibrary" />
+		        type="Zongsoft.Security.Membership.Authentication, Zongsoft.Security" />
 
 		<object name="Authorization"
 		        permissionProvider="{path:../PermissionProvider}"
 		        roleProvider="{path:../RoleProvider}"
-		        type="Zongsoft.Security.Membership.Authorization, Zongsoft.CoreLibrary" />
+		        type="Zongsoft.Security.Membership.Authorization, Zongsoft.Security" />
 	</extension>
 
 	<!-- 挂载“安全”相关的各种服务 -->

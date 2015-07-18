@@ -37,7 +37,7 @@ namespace Zongsoft.Security.Membership
 	public class RoleProvider : MembershipProviderBase, IRoleProvider, IMemberProvider
 	{
 		#region 构造函数
-		public RoleProvider(ISettingsProvider settings) : base(settings)
+		public RoleProvider()
 		{
 		}
 		#endregion
@@ -49,10 +49,10 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleId)).FirstOrDefault();
 		}
 
-		public IEnumerable<Role> GetAllRoles()
+		public IEnumerable<Role> GetAllRoles(string @namespace)
 		{
 			var dataAccess = this.EnsureDataAccess();
-			return dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("Namespace", this.Namespace));
+			return dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)));
 		}
 
 		public IEnumerable<Role> GetRoles(int memberId, MemberType memberType)
@@ -61,7 +61,6 @@ namespace Zongsoft.Security.Membership
 
 			var roles = dataAccess.Execute(MembershipHelper.DATA_ENTITY_ROLE, new Dictionary<string, object>
 			{
-				{"Namespace", this.Namespace},
 				{"MemberId", memberId},
 				{"MemberType", memberType},
 			}) as IEnumerable<Role>;

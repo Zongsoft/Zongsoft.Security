@@ -35,7 +35,7 @@ namespace Zongsoft.Security.Membership
 	public class PermissionProvider : MembershipProviderBase, IPermissionProvider
 	{
 		#region 构造函数
-		public PermissionProvider(ISettingsProvider settings) : base(settings)
+		public PermissionProvider()
 		{
 		}
 		#endregion
