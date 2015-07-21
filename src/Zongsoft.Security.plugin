@@ -28,6 +28,7 @@
 		        type="Zongsoft.Security.Censorship, Zongsoft.Security" />
 
 		<object name="CertificationProvider"
+		        storage="{srv:Redis}"
 		        type="Zongsoft.Security.CertificationProvider, Zongsoft.Security" />
 
 		<object name="RoleProvider"

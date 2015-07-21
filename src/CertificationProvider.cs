@@ -401,7 +401,7 @@ namespace Zongsoft.Security
 			var storage = this.Storage;
 
 			if(storage == null)
-				throw new InvalidOperationException("The value of 'Storage' property is null.");
+				throw new MissingMemberException(this.GetType().FullName, "Storage");
 
 			return storage;
 		}
