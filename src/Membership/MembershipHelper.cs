@@ -47,6 +47,11 @@ namespace Zongsoft.Security.Membership
 		internal const string DATA_ENTITY_MEMBER = DATA_CONTAINER_NAME + ".Member";
 		internal const string DATA_ENTITY_PERMISSION = DATA_CONTAINER_NAME + ".Permission";
 		internal const string DATA_ENTITY_PERMISSION_FILTER = DATA_CONTAINER_NAME + ".PermissionFilter";
+
+		internal const int MINIMUM_ID = 100000;
+
+		internal const string SEQUENCE_USERID = "Zongsoft.Security.Membership.User.ID";
+		internal const string SEQUENCE_ROLEID = "Zongsoft.Security.Membership.Role.ID";
 		#endregion
 
 		#region 公共方法
@@ -76,13 +81,14 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
 
+			string text;
 			var conditions = new Condition[2];
 			conditions[0] = new Condition("Namespace", TrimNamespace(@namespace));
 
-			if(Zongsoft.Text.TextRegular.Web.Email.IsMatch(identity, out identity))
-				conditions[1] = new Condition("Email", identity);
-			else if(Zongsoft.Text.TextRegular.Chinese.Cellphone.IsMatch(identity, out identity))
-				conditions[1] = new Condition("PhoneNumber", identity);
+			if(Zongsoft.Text.TextRegular.Web.Email.IsMatch(identity, out text))
+				conditions[1] = new Condition("Email", text);
+			else if(Zongsoft.Text.TextRegular.Chinese.Cellphone.IsMatch(identity, out text))
+				conditions[1] = new Condition("PhoneNumber", text);
 			else
 				conditions[1] = new Condition("Name", identity);
 
