@@ -2,7 +2,6 @@
 SET TIME_ZONE='+08:00';
 
 CREATE TABLE IF NOT EXISTS `Security_Role` (
-
   `RoleId` int NOT NULL COMMENT '主键，角色编号',
   `Namespace` VARCHAR(50) NULL COMMENT '角色所属的命名空间，该字段表示应用或组织机构的标识',
   `Name` VARCHAR(50) NOT NULL COMMENT '角色名称，该名称在所属命名空间内具有唯一性',
@@ -49,7 +48,6 @@ CREATE TABLE IF NOT EXISTS `Security_User` (
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表';
 
 CREATE TABLE IF NOT EXISTS `Security_Member` (
-
   `RoleId` int NOT NULL COMMENT '主键，角色编号',
   `MemberId` int NOT NULL COMMENT '主键，成员编号',
   `MemberType` TINYINT(1) NOT NULL COMMENT '主键，成员类型',
@@ -57,7 +55,6 @@ CREATE TABLE IF NOT EXISTS `Security_Member` (
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='角色成员表';
 
 CREATE TABLE IF NOT EXISTS `Security_Permission` (
-
   `MemberId` int NOT NULL COMMENT '主键，成员编号',
   `MemberType` TINYINT(1) NOT NULL COMMENT '主键，成员类型',
   `SchemaId` VARCHAR(50) NOT NULL COMMENT '授权目标的标识',
@@ -67,7 +64,6 @@ CREATE TABLE IF NOT EXISTS `Security_Permission` (
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='权限表';
 
 CREATE TABLE IF NOT EXISTS `Security_PermissionFilter` (
-
   `MemberId` int NOT NULL COMMENT '主键，成员编号',
   `MemberType` TINYINT(1) NOT NULL COMMENT '主键，成员类型',
   `SchemaId` VARCHAR(50) NOT NULL COMMENT '授权目标的标识',
@@ -75,6 +71,13 @@ CREATE TABLE IF NOT EXISTS `Security_PermissionFilter` (
   `Filter` VARCHAR(4000) NOT NULL COMMENT '拒绝授权的过滤表达式',
   PRIMARY KEY (`MemberId`, `MemberType`, `SchemaId`, `ActionId`))
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='权限表';
+
+CREATE TABLE IF NOT EXISTS `Security_Censorship` (
+  `Name` VARCHAR(50) NOT NULL COMMENT '主键，审查类名',
+  `Word` VARCHAR(50) NOT NULL COMMENT '主键，阻止词汇',
+  PRIMARY KEY (`Name`, `Word`))
+ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='词汇审查表';
+
 
 # COMMENT '角色名在命名空间范围内的唯一索引'
 ALTER TABLE `Automao`.`Security_Role` 
