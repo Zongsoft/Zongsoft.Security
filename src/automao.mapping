@@ -35,4 +35,9 @@
 		<ActionId PKColumn="ActionId" ConstructorName="actionId" />
 		<Granted Column="Filter" ConstructorName="filter" />
 	</Security.PermissionFilter>
+
+	<Security.Censorship Table="Security_Censorship">
+		<Name PKColumn=Name" />
+		<Word PKColumn="Word" />
+	</Security.PermissionFilter>
 </ClassInfo>

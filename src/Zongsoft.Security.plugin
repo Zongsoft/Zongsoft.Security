@@ -24,6 +24,9 @@
 		<object name="IsAuthorized" type="Zongsoft.Security.Membership.IsAuthorizedPredication, Zongsoft.Security" />
 		<object name="IsUnauthorized" type="Zongsoft.Security.Membership.IsUnauthorizedPredication, Zongsoft.Security" />
 
+		<object name="Censorship"
+		        type="Zongsoft.Security.Censorship, Zongsoft.Security" />
+
 		<object name="CertificationProvider"
 		        type="Zongsoft.Security.CertificationProvider, Zongsoft.Security" />
 
@@ -56,6 +59,7 @@
 		<object name="IsAuthorized" value="{path:/Workspace/Security/IsAuthorized}" />
 		<object name="IsUnauthorized" value="{path:/Workspace/Security/IsUnauthorized}" />
 
+		<object name="Censorship" value="{path:/Workspace/Security/Censorship}" />
 		<object name="CertificationProvider" value="{path:/Workspace/Security/CertificationProvider}" />
 		<object name="RoleProvider" value="{path:/Workspace/Security/RoleProvider}" />
 		<object name="UserProvider" value="{path:/Workspace/Security/UserProvider}" />
