@@ -28,17 +28,17 @@
 		        type="Zongsoft.Security.Censorship, Zongsoft.Security" />
 
 		<object name="CertificationProvider"
-		        storage="{srv:Redis}"
+		        storage="{srv:Storage}"
 		        type="Zongsoft.Security.CertificationProvider, Zongsoft.Security" />
 
 		<object name="RoleProvider"
 		        dataAccess="{srv:Security@Data}"
-		        sequence="{srv:RedisSequence}"
+		        sequence="{srv:.}"
 		        type="Zongsoft.Security.Membership.RoleProvider, Zongsoft.Security" />
 
 		<object name="UserProvider"
 		        dataAccess="{srv:Security@Data}"
-		        sequence="{srv:RedisSequence}"
+		        sequence="{srv:.}"
 		        type="Zongsoft.Security.Membership.UserProvider, Zongsoft.Security" />
 
 		<object name="PermissionProvider"
