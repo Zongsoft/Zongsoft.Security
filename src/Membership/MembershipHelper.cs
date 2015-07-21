@@ -106,6 +106,9 @@ namespace Zongsoft.Security.Membership
 
 			if(!((name[1] >= 'A' && name[1] <= 'Z') || (name[1] >= 'a' && name[1] <= 'z')))
 				throw new InvalidOperationException("The value of 'Name' property first character must is letters of an alphabet");
+
+			if(Censorship.Names.IsBlocked(name))
+				throw new InvalidOperationException(string.Format("The '{0}' name is blocked.", name));
 		}
 		#endregion
 

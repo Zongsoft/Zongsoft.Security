@@ -56,17 +56,32 @@
 			<property name="Description" type="nvarchar" length="500" nullable="true" />
 		</entity>
 
-		<entity name="UserProfile" storage:name="dbo.[Common_UserProfile]">
+		<entity name="UserProfile" storage:name="dbo.[UserProfile]">
 			<key>
 				<propertyRef name="UserId" />
 			</key>
 
 			<property name="UserId" type="int" nullable="false" />
-			<property name="Gender" type="bit" nullable="true" />
-			<property name="Rank" type="tinyint" nullable="false" />
+			<property name="Gender" type="bit" nullable="false" />
+			<property name="Nickname" type="nvarchar" length="50" nullable="true" />
+			<property name="Birthdate" type="date" nullable="true" />
+			<property name="IdentityId" type="varchar" length="50" nullable="true" />
+			<property name="Avatar" type="varchar" length="50" nullable="true" />
+			<property name="Grade" type="tinyint" nullable="false" />
 			<property name="QQ" type="varchar" length="50" nullable="true" />
-			<property name="Sina" type="varchar" length="50" nullable="true" />
-			<property name="Avatar" type="varchar" length="100" nullable="true" />
+			<property name="WeChatNo" type="varchar" length="50" nullable="true" />
+			<property name="SinaId" type="varchar" length="50" nullable="true" />
+			<property name="ContactAddressCode" type="int" nullable="true" />
+			<property name="ContactAddressDetail" type="nvarchar" length="100" nullable="true" />
+			<property name="HomeAddressCode" type="int" nullable="true" />
+			<property name="HomeAddressDetail" type="nvarchar" length="100" nullable="true" />
+			<property name="DrivingLicenseType" type="tinyint" nullable="true" />
+			<property name="DrivingLicenseNo" type="varchar" length="50" nullable="true" />
+			<property name="DrivingLicenseCode" type="varchar" length="50" nullable="true" />
+			<property name="DrivingLicenseIssue" type="date" nullable="true" />
+			<property name="DrivingLicenseExpire" type="date" nullable="true" />
+			<property name="Points" type="int" nullable="false" />
+			<property name="TotalPoints" type="int" nullable="false" />
 		</entity>
 
 		<entity name="Member" storage:name="dbo.[Security_Member]">
@@ -109,6 +124,16 @@
 			<property name="SchemaId" type="varchar" length="50" nullable="false" />
 			<property name="ActionId" type="varchar" length="50" nullable="false" />
 			<property name="Filter" type="nvarchar" length="4000" nullable="false" />
+		</entity>
+
+		<entity name="Censorship" storage:name="dbo.[Security_Censorship]">
+			<key>
+				<propertyRef name="Name" />
+				<propertyRef name="Word" />
+			</key>
+
+			<property name="Name" type="varchar" length="50" nullable="false" />
+			<property name="Word" type="nvarchar" length="50" nullable="false" />
 		</entity>
 	</storage:container>
 
@@ -178,11 +203,26 @@
 			</key>
 
 			<property name="UserId" type="int" nullable="false" />
-			<property name="Gender" type="bool" nullable="true" />
-			<property name="Rank" type="byte" nullable="false" />
+			<property name="Gender" type="bool" nullable="false" />
+			<property name="Nickname" type="string" length="50" nullable="true" />
+			<property name="Birthdate" type="datetime" nullable="true" />
+			<property name="IdentityId" type="string" length="50" nullable="true" />
+			<property name="Avatar" type="string" length="50" nullable="true" />
+			<property name="Grade" type="byte" nullable="false" />
 			<property name="QQ" type="string" length="50" nullable="true" />
-			<property name="Sina" type="string" length="50" nullable="true" />
-			<property name="Avatar" type="string" length="100" nullable="true" />
+			<property name="WeChatNo" type="string" length="50" nullable="true" />
+			<property name="SinaId" type="string" length="50" nullable="true" />
+			<property name="ContactAddressCode" type="int" nullable="true" />
+			<property name="ContactAddressDetail" type="string" length="100" nullable="true" />
+			<property name="HomeAddressCode" type="int" nullable="true" />
+			<property name="HomeAddressDetail" type="string" length="100" nullable="true" />
+			<property name="DrivingLicenseType" type="byte" nullable="true" />
+			<property name="DrivingLicenseNo" type="string" length="50" nullable="true" />
+			<property name="DrivingLicenseCode" type="string" length="50" nullable="true" />
+			<property name="DrivingLicenseIssue" type="datetime" nullable="true" />
+			<property name="DrivingLicenseExpire" type="datetime" nullable="true" />
+			<property name="Points" type="int" nullable="false" />
+			<property name="TotalPoints" type="int" nullable="false" />
 		</entity>
 
 		<entity name="Member">
@@ -229,6 +269,16 @@
 			<property name="SchemaId" type="string" length="50" nullable="false" />
 			<property name="ActionId" type="string" length="50" nullable="false" />
 			<property name="Filter" type="string" length="4000" nullable="false" />
+		</entity>
+
+		<entity name="Censorship">
+			<key>
+				<propertyRef name="Name" />
+				<propertyRef name="Word" />
+			</key>
+
+			<property name="Name" type="string" length="50" nullable="false" />
+			<property name="Word" type="string" length="50" nullable="false" />
 		</entity>
 
 		<association name="Role_Creator">
