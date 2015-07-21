@@ -36,9 +36,30 @@ namespace Zongsoft.Security.Membership
 {
 	public class UserProvider : MembershipProviderBase, IUserProvider
 	{
+		#region 成员字段
+		private Zongsoft.Common.ISequence _sequence;
+		#endregion
+
 		#region 构造函数
 		public UserProvider()
 		{
+		}
+		#endregion
+
+		#region 公共属性
+		public Zongsoft.Common.ISequence Sequence
+		{
+			get
+			{
+				return _sequence;
+			}
+			set
+			{
+				if(value == null)
+					throw new ArgumentNullException();
+
+				_sequence = value;
+			}
 		}
 		#endregion
 
@@ -92,6 +113,19 @@ namespace Zongsoft.Security.Membership
 
 			foreach(var user in users)
 			{
+				if(user == null)
+					continue;
+
+				if(user.UserId < 1)
+				{
+					var sequence = this.Sequence;
+
+					if(sequence == null)
+						throw new MissingMemberException(this.GetType().FullName, "Sequence");
+
+					user.UserId = (int)sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
+				}
+
 				//确保所有用户名是有效的
 				MembershipHelper.EnsureName(user.Name);
 			}

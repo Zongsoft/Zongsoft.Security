@@ -36,9 +36,30 @@ namespace Zongsoft.Security.Membership
 {
 	public class RoleProvider : MembershipProviderBase, IRoleProvider, IMemberProvider
 	{
+		#region 成员字段
+		private Zongsoft.Common.ISequence _sequence;
+		#endregion
+
 		#region 构造函数
 		public RoleProvider()
 		{
+		}
+		#endregion
+
+		#region 公共属性
+		public Zongsoft.Common.ISequence Sequence
+		{
+			get
+			{
+				return _sequence;
+			}
+			set
+			{
+				if(value == null)
+					throw new ArgumentNullException();
+
+				_sequence = value;
+			}
 		}
 		#endregion
 
@@ -76,6 +97,19 @@ namespace Zongsoft.Security.Membership
 
 			foreach(var role in roles)
 			{
+				if(role == null)
+					continue;
+
+				if(role.RoleId < 1)
+				{
+					var sequence = this.Sequence;
+
+					if(sequence == null)
+						throw new MissingMemberException(this.GetType().FullName, "Sequence");
+
+					role.RoleId = (int)sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_ROLEID, 1, MembershipHelper.MINIMUM_ID);
+				}
+
 				//确保所有角色名是有效的
 				MembershipHelper.EnsureName(role.Name);
 			}
