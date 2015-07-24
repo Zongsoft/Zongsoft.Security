@@ -104,10 +104,10 @@ namespace Zongsoft.Security
 		#endregion
 
 		#region 公共方法
-		public Certification Register(Membership.User user, string @namespace, string scene, IDictionary<string, object> extendedProperties)
+		public Certification Register(Membership.User user, string scene, IDictionary<string, object> extendedProperties = null)
 		{
 			//创建一个新的凭证对象
-			var certification = this.CreateCertification(user, @namespace, scene, extendedProperties);
+			var certification = this.CreateCertification(user, scene, extendedProperties);
 
 			if(certification == null)
 				throw new InvalidOperationException();
@@ -124,7 +124,7 @@ namespace Zongsoft.Security
 			if(string.IsNullOrWhiteSpace(certificationId))
 				return;
 
-			var storage = this.GetStorage();
+			var storage = this.EnsureStorage();
 
 			//获取指定编号的凭证对象
 			var certification = this.GetCertification(certificationId);
@@ -153,7 +153,7 @@ namespace Zongsoft.Security
 			if(string.IsNullOrWhiteSpace(certificationId))
 				throw new ArgumentNullException("certificationId");
 
-			var storage = this.GetStorage();
+			var storage = this.EnsureStorage();
 
 			//查找指定编号的凭证对象
 			var certification = this.GetCertification(certificationId);
@@ -163,7 +163,7 @@ namespace Zongsoft.Security
 				return null;
 
 			//创建一个新的凭证对象
-			certification = this.CreateCertification(certification.User, certification.Namespace, certification.Scene, (certification.HasExtendedProperties ? certification.ExtendedProperties : null));
+			certification = this.CreateCertification(certification.User, certification.Scene, (certification.HasExtendedProperties ? certification.ExtendedProperties : null));
 
 			//将新的凭证对象以字典的方式保存到物理存储层中
 			storage.SetValue(this.GetCacheKeyForCertification(certification.CertificationId), certification.ToDictionary());
@@ -202,16 +202,12 @@ namespace Zongsoft.Security
 
 		public int GetCount()
 		{
-			throw new NotSupportedException();
+			return this.GetCount(null);
 		}
 
 		public int GetCount(string @namespace)
 		{
-			if(string.IsNullOrWhiteSpace(@namespace))
-				throw new ArgumentNullException("namespace");
-
-			var storage = this.GetStorage();
-
+			var storage = this.EnsureStorage();
 			var namespaces = storage.GetValue(this.GetCacheKeyForNamespace(@namespace), null) as ICollection;
 
 			if(namespaces == null)
@@ -246,7 +242,7 @@ namespace Zongsoft.Security
 			if(certification != null)
 				return certification.Namespace;
 
-			var storage = this.GetStorage();
+			var storage = this.EnsureStorage();
 
 			//在物理存储层中查找指定编号的凭证对象的缓存字典
 			var dictionary = storage.GetValue(this.GetCacheKeyForCertification(certificationId)) as IDictionary;
@@ -269,7 +265,7 @@ namespace Zongsoft.Security
 			if(certification != null)
 				return certification;
 
-			var storage = this.GetStorage();
+			var storage = this.EnsureStorage();
 
 			//从物理存储层获取凭证对象的序列化后的字典对象
 			var dictionary = storage.GetValue(this.GetCacheKeyForCertification(certificationId)) as IDictionary;
@@ -288,8 +284,7 @@ namespace Zongsoft.Security
 
 		public Certification GetCertification(int userId, string scene)
 		{
-			var storage = this.GetStorage();
-
+			var storage = this.EnsureStorage();
 			var certificationId = storage.GetValue(this.GetCacheKeyForUser(userId, scene), null) as string;
 
 			if(string.IsNullOrWhiteSpace(certificationId))
@@ -300,11 +295,7 @@ namespace Zongsoft.Security
 
 		public IEnumerable<Certification> GetCertifications(string @namespace)
 		{
-			if(string.IsNullOrWhiteSpace(@namespace))
-				throw new ArgumentNullException("namespace");
-
-			var storage = this.GetStorage();
-
+			var storage = this.EnsureStorage();
 			var namespaces = storage.GetValue(this.GetCacheKeyForNamespace(@namespace), null) as IDictionary;
 
 			if(namespaces == null)
@@ -323,14 +314,14 @@ namespace Zongsoft.Security
 			return Zongsoft.Common.RandomGenerator.GenerateString(16);
 		}
 
-		protected virtual Certification CreateCertification(Membership.User user, string @namespace, string scene, IDictionary<string, object> extendedProperties)
+		protected virtual Certification CreateCertification(Membership.User user, string scene, IDictionary<string, object> extendedProperties)
 		{
-			return new Certification(this.GenerateCertificationId(), user, @namespace, scene, _renewalPeriod, DateTime.Now, extendedProperties);
+			return new Certification(this.GenerateCertificationId(), user, scene, _renewalPeriod, DateTime.Now, extendedProperties);
 		}
 
 		protected virtual void Register(Certification certification)
 		{
-			var storage = this.GetStorage();
+			var storage = this.EnsureStorage();
 
 			//声明命名空间对应的所有凭证的集合
 			ICollection<string> namespaces = null;
@@ -396,7 +387,7 @@ namespace Zongsoft.Security
 
 		#region 私有方法
 		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-		private Zongsoft.Runtime.Caching.ICache GetStorage()
+		private Zongsoft.Runtime.Caching.ICache EnsureStorage()
 		{
 			var storage = this.Storage;
 
@@ -411,7 +402,7 @@ namespace Zongsoft.Security
 			if(string.IsNullOrWhiteSpace(certificationId))
 				throw new ArgumentNullException("certificationId");
 
-			var storage = this.GetStorage();
+			var storage = this.EnsureStorage();
 
 			//在当前缓存容器中查找指定编号的凭证对象
 			var dictionary = storage.GetValue(this.GetCacheKeyForCertification(certificationId), null) as IDictionary;
