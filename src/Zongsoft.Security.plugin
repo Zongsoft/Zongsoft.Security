@@ -25,6 +25,7 @@
 		<object name="IsUnauthorized" type="Zongsoft.Security.Membership.IsUnauthorizedPredication, Zongsoft.Security" />
 
 		<object name="Censorship"
+		        dataAccess="{srv:Security@Data}"
 		        type="Zongsoft.Security.Censorship, Zongsoft.Security" />
 
 		<object name="CertificationProvider"
