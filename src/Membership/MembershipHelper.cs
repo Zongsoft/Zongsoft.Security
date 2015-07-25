@@ -110,7 +110,9 @@ namespace Zongsoft.Security.Membership
 			if(name.Length < 2)
 				throw new InvalidOperationException("The value of 'Name' property length must greater than 1.");
 
-			if(!((name[1] >= 'A' && name[1] <= 'Z') || (name[1] >= 'a' && name[1] <= 'z')))
+			var firstChar = name[0];
+
+			if(firstChar < 'A' || (firstChar > 'Z' && firstChar < 'a') || firstChar > 'z')
 				throw new InvalidOperationException("The value of 'Name' property first character must is letters of an alphabet");
 
 			if(Censorship.Names.IsBlocked(name))
