@@ -94,7 +94,12 @@ namespace Zongsoft.Security
 			if(string.IsNullOrWhiteSpace(word))
 				return false;
 
-			return _dataAccess.Count(DATA_ENTITY_CENSORSHIP,
+			var dataAccess = this.DataAccess;
+
+			if(dataAccess == null)
+				throw new MissingMemberException(this.GetType().FullName, "DataAccess");
+
+			return dataAccess.Count(DATA_ENTITY_CENSORSHIP,
 				new ConditionCollection(ConditionCombine.And,
 					new Condition("Name", _names, ConditionOperator.In),
 					new Condition("Word", word.Trim()))) > 1;
