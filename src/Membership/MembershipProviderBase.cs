@@ -65,7 +65,7 @@ namespace Zongsoft.Security.Membership
 		protected IDataAccess EnsureDataAccess()
 		{
 			if(_dataAccess == null)
-				throw new InvalidOperationException("The value of 'DataAccess' property is null.");
+				throw new MissingMemberException(this.GetType().FullName, "DataAccess");
 
 			return _dataAccess;
 		}

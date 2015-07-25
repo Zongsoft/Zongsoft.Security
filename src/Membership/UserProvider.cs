@@ -38,6 +38,7 @@ namespace Zongsoft.Security.Membership
 	{
 		#region 成员字段
 		private Zongsoft.Common.ISequence _sequence;
+		private ICensorship _censorship;
 		#endregion
 
 		#region 构造函数
@@ -59,6 +60,21 @@ namespace Zongsoft.Security.Membership
 					throw new ArgumentNullException();
 
 				_sequence = value;
+			}
+		}
+
+		public ICensorship Censorship
+		{
+			get
+			{
+				return _censorship;
+			}
+			set
+			{
+				if(value == null)
+					throw new ArgumentNullException();
+
+				_censorship = value;
 			}
 		}
 		#endregion
@@ -128,6 +144,10 @@ namespace Zongsoft.Security.Membership
 
 				//确保所有用户名是有效的
 				MembershipHelper.EnsureName(user.Name);
+
+				//确保用户名是审核通过的
+				if(_censorship != null && _censorship.IsBlocked(user.Name, Zongsoft.Security.Censorship.KEY_NAME, Zongsoft.Security.Censorship.KEY_SENSITIVES))
+					throw new InvalidOperationException(string.Format("Illegal '{0}' name of user.", user.Name));
 			}
 
 			var dataAccess = this.EnsureDataAccess();
