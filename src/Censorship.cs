@@ -35,40 +35,39 @@ namespace Zongsoft.Security
 	{
 		#region 常量定义
 		private const string DATA_ENTITY_CENSORSHIP = "Security.Censorship";
-		#endregion
 
-		#region 静态字段
-		/// <summary>专有名词</summary>
-		public static readonly Censorship Names = new Censorship("Names", "Sensitives");
-
-		/// <summary>敏感词汇</summary>
-		public static readonly Censorship Sensitives = new Censorship("Sensitives");
+		public const string KEY_NAME = "Names";
+		public const string KEY_SENSITIVES = "Sensitives";
 		#endregion
 
 		#region 成员字段
-		private string[] _names;
+		private string[] _keys;
 		private IDataAccess _dataAccess;
 		#endregion
 
 		#region 构造函数
-		public Censorship(params string[] names)
+		public Censorship(params string[] keys)
 		{
-			if(names == null)
-				throw new ArgumentNullException("names");
-
-			if(names.Length < 1 || string.IsNullOrWhiteSpace(names[0]))
-				throw new ArgumentNullException("name");
-
-			_names = names;
+			_keys = keys;
 		}
 		#endregion
 
 		#region 公共属性
-		public string Name
+		public string[] Keys
 		{
 			get
 			{
-				return _names[0];
+				return _keys;
+			}
+			set
+			{
+				if(value == null)
+					throw new ArgumentNullException();
+
+				if(value.Length < 1)
+					throw new ArgumentException("The length of array is zero.");
+
+				_keys = value;
 			}
 		}
 
@@ -89,7 +88,7 @@ namespace Zongsoft.Security
 		#endregion
 
 		#region 公共方法
-		public bool IsBlocked(string word)
+		public bool IsBlocked(string word, params string[] keys)
 		{
 			if(string.IsNullOrWhiteSpace(word))
 				return false;
@@ -101,7 +100,7 @@ namespace Zongsoft.Security
 
 			return dataAccess.Count(DATA_ENTITY_CENSORSHIP,
 				new ConditionCollection(ConditionCombine.And,
-					new Condition("Name", _names, ConditionOperator.In),
+					new Condition("Name", keys ?? _keys, ConditionOperator.In),
 					new Condition("Word", word.Trim()))) > 1;
 		}
 		#endregion
