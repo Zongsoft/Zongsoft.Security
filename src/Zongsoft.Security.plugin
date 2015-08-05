@@ -17,6 +17,21 @@
 		<serviceProvider name="Security" path="/Workspace/Services/Security" />
 	</extension>
 
+	<!-- 挂载验证码操作命令 -->
+	<extension path="/Workbench/Commands">
+		<commandNode name="Security">
+			<commandNode name="Authenticode">
+				<object name="Send" cache="{srv:.}"
+				        queue="{srv:MessageQueueProvider}"
+				        type="Zongsoft.Security.Commands.AuthenticodeSendCommand, Zongsoft.Security" />
+
+				<object name="Validate"
+				        cache="{srv:.}"
+				        type="Zongsoft.Security.Commands.AuthenticodeValidateCommand, Zongsoft.Security" />
+			</commandNode>
+		</commandNode>
+	</extension>
+
 	<!-- 挂载安全业务 -->
 	<extension path="/Workspace/Security">
 		<object name="IsAuthenticated" type="Zongsoft.Security.Membership.IsAuthenticatedPredication, Zongsoft.Security" />

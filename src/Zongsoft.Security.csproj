@@ -42,6 +42,9 @@
   <ItemGroup>
     <Compile Include="CertificationProvider.cs" />
     <Compile Include="Censorship.cs" />
+    <Compile Include="Commands\Authenticode.cs" />
+    <Compile Include="Commands\AuthenticodeSendCommand.cs" />
+    <Compile Include="Commands\AuthenticodeValidateCommand.cs" />
     <Compile Include="Membership\Authentication.cs" />
     <Compile Include="Membership\AuthenticationPredications.cs" />
     <Compile Include="Membership\Authorization.cs" />
@@ -56,6 +59,9 @@
   <ItemGroup>
     <None Include="Zongsoft.Security.mapping" />
     <None Include="Zongsoft.Security.plugin" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
