@@ -46,7 +46,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 验证方法
-		public AuthenticationResult Authenticate(string identity, string password, string scene, string @namespace = null)
+		public AuthenticationResult Authenticate(string identity, string password, string @namespace = null)
 		{
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
@@ -60,7 +60,7 @@ namespace Zongsoft.Security.Membership
 			if(userId == null)
 			{
 				//激发“Authenticated”事件
-				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene, false));
+				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, false));
 
 				//指定的用户名如果不存在则抛出验证异常
 				throw new AuthenticationException(AuthenticationException.InvalidIdentity);
@@ -73,7 +73,7 @@ namespace Zongsoft.Security.Membership
 				var user = MembershipHelper.GetUser(this.EnsureDataAccess(), userId.Value);
 
 				//创建“Authenticated”事件参数
-				var eventArgs = new AuthenticatedEventArgs(identity, @namespace, scene, true, user);
+				var eventArgs = new AuthenticatedEventArgs(identity, @namespace, true, user);
 
 				//激发“Authenticated”事件
 				this.OnAuthenticated(eventArgs);
@@ -83,7 +83,7 @@ namespace Zongsoft.Security.Membership
 			}
 
 			//激发“Authenticated”事件
-			this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene, false));
+			this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, false));
 
 			//密码校验失败则抛出验证异常
 			throw new AuthenticationException(AuthenticationException.InvalidPassword);
