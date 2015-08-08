@@ -40,6 +40,7 @@ namespace Zongsoft.Security.Commands
 		#region 成员字段
 		private int _period;
 		private ICache _cache;
+		private Zongsoft.Collections.IQueue _queue;
 		private Zongsoft.Collections.IQueueProvider _queueProvider;
 		#endregion
 
@@ -81,6 +82,30 @@ namespace Zongsoft.Security.Commands
 					throw new ArgumentNullException();
 
 				_cache = value;
+			}
+		}
+
+		/// <summary>
+		/// 获取或设置验证码发送命令的目标队列。
+		/// </summary>
+		public Zongsoft.Collections.IQueue Queue
+		{
+			get
+			{
+				if(_queue == null)
+				{
+					if(_queueProvider != null)
+						_queue = _queueProvider.GetQueue("SMS");
+				}
+
+				return _queue;
+			}
+			set
+			{
+				if(value == null)
+					throw new ArgumentNullException();
+
+				_queue = value;
 			}
 		}
 
@@ -134,7 +159,11 @@ namespace Zongsoft.Security.Commands
 
 			if(_period <= 0 || (DateTime.Now - timestamp).TotalSeconds > _period)
 			{
-				var queue = queueProvder.GetQueue("SMS");
+				var queue = this.Queue;
+
+				if(queue == null)
+					throw new MissingMemberException(this.GetType().FullName, "Queue");
+
 				queue.Enqueue(json);
 
 				var duration = cache.GetDuration(GetStorageTimestampKey(context.Arguments[0], context.Arguments[1]));
