@@ -40,7 +40,7 @@ namespace Zongsoft.Security.Commands
 		#region 成员字段
 		private int _period;
 		private ICache _cache;
-		private IMessageQueue _queue;
+		private Zongsoft.Collections.IQueueProvider _queueProvider;
 		#endregion
 
 		#region 构造函数
@@ -85,20 +85,20 @@ namespace Zongsoft.Security.Commands
 		}
 
 		/// <summary>
-		/// 获取或设置验证码发送命令的目标队列。
+		/// 获取或设置验证码发送命令的目标队列的提供程序。
 		/// </summary>
-		public IMessageQueue Queue
+		public Zongsoft.Collections.IQueueProvider QueueProvider
 		{
 			get
 			{
-				return _queue;
+				return _queueProvider;
 			}
 			set
 			{
 				if(value == null)
 					throw new ArgumentNullException();
 
-				_queue = value;
+				_queueProvider = value;
 			}
 		}
 		#endregion
@@ -114,10 +114,10 @@ namespace Zongsoft.Security.Commands
 			if(cache == null)
 				throw new MissingMemberException(this.GetType().FullName, "Cache");
 
-			var queue = this.Queue;
+			var queueProvder = this.QueueProvider;
 
-			if(cache == null)
-				throw new MissingMemberException(this.GetType().FullName, "Queue");
+			if(queueProvder == null)
+				throw new MissingMemberException(this.GetType().FullName, "QueueProvider");
 
 			var code = GenerateCode((int)context.Options["length"]);
 			var json = string.Format("{{Type:\"Authenticode\", Source:\"{0}\", Destination:\"{1}\", Value:\"{3}\"}}", context.Arguments[0], context.Arguments[1], code);
@@ -134,6 +134,7 @@ namespace Zongsoft.Security.Commands
 
 			if(_period <= 0 || (DateTime.Now - timestamp).TotalSeconds > _period)
 			{
+				var queue = queueProvder.GetQueue("SMS");
 				queue.Enqueue(json);
 
 				var duration = cache.GetDuration(GetStorageTimestampKey(context.Arguments[0], context.Arguments[1]));

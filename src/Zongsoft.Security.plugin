@@ -22,7 +22,7 @@
 		<commandNode name="Security">
 			<commandNode name="Authenticode">
 				<object name="Send" cache="{srv:.}"
-				        queue="{srv:MessageQueueProvider}"
+				        queueProvider="{srv:MessageQueueProvider}"
 				        type="Zongsoft.Security.Commands.AuthenticodeSendCommand, Zongsoft.Security" />
 
 				<object name="Validate"
