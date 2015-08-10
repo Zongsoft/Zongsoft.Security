@@ -62,6 +62,8 @@ namespace Zongsoft.Security.Membership
 				//激发“Authenticated”事件
 				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, false));
 
+				Zongsoft.Diagnostics.Logger.Debug(string.Format("无效的用户标识！{0}@{1}:{2}", identity, @namespace, password));
+
 				//指定的用户名如果不存在则抛出验证异常
 				throw new AuthenticationException(AuthenticationException.InvalidIdentity, "无效的用户标识。", null);
 			}
