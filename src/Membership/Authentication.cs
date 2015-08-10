@@ -63,7 +63,7 @@ namespace Zongsoft.Security.Membership
 				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, false));
 
 				//指定的用户名如果不存在则抛出验证异常
-				throw new AuthenticationException(AuthenticationException.InvalidIdentity);
+				throw new AuthenticationException(AuthenticationException.InvalidIdentity, "无效的用户标识。", null);
 			}
 
 			//如果验证成功，则返回验证结果
@@ -86,7 +86,7 @@ namespace Zongsoft.Security.Membership
 			this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, false));
 
 			//密码校验失败则抛出验证异常
-			throw new AuthenticationException(AuthenticationException.InvalidPassword);
+			throw new AuthenticationException(AuthenticationException.InvalidPassword, "无效的密码。", null);
 		}
 		#endregion
 
