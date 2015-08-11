@@ -42,9 +42,6 @@
   <ItemGroup>
     <Compile Include="CertificationProvider.cs" />
     <Compile Include="Censorship.cs" />
-    <Compile Include="Commands\Authenticode.cs" />
-    <Compile Include="Commands\AuthenticodeSendCommand.cs" />
-    <Compile Include="Commands\AuthenticodeValidateCommand.cs" />
     <Compile Include="Membership\Authentication.cs" />
     <Compile Include="Membership\AuthenticationPredications.cs" />
     <Compile Include="Membership\Authorization.cs" />
