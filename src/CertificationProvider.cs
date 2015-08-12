@@ -165,9 +165,12 @@ namespace Zongsoft.Security
 			//创建一个新的凭证对象
 			certification = this.CreateCertification(certification.User, certification.Scene, (certification.HasExtendedProperties ? certification.ExtendedProperties : null));
 
-			//将新的凭证对象以字典的方式保存到物理存储层中
-			//storage.SetValue(this.GetCacheKeyOfCertification(certification.CertificationId), certification.ToDictionary());
-			storage.SetValue(this.GetCacheKeyOfCertification(certification.CertificationId), Zongsoft.Runtime.Serialization.Serializer.Json.Serialize(certification));
+			//将新的凭证对象以JSON文本的方式保存到物理存储层中
+			storage.SetValue(this.GetCacheKeyOfCertification(certification.CertificationId), Zongsoft.Runtime.Serialization.Serializer.Json.Serialize(certification, new Runtime.Serialization.TextSerializationSettings()
+			{
+				Indented = false,
+				Typed = true,
+			}));
 
 			//将当前用户及场景对应的凭证号更改为新创建的凭证号
 			storage.SetValue(this.GetCacheKeyOfUser(certification.User.UserId, certification.Scene), certification.CertificationId);
@@ -268,7 +271,7 @@ namespace Zongsoft.Security
 
 			var storage = this.EnsureStorage();
 
-			//从物理存储层获取凭证对象的序列化后的字典对象
+			//从物理存储层获取凭证对象的序列化后的JSON文本
 			var text = storage.GetValue(this.GetCacheKeyOfCertification(certificationId)) as string;
 
 			if(text != null && text.Length > 0)
@@ -278,21 +281,10 @@ namespace Zongsoft.Security
 
 				//将反序列化后的凭证对象保存到本地内存缓存中
 				_memoryCache.SetValue(certificationId, certification, TimeSpan.FromSeconds(certification.Duration.TotalSeconds / 2));
+
+				//返回从物理存储层获取到的凭证对象
+				return certification;
 			}
-
-			/*
-			//从物理存储层获取凭证对象的序列化后的字典对象
-			var dictionary = storage.GetValue(this.GetCacheKeyOfCertification(certificationId)) as IDictionary;
-
-			if(dictionary != null)
-			{
-				//将存储层返回的凭证对象序列化的字典反序列化
-				certification = Certification.FromDictionary(dictionary);
-
-				//将反序列化后的凭证对象保存到本地内存缓存中
-				_memoryCache.SetValue(certificationId, certification, TimeSpan.FromSeconds(certification.Duration.TotalSeconds / 2));
-			}
-			*/
 
 			return null;
 		}
@@ -361,9 +353,12 @@ namespace Zongsoft.Security
 			//设置当前用户及场景所对应的唯一凭证号为新注册的凭证号
 			storage.SetValue(this.GetCacheKeyOfUser(certification.User.UserId, certification.Scene), certification.CertificationId, certification.Duration);
 
-			//将当前凭证信息以字典的方式保存到物理存储层中
-			//storage.SetValue(this.GetCacheKeyOfCertification(certification.CertificationId), certification.ToDictionary(), certification.Duration);
-			storage.SetValue(this.GetCacheKeyOfCertification(certification.CertificationId), Zongsoft.Runtime.Serialization.Serializer.Json.Serialize(certification), certification.Duration);
+			//将当前凭证信息以JSON文本的方式保存到物理存储层中
+			storage.SetValue(this.GetCacheKeyOfCertification(certification.CertificationId), Zongsoft.Runtime.Serialization.Serializer.Json.Serialize(certification, new Runtime.Serialization.TextSerializationSettings()
+			{
+				Indented = false,
+				Typed = true,
+			}), certification.Duration);
 
 			if(namespaces == null)
 			{
