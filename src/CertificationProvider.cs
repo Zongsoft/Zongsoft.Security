@@ -279,8 +279,11 @@ namespace Zongsoft.Security
 				//将存储层返回的凭证对象序列化的字典反序列化
 				certification = Zongsoft.Runtime.Serialization.Serializer.Json.Deserialize<Certification>(text);
 
-				//将反序列化后的凭证对象保存到本地内存缓存中
-				_memoryCache.SetValue(certificationId, certification, TimeSpan.FromSeconds(certification.Duration.TotalSeconds / 2));
+				if(certification != null)
+				{
+					//将反序列化后的凭证对象保存到本地内存缓存中
+					_memoryCache.SetValue(certificationId, certification, TimeSpan.FromSeconds(certification.Duration.TotalSeconds / 2));
+				}
 
 				//返回从物理存储层获取到的凭证对象
 				return certification;
@@ -348,6 +351,10 @@ namespace Zongsoft.Security
 				//将原来的凭证号从对应的命名空间集合中删除
 				if(namespaces != null)
 					namespaces.Remove(originalCertificationId);
+
+				//将本地内存缓存中的凭证对象删除
+				_memoryCache.Remove(originalCertificationId);
+
 			}
 
 			//设置当前用户及场景所对应的唯一凭证号为新注册的凭证号
@@ -414,27 +421,29 @@ namespace Zongsoft.Security
 
 			var storage = this.EnsureStorage();
 
-			//在当前缓存容器中查找指定编号的凭证对象
-			var dictionary = storage.GetValue(this.GetCacheKeyOfCertification(certificationId), null) as IDictionary;
+			//在缓存容器中查找指定编号的凭证对象的序列化后的JSON文本
+			var text = storage.GetValue(this.GetCacheKeyOfCertification(certificationId), null) as string;
 
-			if(dictionary == null || dictionary.Count < 1)
+			//如果缓存容器中没有找到指定编号的凭证则说明指定的编号无效或者该编号对应的凭证已经过期
+			if(string.IsNullOrEmpty(text))
 			{
 				if(throwsException)
-					throw new CertificationException(certificationId, "The certification is not exists.");
+					throw new CertificationException(certificationId, "The certification is not exists or it was expired.");
 
 				return;
 			}
 
-			//获取当前凭证的最后访问时间、凭证的周期、应用场景、用户编号
-			var timestamp = Zongsoft.Common.Convert.ConvertValue<DateTime>(dictionary["Timestamp"]);
-			var duration = Zongsoft.Common.Convert.ConvertValue<TimeSpan>(dictionary["Duration"], TimeSpan.Zero);
-			var scene = Zongsoft.Common.Convert.ConvertValue<string>(dictionary["Scene"]);
-			var userId = Zongsoft.Common.Convert.ConvertValue<int>(dictionary["User.UserId"]);
+			//反序列化JSON文本到凭证对象
+			var certification = Zongsoft.Runtime.Serialization.Serializer.Json.Deserialize<Certification>(text);
+
+			//如果反序列化失败则始终抛出异常
+			if(certification == null)
+				throw new InvalidOperationException("*** INTERNAL ERROR *** The certification text is invalid.");
 
 			var now = DateTime.Now;
 
 			//如果现在时间超出凭证指定的期限范围则抛出异常
-			if(now < timestamp || now > timestamp + duration)
+			if(now < certification.Timestamp || now > certification.Expires)
 			{
 				if(throwsException)
 					throw new CertificationException(certificationId, "The certification was expired.");
@@ -443,13 +452,20 @@ namespace Zongsoft.Security
 			}
 
 			//更新最新的访问时间
-			dictionary["Timestamp"] = now;
+			certification.Timestamp = now;
+
+			//将当前凭证信息以JSON文本的方式保存到物理存储层中
+			storage.SetValue(this.GetCacheKeyOfCertification(certificationId), Zongsoft.Runtime.Serialization.Serializer.Json.Serialize(certification, new Runtime.Serialization.TextSerializationSettings()
+			{
+				Indented = false,
+				Typed = true,
+			}), certification.Duration);
 
 			//顺延凭证的缓存项
-			storage.SetDuration(this.GetCacheKeyOfCertification(certificationId), duration);
+			storage.SetDuration(this.GetCacheKeyOfCertification(certificationId), certification.Duration);
 
 			//顺延当前用户及场景对应凭证号的缓存项
-			storage.SetDuration(this.GetCacheKeyOfUser(userId, scene), duration);
+			storage.SetDuration(this.GetCacheKeyOfUser(certification.UserId, certification.Scene), certification.Duration);
 		}
 
 		private string GetCacheKeyOfUser(int userId, string scene)
