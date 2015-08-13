@@ -140,7 +140,7 @@ namespace Zongsoft.Security
 				storage.Remove(this.GetCacheKeyOfUser(certification.User.UserId, certification.Scene));
 
 				//获取当前命名空间包含的所有凭证集合
-				var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(certification.Namespace), null) as ICollection<string>;
+				var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(certification.Namespace)) as ICollection<string>;
 
 				//将当前凭证号从命名空间集合中删除
 				if(namespaces != null)
@@ -166,20 +166,16 @@ namespace Zongsoft.Security
 			certification = this.CreateCertification(certification.User, certification.Scene, (certification.HasExtendedProperties ? certification.ExtendedProperties : null));
 
 			//将新的凭证对象以JSON文本的方式保存到物理存储层中
-			storage.SetValue(this.GetCacheKeyOfCertification(certification.CertificationId), Zongsoft.Runtime.Serialization.Serializer.Json.Serialize(certification, new Runtime.Serialization.TextSerializationSettings()
-			{
-				Indented = false,
-				Typed = true,
-			}));
+			storage.SetValue(this.GetCacheKeyOfCertification(certification.CertificationId), this.SerializeCertificationToJson(certification), certification.Duration);
 
 			//将当前用户及场景对应的凭证号更改为新创建的凭证号
-			storage.SetValue(this.GetCacheKeyOfUser(certification.User.UserId, certification.Scene), certification.CertificationId);
+			storage.SetValue(this.GetCacheKeyOfUser(certification.User.UserId, certification.Scene), certification.CertificationId, certification.Duration);
 
 			//将原来的凭证从物理存储层中删除
 			storage.Remove(certificationId);
 
 			//获取当前凭证所在的命名空间集
-			var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(certification.Namespace), null) as ICollection<string>;
+			var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(certification.Namespace)) as ICollection<string>;
 
 			if(namespaces != null)
 			{
@@ -198,7 +194,7 @@ namespace Zongsoft.Security
 			_memoryCache.Remove(certificationId);
 
 			//将新建的凭证保存到本地内存缓存中
-			_memoryCache.SetValue(certification.CertificationId, certification, TimeSpan.FromSeconds(certification.Duration.TotalSeconds / 2));
+			_memoryCache.SetValue(certification.CertificationId, certification, DateTime.Now.AddSeconds(certification.Duration.TotalSeconds / 2));
 
 			//返回续约后的新凭证对象
 			return certification;
@@ -212,7 +208,7 @@ namespace Zongsoft.Security
 		public int GetCount(string @namespace)
 		{
 			var storage = this.EnsureStorage();
-			var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(@namespace), null) as ICollection;
+			var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(@namespace)) as ICollection;
 
 			if(namespaces == null)
 				return 0;
@@ -231,7 +227,7 @@ namespace Zongsoft.Security
 			if(certification != null)
 				certification.Timestamp = DateTime.Now;
 			else
-				this.SpreadCertificationExpries(certificationId, true);
+				this.SpreadCertificationExpries(certificationId, DateTime.Now, true);
 		}
 
 		public string GetNamespace(string certificationId)
@@ -240,7 +236,7 @@ namespace Zongsoft.Security
 				throw new ArgumentNullException("certificationId");
 
 			//首先从本地内存缓存中获取指定编号的凭证对象
-			var certification = _memoryCache.GetValue(certificationId, null) as Certification;
+			var certification = _memoryCache.GetValue(certificationId) as Certification;
 
 			//如果本地缓存获取成功则直接从其获取Namespace属性值返回
 			if(certification != null)
@@ -263,7 +259,7 @@ namespace Zongsoft.Security
 				return null;
 
 			//首先从本地内存缓存中获取指定编号的凭证对象
-			var certification = _memoryCache.GetValue(certificationId, null) as Certification;
+			var certification = _memoryCache.GetValue(certificationId) as Certification;
 
 			//如果本地缓存获取成功则直接返回
 			if(certification != null)
@@ -282,7 +278,7 @@ namespace Zongsoft.Security
 				if(certification != null)
 				{
 					//将反序列化后的凭证对象保存到本地内存缓存中
-					_memoryCache.SetValue(certificationId, certification, TimeSpan.FromSeconds(certification.Duration.TotalSeconds / 2));
+					_memoryCache.SetValue(certificationId, certification, DateTime.Now.AddSeconds(certification.Duration.TotalSeconds / 2));
 				}
 
 				//返回从物理存储层获取到的凭证对象
@@ -295,7 +291,7 @@ namespace Zongsoft.Security
 		public Certification GetCertification(int userId, string scene)
 		{
 			var storage = this.EnsureStorage();
-			var certificationId = storage.GetValue(this.GetCacheKeyOfUser(userId, scene), null) as string;
+			var certificationId = storage.GetValue(this.GetCacheKeyOfUser(userId, scene)) as string;
 
 			if(string.IsNullOrWhiteSpace(certificationId))
 				return null;
@@ -306,7 +302,7 @@ namespace Zongsoft.Security
 		public IEnumerable<Certification> GetCertifications(string @namespace)
 		{
 			var storage = this.EnsureStorage();
-			var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(@namespace), null) as IDictionary;
+			var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(@namespace)) as IDictionary;
 
 			if(namespaces == null)
 				yield break;
@@ -337,7 +333,7 @@ namespace Zongsoft.Security
 			ICollection<string> namespaces = null;
 
 			//获取要注册的用户及应用场景已经注册的凭证号
-			var originalCertificationId = storage.GetValue(this.GetCacheKeyOfUser(certification.User.UserId, certification.Scene), null) as string;
+			var originalCertificationId = storage.GetValue(this.GetCacheKeyOfUser(certification.User.UserId, certification.Scene)) as string;
 
 			//确保同个用户在相同场景下只能存在一个凭证：如果获取的凭证号不为空并且有值，则
 			if(originalCertificationId != null && originalCertificationId.Length > 0)
@@ -346,7 +342,7 @@ namespace Zongsoft.Security
 				storage.Remove(this.GetCacheKeyOfCertification(originalCertificationId));
 
 				//获取命名空间的凭证集合
-				namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(certification.Namespace), null) as ICollection<string>;
+				namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(certification.Namespace)) as ICollection<string>;
 
 				//将原来的凭证号从对应的命名空间集合中删除
 				if(namespaces != null)
@@ -361,16 +357,12 @@ namespace Zongsoft.Security
 			storage.SetValue(this.GetCacheKeyOfUser(certification.User.UserId, certification.Scene), certification.CertificationId, certification.Duration);
 
 			//将当前凭证信息以JSON文本的方式保存到物理存储层中
-			storage.SetValue(this.GetCacheKeyOfCertification(certification.CertificationId), Zongsoft.Runtime.Serialization.Serializer.Json.Serialize(certification, new Runtime.Serialization.TextSerializationSettings()
-			{
-				Indented = false,
-				Typed = true,
-			}), certification.Duration);
+			storage.SetValue(this.GetCacheKeyOfCertification(certification.CertificationId), this.SerializeCertificationToJson(certification), certification.Duration);
 
 			if(namespaces == null)
 			{
 				//获取当前凭证所在的命名空间的集合
-				namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(certification.Namespace), null) as ICollection<string>;
+				namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(certification.Namespace)) as ICollection<string>;
 
 				//如果命名空间集合为空则创建它，并初始化包含当前凭证号，否则直接在集合中添加当前凭证号
 				if(namespaces == null)
@@ -384,7 +376,7 @@ namespace Zongsoft.Security
 			}
 
 			//将缓存对象保存到本地内存缓存中
-			_memoryCache.SetValue(certification.CertificationId, certification, TimeSpan.FromSeconds(certification.Duration.TotalSeconds / 2));
+			_memoryCache.SetValue(certification.CertificationId, certification, DateTime.Now.AddSeconds(certification.Duration.TotalSeconds / 2));
 		}
 		#endregion
 
@@ -398,7 +390,7 @@ namespace Zongsoft.Security
 			var now = DateTime.Now;
 
 			if(certification != null && (now > certification.IssuedTime && now < certification.Expires))
-				this.SpreadCertificationExpries(e.OldKey, false);
+				this.SpreadCertificationExpries(e.OldKey, certification.Timestamp, false);
 		}
 		#endregion
 
@@ -414,7 +406,7 @@ namespace Zongsoft.Security
 			return storage;
 		}
 
-		private void SpreadCertificationExpries(string certificationId, bool throwsException)
+		private void SpreadCertificationExpries(string certificationId, DateTime timestamp, bool explicitRefresh)
 		{
 			if(string.IsNullOrWhiteSpace(certificationId))
 				throw new ArgumentNullException("certificationId");
@@ -422,12 +414,12 @@ namespace Zongsoft.Security
 			var storage = this.EnsureStorage();
 
 			//在缓存容器中查找指定编号的凭证对象的序列化后的JSON文本
-			var text = storage.GetValue(this.GetCacheKeyOfCertification(certificationId), null) as string;
+			var text = storage.GetValue(this.GetCacheKeyOfCertification(certificationId)) as string;
 
 			//如果缓存容器中没有找到指定编号的凭证则说明指定的编号无效或者该编号对应的凭证已经过期
 			if(string.IsNullOrEmpty(text))
 			{
-				if(throwsException)
+				if(explicitRefresh)
 					throw new CertificationException(certificationId, "The certification is not exists or it was expired.");
 
 				return;
@@ -440,32 +432,43 @@ namespace Zongsoft.Security
 			if(certification == null)
 				throw new InvalidOperationException("*** INTERNAL ERROR *** The certification text is invalid.");
 
-			var now = DateTime.Now;
-
-			//如果现在时间超出凭证指定的期限范围则抛出异常
-			if(now < certification.Timestamp || now > certification.Expires)
+			//如果指定的活动时间超出凭证的期限范围则抛出异常
+			if(timestamp < certification.IssuedTime || timestamp > certification.Expires)
 			{
-				if(throwsException)
+				if(explicitRefresh)
 					throw new CertificationException(certificationId, "The certification was expired.");
 
 				return;
 			}
 
 			//更新最新的访问时间
-			certification.Timestamp = now;
+			certification.Timestamp = timestamp;
 
 			//将当前凭证信息以JSON文本的方式保存到物理存储层中
-			storage.SetValue(this.GetCacheKeyOfCertification(certificationId), Zongsoft.Runtime.Serialization.Serializer.Json.Serialize(certification, new Runtime.Serialization.TextSerializationSettings()
-			{
-				Indented = false,
-				Typed = true,
-			}), certification.Duration);
+			storage.SetValue(this.GetCacheKeyOfCertification(certificationId), this.SerializeCertificationToJson(certification), certification.Duration);
 
 			//顺延凭证的缓存项
 			storage.SetDuration(this.GetCacheKeyOfCertification(certificationId), certification.Duration);
 
 			//顺延当前用户及场景对应凭证号的缓存项
 			storage.SetDuration(this.GetCacheKeyOfUser(certification.UserId, certification.Scene), certification.Duration);
+
+			//只有当由用户显式刷新凭证才需要保存凭证到内存缓存中
+			if(explicitRefresh)
+			{
+				//将缓存对象保存到本地内存缓存中
+				_memoryCache.SetValue(certification.CertificationId, certification, DateTime.Now.AddSeconds(certification.Duration.TotalSeconds / 2));
+			}
+		}
+
+		private string SerializeCertificationToJson(Certification certification)
+		{
+			return Zongsoft.Runtime.Serialization.Serializer.Json.Serialize(certification, new Runtime.Serialization.TextSerializationSettings()
+			{
+				Indented = false,
+				Typed = true,
+				SerializationBehavior = Runtime.Serialization.SerializationBehavior.IgnoreDefaultValue,
+			});
 		}
 
 		private string GetCacheKeyOfUser(int userId, string scene)
@@ -473,7 +476,7 @@ namespace Zongsoft.Security
 			if(string.IsNullOrWhiteSpace(scene))
 				return "Zongsoft.Security:" + userId.ToString();
 			else
-				return string.Format("Zongsoft.Security:{0}:{1}", userId.ToString(), scene.Trim().ToLowerInvariant());
+				return string.Format("Zongsoft.Security:{0}:{1}", scene.Trim().ToLowerInvariant(), userId.ToString());
 		}
 
 		private string GetCacheKeyOfCertification(string certificationId)
@@ -481,15 +484,15 @@ namespace Zongsoft.Security
 			if(string.IsNullOrWhiteSpace(certificationId))
 				throw new ArgumentNullException("certificationId");
 
-			return "Zongsoft.Security.Certification:" + certificationId.Trim().ToLowerInvariant();
+			return "Zongsoft.Security.Certification:" + certificationId.Trim().ToUpperInvariant();
 		}
 
 		private string GetCacheKeyOfNamespace(string @namespace)
 		{
 			if(string.IsNullOrWhiteSpace(@namespace))
-				return "Zongsoft.Security.Certification.Namespaces";
+				return "Zongsoft.Security.Certification.Namespace";
 
-			return "Zongsoft.Security.Certification.Namespaces:" + @namespace.Trim().ToLowerInvariant();
+			return "Zongsoft.Security.Certification.Namespace:" + @namespace.Trim().ToLowerInvariant();
 		}
 		#endregion
 	}
