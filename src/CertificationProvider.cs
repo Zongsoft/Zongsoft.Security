@@ -227,7 +227,10 @@ namespace Zongsoft.Security
 			if(certification != null)
 				certification.Timestamp = DateTime.Now;
 			else
-				this.SpreadCertificationExpries(certificationId, DateTime.Now, true);
+			{
+				if(this.EnsureCertificationTimeout(certificationId, DateTime.Now) == null)
+					throw new CertificationException(certificationId, "The certification is not exists or it was expired.");
+			}
 		}
 
 		public string GetNamespace(string certificationId)
@@ -265,27 +268,8 @@ namespace Zongsoft.Security
 			if(certification != null)
 				return certification;
 
-			var storage = this.EnsureStorage();
-
-			//从物理存储层获取凭证对象的序列化后的JSON文本
-			var text = storage.GetValue(this.GetCacheKeyOfCertification(certificationId)) as string;
-
-			if(text != null && text.Length > 0)
-			{
-				//将存储层返回的凭证对象序列化的字典反序列化
-				certification = Zongsoft.Runtime.Serialization.Serializer.Json.Deserialize<Certification>(text);
-
-				if(certification != null)
-				{
-					//将反序列化后的凭证对象保存到本地内存缓存中
-					_memoryCache.SetValue(certificationId, certification, DateTime.Now.AddSeconds(certification.Duration.TotalSeconds / 2));
-				}
-
-				//返回从物理存储层获取到的凭证对象
-				return certification;
-			}
-
-			return null;
+			//顺延存储层的凭证并返回其凭证对象
+			return this.EnsureCertificationTimeout(certificationId, DateTime.Now);
 		}
 
 		public Certification GetCertification(int userId, string scene)
@@ -390,7 +374,7 @@ namespace Zongsoft.Security
 			var now = DateTime.Now;
 
 			if(certification != null && (now > certification.IssuedTime && now < certification.Expires))
-				this.SpreadCertificationExpries(e.OldKey, certification.Timestamp, false);
+				this.EnsureCertificationTimeout(e.OldKey, certification.Timestamp);
 		}
 		#endregion
 
@@ -406,7 +390,7 @@ namespace Zongsoft.Security
 			return storage;
 		}
 
-		private void SpreadCertificationExpries(string certificationId, DateTime timestamp, bool explicitRefresh)
+		private Certification EnsureCertificationTimeout(string certificationId, DateTime timestamp)
 		{
 			if(string.IsNullOrWhiteSpace(certificationId))
 				throw new ArgumentNullException("certificationId");
@@ -418,12 +402,7 @@ namespace Zongsoft.Security
 
 			//如果缓存容器中没有找到指定编号的凭证则说明指定的编号无效或者该编号对应的凭证已经过期
 			if(string.IsNullOrEmpty(text))
-			{
-				if(explicitRefresh)
-					throw new CertificationException(certificationId, "The certification is not exists or it was expired.");
-
-				return;
-			}
+				return null;
 
 			//反序列化JSON文本到凭证对象
 			var certification = Zongsoft.Runtime.Serialization.Serializer.Json.Deserialize<Certification>(text);
@@ -432,33 +411,26 @@ namespace Zongsoft.Security
 			if(certification == null)
 				throw new InvalidOperationException("*** INTERNAL ERROR *** The certification text is invalid.");
 
-			//如果指定的活动时间超出凭证的期限范围则抛出异常
+			//如果指定的活动时间超出凭证的期限范围则返回空
 			if(timestamp < certification.IssuedTime || timestamp > certification.Expires)
-			{
-				if(explicitRefresh)
-					throw new CertificationException(certificationId, "The certification was expired.");
+				return null;
 
-				return;
-			}
+			//计算实际要顺延的期限
+			var duration = certification.Duration - (DateTime.Now - timestamp);
 
 			//更新最新的访问时间
 			certification.Timestamp = timestamp;
 
 			//将当前凭证信息以JSON文本的方式保存到物理存储层中
-			storage.SetValue(this.GetCacheKeyOfCertification(certificationId), this.SerializeCertificationToJson(certification), certification.Duration);
-
-			//顺延凭证的缓存项
-			storage.SetDuration(this.GetCacheKeyOfCertification(certificationId), certification.Duration);
+			storage.SetValue(this.GetCacheKeyOfCertification(certificationId), this.SerializeCertificationToJson(certification), duration);
 
 			//顺延当前用户及场景对应凭证号的缓存项
-			storage.SetDuration(this.GetCacheKeyOfUser(certification.UserId, certification.Scene), certification.Duration);
+			storage.SetDuration(this.GetCacheKeyOfUser(certification.UserId, certification.Scene), duration);
 
-			//只有当由用户显式刷新凭证才需要保存凭证到内存缓存中
-			if(explicitRefresh)
-			{
-				//将缓存对象保存到本地内存缓存中
-				_memoryCache.SetValue(certification.CertificationId, certification, DateTime.Now.AddSeconds(certification.Duration.TotalSeconds / 2));
-			}
+			//将缓存对象保存到本地内存缓存中
+			_memoryCache.SetValue(certification.CertificationId, certification, DateTime.Now.AddSeconds(duration.TotalSeconds / 2));
+
+			return certification;
 		}
 
 		private string SerializeCertificationToJson(Certification certification)
