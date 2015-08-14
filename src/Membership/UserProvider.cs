@@ -37,8 +37,9 @@ namespace Zongsoft.Security.Membership
 	public class UserProvider : MembershipProviderBase, IUserProvider
 	{
 		#region 成员字段
-		private Zongsoft.Common.ISequence _sequence;
 		private ICensorship _censorship;
+		private Zongsoft.Common.ISequence _sequence;
+		private Zongsoft.Runtime.Caching.ICache _cache;
 		#endregion
 
 		#region 构造函数
@@ -60,6 +61,21 @@ namespace Zongsoft.Security.Membership
 					throw new ArgumentNullException();
 
 				_sequence = value;
+			}
+		}
+
+		public Zongsoft.Runtime.Caching.ICache Cache
+		{
+			get
+			{
+				return _cache;
+			}
+			set
+			{
+				if(value == null)
+					throw new ArgumentNullException();
+
+				_cache = value;
 			}
 		}
 
@@ -89,7 +105,7 @@ namespace Zongsoft.Security.Membership
 		public User GetUser(string identity, string @namespace)
 		{
 			var dataAccess = this.EnsureDataAccess();
-			var conditions = new ConditionCollection(ConditionCombine.And, MembershipHelper.GetUserIdentityConditions(identity, @namespace));
+			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
 			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, conditions).FirstOrDefault();
 		}
 
@@ -187,7 +203,7 @@ namespace Zongsoft.Security.Membership
 				return false;
 
 			if(!PasswordUtility.VerifyPassword(oldPassword, storedPassword, storedPasswordSalt))
-				throw new AuthenticationException("Invalid password.");
+				return false;
 
 			//重新生成密码随机数
 			storedPasswordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
@@ -206,90 +222,196 @@ namespace Zongsoft.Security.Membership
 			secret = null;
 			token = null;
 
-			return false;
+			var dataAccess = this.EnsureDataAccess();
+
+			if(!MembershipHelper.GetUserId(dataAccess, identity, @namespace, out userId))
+				return false;
+
+			secret = Zongsoft.Common.RandomGenerator.GenerateInt64().ToString();
+
+			if(secret.Length > 6)
+				secret = secret.Substring(0, 6);
+
+			var cache = this.EnsureCache();
+
+			if(!cache.SetValue(this.GetCacheKeyOfResetPassword(userId), secret, TimeSpan.FromHours(24), true))
+				secret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
+
+			token = this.GetSecretToken(userId, secret);
+
+			return secret != null && secret.Length > 0;
 		}
 
 		public bool ResetPassword(int userId, string token, string newPassword = null)
 		{
-			return false;
+			if(string.IsNullOrEmpty(token))
+				return false;
+
+			var cache = this.EnsureCache();
+			var secret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
+			var result = secret != null && string.Equals(token, this.GetSecretToken(userId, secret), StringComparison.Ordinal);
+
+			if(result && newPassword != null && newPassword.Length > 0)
+			{
+				var dataAccess = this.EnsureDataAccess();
+
+				//重新生成密码随机数
+				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
+
+				return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+					new
+					{
+						Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
+						PasswordSalt = passwordSalt,
+					}, new Condition("UserId", userId)) > 0;
+			}
+
+			return result;
 		}
 
 		public bool ResetPassword(string identity, string @namespace, string secret, string newPassword = null)
 		{
-			return false;
+			if(string.IsNullOrWhiteSpace(identity) || string.IsNullOrWhiteSpace(secret))
+				return false;
+
+			var userId = 0;
+			var dataAccess = this.EnsureDataAccess();
+
+			if(!MembershipHelper.GetUserId(dataAccess, identity, @namespace, out userId))
+				return false;
+
+			var cache = this.EnsureCache();
+			var cachedSecret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
+			var result = cachedSecret != null && string.Equals(cachedSecret, secret, StringComparison.Ordinal);
+
+			if(result && newPassword != null && newPassword.Length > 0)
+			{
+				//重新生成密码随机数
+				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
+
+				return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+					new
+					{
+						Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
+						PasswordSalt = passwordSalt,
+					}, new Condition("UserId", userId)) > 0;
+			}
+
+			return result;
 		}
 
 		public bool ResetPassword(string identity, string @namespace, string[] passwordAnswers, string newPassword = null)
 		{
-			//var objectAccess = this.EnsureDataAccess();
-			//var certification = this.GetCertification(certificationId);
+			if(string.IsNullOrWhiteSpace(identity) || passwordAnswers == null || passwordAnswers.Length != 3)
+				return false;
 
-			//IDictionary<string, object> outParameters;
+			var dataAccess = this.EnsureDataAccess();
+			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
+			var record = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, conditions, "!, UserId, PasswordAnswer1, PasswordAnswer2, PasswordAnswer3").FirstOrDefault();
 
-			//objectAccess.Execute("Security.User.GetPasswordAnswer", new Dictionary<string, object>
-			//{
-			//	{"UserId", certification.User.UserId},
-			//}, out outParameters);
+			if(record == null || record.Count < 1)
+				return false;
 
-			//object answerValue;
+			var userId = Zongsoft.Common.Convert.ConvertValue<int>(record["UserId"]);
 
-			//if(!outParameters.TryGetValue("PasswordAnswer", out answerValue))
-			//	throw new InvalidOperationException("Can not obtain the Password-Answer.");
+			var result = (string.Equals(passwordAnswers[0], (string)record["PasswordAnswer1"], StringComparison.Ordinal) &&
+			              string.Equals(passwordAnswers[1], (string)record["PasswordAnswer2"], StringComparison.Ordinal) &&
+			              string.Equals(passwordAnswers[2], (string)record["PasswordAnswer3"], StringComparison.Ordinal));
 
-			//if(!Zongsoft.Collections.BinaryComparer.Default.Equals(PasswordUtility.HashPassword(passwordAnswer), (byte[])answerValue))
-			//	throw new AuthenticationException("Invalid value of the Password-Answer.");
+			if(result && newPassword != null && newPassword.Length > 0)
+			{
+				//重新生成密码随机数
+				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
 
-			//var password = PasswordUtility.GeneratePassword();
-			//var passwordSalt = PasswordUtility.GeneratePasswordSalt(4);
+				return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+					new
+					{
+						Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
+						PasswordSalt = passwordSalt,
+					}, new Condition("UserId", userId)) > 0;
+			}
 
-			//objectAccess.Execute("Security.User.SetPassword", new Dictionary<string, object>
-			//{
-			//	{"UserId", certification.User.UserId},
-			//	{"Password", PasswordUtility.HashPassword(password, passwordSalt)},
-			//	{"PasswordSalt", passwordSalt},
-			//});
-
-			return true;
+			return result;
 		}
 
 		public string[] GetPasswordQuestions(string identity, string @namespace)
 		{
 			var dataAccess = this.EnsureDataAccess();
-			var conditions = new ConditionCollection(ConditionCombine.And, MembershipHelper.GetUserIdentityConditions(identity, @namespace));
-			var dictionary = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, conditions, "!, UserId, PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
+			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
+			var record = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, conditions, "!, UserId, PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
+
+			if(record == null)
+				return null;
 
 			var result = new string[] {
-				dictionary["PasswordQuestion1"] as string,
-				dictionary["PasswordQuestion2"] as string,
-				dictionary["PasswordQuestion3"] as string,
+				record["PasswordQuestion1"] as string,
+				record["PasswordQuestion2"] as string,
+				record["PasswordQuestion3"] as string,
 			};
 
 			return result;
 		}
 
-		public void SetPasswordQuestionsAndAnswers(int userId, string password, string[] passwordQuestions, string[] passwordAnswers)
+		public bool SetPasswordQuestionsAndAnswers(int userId, string password, string[] passwordQuestions, string[] passwordAnswers)
 		{
-			//var dataAccess = this.EnsureDataAccess();
-			//var certification = this.GetCertification(certificationId);
+			if(passwordQuestions == null || passwordQuestions.Length == 0)
+				throw new ArgumentNullException("passwordQuestions");
 
-			//byte[] storedPassword;
-			//byte[] storedPasswordSalt;
+			if(passwordAnswers == null || passwordAnswers.Length == 0)
+				throw new ArgumentNullException("passwordAnswers");
 
-			//var user = MembershipHelper.GetPassword(objectAccess, certification.User.UserId, out storedPassword, out storedPasswordSalt);
+			if(passwordQuestions.Length != passwordAnswers.Length)
+				throw new ArgumentException();
 
-			//if(user == null)
-			//	throw new InvalidOperationException("Invalid account.");
+			var dataAccess = this.EnsureDataAccess();
 
-			//if(!PasswordUtility.VerifyPassword(password, storedPassword, storedPasswordSalt))
-			//	throw new AuthenticationException("Invalid password.");
+			byte[] storedPassword;
+			byte[] storedPasswordSalt;
 
-			//dataAccess.Execute("Security.User.SetPasswordQuestionAndAnswer", new Dictionary<string, object>
-			//{
-			//	{"ApplicationId", certification.Namespace},
-			//	{"UserId", certification.User.UserId},
-			//	{"PasswordQuestion", passwordQuestion},
-			//	{"PasswordAnswer", PasswordUtility.HashPassword(passwordAnswer)},
-			//});
+			if(!MembershipHelper.GetPassword(dataAccess, userId, out storedPassword, out storedPasswordSalt))
+				return false;
+
+			if(!PasswordUtility.VerifyPassword(password, storedPassword, storedPasswordSalt))
+				return false;
+
+			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
+			{
+				PasswordQuestion1 = passwordQuestions.Length > 0 ? passwordQuestions[0] : null,
+				PasswordAnswer1 = passwordAnswers.Length > 0 ? passwordAnswers[0] : null,
+				PasswordQuestion2 = passwordQuestions.Length > 1 ? passwordQuestions[1] : null,
+				PasswordAnswer2 = passwordAnswers.Length > 1 ? passwordAnswers[1] : null,
+				PasswordQuestion3 = passwordQuestions.Length > 2 ? passwordQuestions[2] : null,
+				PasswordAnswer3 = passwordAnswers.Length > 2 ? passwordAnswers[2] : null,
+			}, new Condition("UserId", userId)) > 0;
+		}
+		#endregion
+
+		#region 私有方法
+		private Zongsoft.Runtime.Caching.ICache EnsureCache()
+		{
+			var cache = this.Cache;
+
+			if(cache == null)
+				throw new MissingMemberException(this.GetType().FullName, "Cache");
+
+			return cache;
+		}
+
+		private string GetSecretToken(int userId, string secret)
+		{
+			if(string.IsNullOrEmpty(secret))
+				return null;
+
+			using(var hash = System.Security.Cryptography.MD5.Create())
+			{
+				var code = hash.ComputeHash(Encoding.ASCII.GetBytes(userId.ToString() + secret));
+				return Zongsoft.Common.Convert.ToHexString(code);
+			}
+		}
+
+		private string GetCacheKeyOfResetPassword(int userId)
+		{
+			return "Zongsoft.Security.Membership.ResetPassword:" + userId.ToString();
 		}
 		#endregion
 	}

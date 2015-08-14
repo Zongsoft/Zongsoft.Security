@@ -62,7 +62,7 @@ namespace Zongsoft.Security.Membership
 
 		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt)
 		{
-			var conditions = new ConditionCollection(ConditionCombine.And, MembershipHelper.GetUserIdentityConditions(identity, @namespace));
+			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
 			return GetPasswordCore(dataAccess, conditions, out password, out passwordSalt);
 		}
 
@@ -73,10 +73,30 @@ namespace Zongsoft.Security.Membership
 
 			return dataAccess.Select<User>(DATA_ENTITY_USER, new Condition("UserId", userId)).FirstOrDefault();
 		}
+
+		public static bool GetUserId(IDataAccess dataAccess, string identity, string @namespace, out int userId)
+		{
+			if(dataAccess == null)
+				throw new ArgumentNullException("dataAccess");
+
+			if(string.IsNullOrWhiteSpace(identity))
+				throw new ArgumentNullException("identity");
+
+			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
+			var record = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, conditions, "!, UserId").FirstOrDefault();
+			var result = record != null && record.Count > 0 && record.ContainsKey("UserId");
+
+			userId = 0;
+
+			if(result)
+				userId = Zongsoft.Common.Convert.ConvertValue<int>(record["UserId"]);
+
+			return result;
+		}
 		#endregion
 
 		#region 内部方法
-		internal static Condition[] GetUserIdentityConditions(string identity, string @namespace)
+		internal static ConditionCollection GetUserIdentityConditions(string identity, string @namespace)
 		{
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
@@ -92,7 +112,7 @@ namespace Zongsoft.Security.Membership
 			else
 				conditions[1] = new Condition("Name", identity);
 
-			return conditions;
+			return new ConditionCollection(ConditionCombine.And, conditions);
 		}
 
 		internal static string TrimNamespace(string @namespace)
