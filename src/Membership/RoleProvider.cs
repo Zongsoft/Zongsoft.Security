@@ -165,6 +165,14 @@ namespace Zongsoft.Security.Membership
 			return this.GetRoles(userId, MemberType.User, -1).Any(role => role.RoleId == roleId);
 		}
 
+		public bool InRoles(int userId, params string[] roleNames)
+		{
+			if(roleNames == null || roleNames.Length < 1)
+				return false;
+
+			return this.GetRoles(userId, MemberType.User, -1).Any(role => roleNames.Contains(role.Name, StringComparer.OrdinalIgnoreCase));
+		}
+
 		public IEnumerable<Role> GetRoles(int memberId, MemberType memberType)
 		{
 			var dataAccess = this.EnsureDataAccess();
