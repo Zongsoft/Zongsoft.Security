@@ -55,15 +55,15 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共方法
-		public static bool GetPassword(IDataAccess dataAccess, int userId, out byte[] password, out byte[] passwordSalt)
+		public static bool GetPassword(IDataAccess dataAccess, int userId, out byte[] password, out byte[] passwordSalt, out bool isApproved, out bool isSuspended)
 		{
-			return GetPasswordCore(dataAccess, new Condition("UserId", userId), out password, out passwordSalt) != 0;
+			return GetPasswordCore(dataAccess, new Condition("UserId", userId), out password, out passwordSalt, out isApproved, out isSuspended) != 0;
 		}
 
-		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt)
+		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt, out bool isApproved, out bool isSuspended)
 		{
 			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
-			return GetPasswordCore(dataAccess, conditions, out password, out passwordSalt);
+			return GetPasswordCore(dataAccess, conditions, out password, out passwordSalt, out isApproved, out isSuspended);
 		}
 
 		public static User GetUser(IDataAccess dataAccess, int userId)
@@ -138,7 +138,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 私有方法
-		private static int? GetPasswordCore(IDataAccess dataAccess, ICondition condition, out byte[] password, out byte[] passwordSalt)
+		private static int? GetPasswordCore(IDataAccess dataAccess, ICondition condition, out byte[] password, out byte[] passwordSalt, out bool isApproved, out bool isSuspended)
 		{
 			if(dataAccess == null)
 				throw new ArgumentNullException("dataAccess");
@@ -148,12 +148,22 @@ namespace Zongsoft.Security.Membership
 
 			password = null;
 			passwordSalt = null;
+			isApproved = false;
+			isSuspended = false;
 
 			//从数据引擎中获取指定条件的用户密码数据
-			var dictionary = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, Password, PasswordSalt").FirstOrDefault();
+			var dictionary = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, Password, PasswordSalt, Approved, Suspended").FirstOrDefault();
 
-			if(dictionary == null)
+			if(dictionary == null || dictionary.Count < 1)
 				return null;
+
+			object value;
+
+			if(dictionary.TryGetValue("Approved", out value))
+				isApproved = Zongsoft.Common.Convert.ConvertValue<bool>(value);
+
+			if(dictionary.TryGetValue("Suspended", out value))
+				isSuspended = Zongsoft.Common.Convert.ConvertValue<bool>(value);
 
 			object storedPassword;
 			object storedPasswordSalt;

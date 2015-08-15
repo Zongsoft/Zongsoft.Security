@@ -109,6 +109,13 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, conditions).FirstOrDefault();
 		}
 
+		public bool Exists(string identity, string @namespace)
+		{
+			var dataAccess = this.EnsureDataAccess();
+			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
+			return dataAccess.Count(MembershipHelper.DATA_ENTITY_USER, conditions) > 0;
+		}
+
 		public IEnumerable<User> GetAllUsers(string @namespace, Paging paging = null)
 		{
 			var dataAccess = this.EnsureDataAccess();
@@ -133,9 +140,52 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Delete(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userIds, ConditionOperator.In));
 		}
 
-		public int CreateUsers(params User[] users)
+		public bool CreateUser(User user, string password)
 		{
-			return this.CreateUsers((IEnumerable<User>)users);
+			if(user == null)
+				throw new ArgumentNullException("user");
+
+			if(user.UserId < 1)
+			{
+				var sequence = this.Sequence;
+
+				if(sequence == null)
+					throw new MissingMemberException(this.GetType().FullName, "Sequence");
+
+				user.UserId = (int)sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
+			}
+
+			//确保所有用户名是有效的
+			MembershipHelper.EnsureName(user.Name);
+
+			//确保用户名是审核通过的
+			if(_censorship != null && _censorship.IsBlocked(user.Name, Zongsoft.Security.Censorship.KEY_NAME, Zongsoft.Security.Censorship.KEY_SENSITIVES))
+				throw new InvalidOperationException(string.Format("Illegal '{0}' name of user.", user.Name));
+
+			var dataAccess = this.EnsureDataAccess();
+
+			using(var transaction = new Zongsoft.Transactions.Transaction())
+			{
+				if(dataAccess.Insert(MembershipHelper.DATA_ENTITY_USER, user) < 1)
+					return false;
+
+				if(password != null && password.Length > 0)
+				{
+					//生成密码随机数
+					var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
+
+					dataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
+					{
+						Password = PasswordUtility.HashPassword(password, passwordSalt),
+						PasswordSalt = passwordSalt,
+					}, new Condition("UserId", user.UserId));
+				}
+
+				//提交事务
+				transaction.Commit();
+			}
+
+			return true;
 		}
 
 		public int CreateUsers(IEnumerable<User> users)
@@ -198,8 +248,9 @@ namespace Zongsoft.Security.Membership
 
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
+			bool isApproved, isSuspended;
 
-			if(!MembershipHelper.GetPassword(dataAccess, userId, out storedPassword, out storedPasswordSalt))
+			if(!MembershipHelper.GetPassword(dataAccess, userId, out storedPassword, out storedPasswordSalt, out isApproved, out isSuspended))
 				return false;
 
 			if(!PasswordUtility.VerifyPassword(oldPassword, storedPassword, storedPasswordSalt))
@@ -367,8 +418,9 @@ namespace Zongsoft.Security.Membership
 
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
+			bool isApproved, isSuspended;
 
-			if(!MembershipHelper.GetPassword(dataAccess, userId, out storedPassword, out storedPasswordSalt))
+			if(!MembershipHelper.GetPassword(dataAccess, userId, out storedPassword, out storedPasswordSalt, out isApproved, out isSuspended))
 				return false;
 
 			if(!PasswordUtility.VerifyPassword(password, storedPassword, storedPasswordSalt))
