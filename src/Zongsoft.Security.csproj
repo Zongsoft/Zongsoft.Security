@@ -55,7 +55,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Zongsoft.Security.mapping" />
-    <None Include="Zongsoft.Security.plugin" />
+    <None Include="Zongsoft.Security.plugin">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx" />
