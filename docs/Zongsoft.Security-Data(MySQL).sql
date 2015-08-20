@@ -27,6 +27,8 @@ INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Moderator')
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Moderators');
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Editor');
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Editors');
+INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Demo');
+INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Demos');
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Test');
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Tests');
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Tester');
