@@ -127,7 +127,7 @@ namespace Zongsoft.Security.Membership
 			var dataAccess = this.EnsureDataAccess();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-				new { PrincipalId = principalId },
+				new { PrincipalId = string.IsNullOrWhiteSpace(principalId) ? null : principalId.Trim() },
 				new Condition("UserId", userId)) > 0;
 		}
 
