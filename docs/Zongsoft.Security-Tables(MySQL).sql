@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS `Security_User` (
   `Password` BINARY(64) NULL COMMENT '用户的登录口令',
   `PasswordSalt` BINARY(8) NULL COMMENT '口令加密向量(随机数)',
   `FullName` VARCHAR(50) NULL COMMENT '用户全称',
-  `Principal` VARCHAR(100) NULL COMMENT '用户对应到业务系统中的负责人',
+  `PrincipalId` VARCHAR(100) NULL COMMENT '用户对应到业务系统中的负责人标识',
   `Email` VARCHAR(50) NULL COMMENT '用户的电子邮箱，该邮箱地址在所属命名空间内具有唯一性',
   `PhoneNumber` VARCHAR(50) NULL COMMENT '用户的手机号码，该手机号码在所属命名空间内具有唯一性',
   `Approved` TINYINT(1) NOT NULL COMMENT '帐户是否已审核通过',

@@ -122,12 +122,12 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)), null, paging ?? new Paging(1, 20));
 		}
 
-		public bool SetPrincipal(int userId, string principal)
+		public bool SetPrincipalId(int userId, string principalId)
 		{
 			var dataAccess = this.EnsureDataAccess();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-				new { Principal = principal },
+				new { PrincipalId = principalId },
 				new Condition("UserId", userId)) > 0;
 		}
 
