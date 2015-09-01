@@ -216,7 +216,7 @@ namespace Zongsoft.Security
 			return namespaces.Count;
 		}
 
-		public void Validate(string certificationId)
+		public bool Validate(string certificationId)
 		{
 			if(string.IsNullOrWhiteSpace(certificationId))
 				throw new ArgumentNullException("certificationId");
@@ -226,11 +226,8 @@ namespace Zongsoft.Security
 
 			if(certification != null)
 				certification.Timestamp = DateTime.Now;
-			else
-			{
-				if(this.EnsureCertificationTimeout(certificationId, DateTime.Now) == null)
-					throw new CertificationException(certificationId, "The certification is not exists or it was expired.");
-			}
+
+			return this.EnsureCertificationTimeout(certificationId, DateTime.Now) != null;
 		}
 
 		public string GetNamespace(string certificationId)

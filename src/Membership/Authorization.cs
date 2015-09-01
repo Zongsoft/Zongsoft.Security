@@ -33,6 +33,11 @@ namespace Zongsoft.Security.Membership
 {
 	public class Authorization : IAuthorization
 	{
+		#region 事件定义
+		public event EventHandler<AuthorizationEventArgs> Authorizing;
+		public event EventHandler<AuthorizationEventArgs> Authorized;
+		#endregion
+
 		#region 成员字段
 		private IPermissionProvider _permissionProvider;
 		private IMemberProvider _memberProvider;
@@ -71,7 +76,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共方法
-		public bool IsAuthorized(int userId, string schemaId, string actionId)
+		public bool Authorize(int userId, string schemaId, string actionId)
 		{
 			if(string.IsNullOrWhiteSpace(schemaId))
 				throw new ArgumentNullException("schemaId");
@@ -79,21 +84,37 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(actionId))
 				throw new ArgumentNullException("actionId");
 
+			//创建授权事件参数
+			var args = new AuthorizationEventArgs(userId, schemaId, actionId, true);
+
+			//激发“Authorizing”事件
+			this.OnAuthorizing(args);
+
+			//如果时间参数指定的验证结果为失败，则直接返回失败
+			if(!args.IsAuthorized)
+				return false;
+
 			//获取指定的安全凭证对应的有效的授权状态集
 			var states = this.GetAuthorizedStates(userId, MemberType.User);
 
-			return states != null && states.Any(state => string.Equals(state.SchemaId, schemaId, StringComparison.OrdinalIgnoreCase) &&
+			args.IsAuthorized = states != null && states.Any(state => string.Equals(state.SchemaId, schemaId, StringComparison.OrdinalIgnoreCase) &&
 			                                             string.Equals(state.ActionId, actionId, StringComparison.OrdinalIgnoreCase));
+
+			//激发“Authorized”事件
+			this.OnAuthorized(args);
+
+			//返回最终的验证结果
+			return args.IsAuthorized;
 		}
 
-		public IEnumerable<AuthorizedState> GetAuthorizedStates(int memberId, MemberType memberType)
+		public IEnumerable<AuthorizationState> GetAuthorizedStates(int memberId, MemberType memberType)
 		{
 			return this.GetAuthorizedStatesCore(memberId, memberType);
 		}
 		#endregion
 
 		#region 虚拟方法
-		protected virtual IEnumerable<AuthorizedState> GetAuthorizedStatesCore(int memberId, MemberType memberType)
+		protected virtual IEnumerable<AuthorizationState> GetAuthorizedStatesCore(int memberId, MemberType memberType)
 		{
 			if(_memberProvider == null)
 				throw new InvalidOperationException("The value of 'RoleProvider' property is null.");
@@ -107,9 +128,9 @@ namespace Zongsoft.Security.Membership
 			this.RecursiveRoles(null, stack, _memberProvider.GetRoles(memberId, memberType));
 
 			//创建授权状态集
-			var grantedStates = new HashSet<AuthorizedState>();
-			var deniedStates = new HashSet<AuthorizedState>();
-			var states = new HashSet<AuthorizedState>();
+			var grantedStates = new HashSet<AuthorizationState>();
+			var deniedStates = new HashSet<AuthorizationState>();
+			var states = new HashSet<AuthorizationState>();
 
 			while(stack.Count > 0)
 			{
@@ -150,17 +171,35 @@ namespace Zongsoft.Security.Membership
 		}
 		#endregion
 
+		#region 事件激发
+		protected virtual void OnAuthorizing(AuthorizationEventArgs args)
+		{
+			var handler = this.Authorizing;
+
+			if(handler != null)
+				handler(this, args);
+		}
+
+		protected virtual void OnAuthorized(AuthorizationEventArgs args)
+		{
+			var handler = this.Authorized;
+
+			if(handler != null)
+				handler(this, args);
+		}
+		#endregion
+
 		#region 私有方法
-		private void SlicePermission(int memberId, MemberType memberType, HashSet<AuthorizedState> grantedStates, HashSet<AuthorizedState> deniedStates)
+		private void SlicePermission(int memberId, MemberType memberType, HashSet<AuthorizationState> grantedStates, HashSet<AuthorizationState> deniedStates)
 		{
 			var permissions = _permissionProvider.GetPermissions(memberId, memberType);
 
 			foreach(var permission in permissions)
 			{
 				if(permission.Granted)
-					grantedStates.Add(new AuthorizedState(permission.SchemaId, permission.ActionId));
+					grantedStates.Add(new AuthorizationState(permission.SchemaId, permission.ActionId));
 				else
-					deniedStates.Add(new AuthorizedState(permission.SchemaId, permission.ActionId));
+					deniedStates.Add(new AuthorizationState(permission.SchemaId, permission.ActionId));
 			}
 		}
 

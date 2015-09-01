@@ -108,7 +108,7 @@ namespace Zongsoft.Security.Membership
 			this.OnAuthenticated(eventArgs);
 
 			//返回成功的验证结果
-			return new AuthenticationResult(eventArgs.User ?? user);
+			return new AuthenticationResult(eventArgs.User ?? user, (eventArgs.HasExtendedProperties ? eventArgs.ExtendedProperties : null));
 		}
 		#endregion
 

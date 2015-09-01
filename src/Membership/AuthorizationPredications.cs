@@ -102,7 +102,7 @@ namespace Zongsoft.Security.Membership
 			if(matches.Count != 2)
 				return false;
 
-			return authorization.IsAuthorized(principal.Identity.Certification.User.UserId, matches[0].Value, matches[1].Value);
+			return authorization.Authorize(principal.Identity.Certification.User.UserId, matches[0].Value, matches[1].Value);
 		}
 		#endregion
 
