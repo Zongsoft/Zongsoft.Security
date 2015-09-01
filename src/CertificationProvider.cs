@@ -225,7 +225,10 @@ namespace Zongsoft.Security
 			var certification = _memoryCache.GetValue(certificationId) as Certification;
 
 			if(certification != null)
+			{
 				certification.Timestamp = DateTime.Now;
+				return true;
+			}
 
 			return this.EnsureCertificationTimeout(certificationId, DateTime.Now) != null;
 		}
