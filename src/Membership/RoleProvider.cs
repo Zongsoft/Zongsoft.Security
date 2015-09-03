@@ -130,8 +130,8 @@ namespace Zongsoft.Security.Membership
 				MembershipHelper.EnsureName(role.Name);
 
 				//确保角色名是审核通过的
-				if(_censorship != null && _censorship.IsBlocked(role.Name, Zongsoft.Security.Censorship.KEY_NAME, Zongsoft.Security.Censorship.KEY_SENSITIVES))
-					throw new InvalidOperationException(string.Format("Illegal '{0}' name of role.", role.Name));
+				if(_censorship != null && _censorship.IsBlocked(role.Name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
+					throw new CensorshipException(string.Format("Illegal '{0}' name of role.", role.Name));
 			}
 
 			var dataAccess = this.EnsureDataAccess();
@@ -152,6 +152,10 @@ namespace Zongsoft.Security.Membership
 			{
 				//确保所有角色名是有效的
 				MembershipHelper.EnsureName(role.Name);
+
+				//确保角色名是审核通过的
+				if(_censorship != null && _censorship.IsBlocked(role.Name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
+					throw new CensorshipException(string.Format("Illegal '{0}' name of role.", role.Name));
 			}
 
 			var dataAccess = this.EnsureDataAccess();

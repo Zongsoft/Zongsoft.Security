@@ -35,12 +35,14 @@
 		<object name="RoleProvider"
 		        dataAccess="{srv:Security@Data}"
 		        sequence="{srv:.}"
+		        censorship="{srv:.@Security}"
 		        type="Zongsoft.Security.Membership.RoleProvider, Zongsoft.Security" />
 
 		<object name="UserProvider"
 		        dataAccess="{srv:Security@Data}"
 		        sequence="{srv:.}"
 		        cache="{srv:.}"
+		        censorship="{srv:.@Security}"
 		        type="Zongsoft.Security.Membership.UserProvider, Zongsoft.Security" />
 
 		<object name="PermissionProvider"

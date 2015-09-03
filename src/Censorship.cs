@@ -36,7 +36,7 @@ namespace Zongsoft.Security
 		#region 常量定义
 		private const string DATA_ENTITY_CENSORSHIP = "Security.Censorship";
 
-		public const string KEY_NAME = "Names";
+		public const string KEY_NAMES = "Names";
 		public const string KEY_SENSITIVES = "Sensitives";
 		#endregion
 
