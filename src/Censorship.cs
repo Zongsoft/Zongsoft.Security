@@ -105,7 +105,7 @@ namespace Zongsoft.Security
 			return dataAccess.Count(DATA_ENTITY_CENSORSHIP,
 				new ConditionCollection(ConditionCombine.And,
 					new Condition("Name", keys ?? _keys, ConditionOperator.In),
-					new Condition("Word", word.Trim()))) > 1;
+					new Condition("Word", word.Trim()))) > 0;
 		}
 		#endregion
 	}
