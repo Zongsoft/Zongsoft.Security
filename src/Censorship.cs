@@ -46,7 +46,11 @@ namespace Zongsoft.Security
 		#endregion
 
 		#region 构造函数
-		public Censorship(params string[] keys)
+		public Censorship()
+		{
+		}
+
+		public Censorship(string[] keys)
 		{
 			_keys = keys;
 		}
