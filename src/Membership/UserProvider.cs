@@ -101,7 +101,11 @@ namespace Zongsoft.Security.Membership
 			var dataAccess = this.EnsureDataAccess();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-				new { Approved = approved },
+				new
+				{
+					Approved = approved,
+					ApprovedTime = DateTime.Now,
+				},
 				new Condition("UserId", userId)) > 0;
 		}
 
@@ -110,7 +114,11 @@ namespace Zongsoft.Security.Membership
 			var dataAccess = this.EnsureDataAccess();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-				new { Suspended = suspended },
+				new
+				{
+					Suspended = suspended,
+					SuspendedTime = DateTime.Now,
+				},
 				new Condition("UserId", userId)) > 0;
 		}
 
@@ -127,6 +135,12 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, conditions).FirstOrDefault();
 		}
 
+		public IEnumerable<User> GetAllUsers(string @namespace, Paging paging = null)
+		{
+			var dataAccess = this.EnsureDataAccess();
+			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)), null, paging ?? new Paging(1, 20));
+		}
+
 		public bool Exists(int userId)
 		{
 			var dataAccess = this.EnsureDataAccess();
@@ -140,18 +154,16 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, conditions);
 		}
 
-		public IEnumerable<User> GetAllUsers(string @namespace, Paging paging = null)
-		{
-			var dataAccess = this.EnsureDataAccess();
-			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)), null, paging ?? new Paging(1, 20));
-		}
-
 		public bool SetAvatar(int userId, string avatar)
 		{
 			var dataAccess = this.EnsureDataAccess();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-				new { Avatar = string.IsNullOrWhiteSpace(avatar) ? null : avatar.Trim() },
+				new
+				{
+					Avatar = string.IsNullOrWhiteSpace(avatar) ? null : avatar.Trim(),
+					ModifiedTime = DateTime.Now,
+				},
 				new Condition("UserId", userId)) > 0;
 		}
 
@@ -160,7 +172,11 @@ namespace Zongsoft.Security.Membership
 			var dataAccess = this.EnsureDataAccess();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-				new { FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName.Trim() },
+				new
+				{
+					FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName.Trim(),
+					ModifiedTime = DateTime.Now,
+				},
 				new Condition("UserId", userId)) > 0;
 		}
 
@@ -169,7 +185,11 @@ namespace Zongsoft.Security.Membership
 			var dataAccess = this.EnsureDataAccess();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-				new { PrincipalId = string.IsNullOrWhiteSpace(principalId) ? null : principalId.Trim() },
+				new
+				{
+					PrincipalId = string.IsNullOrWhiteSpace(principalId) ? null : principalId.Trim(),
+					ModifiedTime = DateTime.Now,
+				},
 				new Condition("UserId", userId)) > 0;
 		}
 
@@ -178,7 +198,11 @@ namespace Zongsoft.Security.Membership
 			var dataAccess = this.EnsureDataAccess();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-				new { Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim() },
+				new
+				{
+					Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
+					ModifiedTime = DateTime.Now,
+				},
 				new Condition("UserId", userId)) > 0;
 		}
 
