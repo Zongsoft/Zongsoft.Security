@@ -96,6 +96,24 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 用户管理
+		public bool Approve(int userId, bool approved = true)
+		{
+			var dataAccess = this.EnsureDataAccess();
+
+			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				new { Approved = approved },
+				new Condition("UserId", userId)) > 0;
+		}
+
+		public bool Suspend(int userId, bool suspended = true)
+		{
+			var dataAccess = this.EnsureDataAccess();
+
+			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				new { Suspended = suspended },
+				new Condition("UserId", userId)) > 0;
+		}
+
 		public User GetUser(int userId)
 		{
 			var dataAccess = this.EnsureDataAccess();
@@ -109,11 +127,17 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, conditions).FirstOrDefault();
 		}
 
+		public bool Exists(int userId)
+		{
+			var dataAccess = this.EnsureDataAccess();
+			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId));
+		}
+
 		public bool Exists(string identity, string @namespace)
 		{
 			var dataAccess = this.EnsureDataAccess();
 			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
-			return dataAccess.Count(MembershipHelper.DATA_ENTITY_USER, conditions) > 0;
+			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, conditions);
 		}
 
 		public IEnumerable<User> GetAllUsers(string @namespace, Paging paging = null)
@@ -122,12 +146,39 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)), null, paging ?? new Paging(1, 20));
 		}
 
+		public bool SetAvatar(int userId, string avatar)
+		{
+			var dataAccess = this.EnsureDataAccess();
+
+			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				new { Avatar = string.IsNullOrWhiteSpace(avatar) ? null : avatar.Trim() },
+				new Condition("UserId", userId)) > 0;
+		}
+
+		public bool SetFullName(int userId, string fullName)
+		{
+			var dataAccess = this.EnsureDataAccess();
+
+			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				new { FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName.Trim() },
+				new Condition("UserId", userId)) > 0;
+		}
+
 		public bool SetPrincipalId(int userId, string principalId)
 		{
 			var dataAccess = this.EnsureDataAccess();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new { PrincipalId = string.IsNullOrWhiteSpace(principalId) ? null : principalId.Trim() },
+				new Condition("UserId", userId)) > 0;
+		}
+
+		public bool SetDescription(int userId, string description)
+		{
+			var dataAccess = this.EnsureDataAccess();
+
+			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				new { Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim() },
 				new Condition("UserId", userId)) > 0;
 		}
 
@@ -439,6 +490,26 @@ namespace Zongsoft.Security.Membership
 				PasswordQuestion3 = passwordQuestions.Length > 2 ? passwordQuestions[2] : null,
 				PasswordAnswer3 = passwordAnswers.Length > 2 ? passwordAnswers[2] : null,
 			}, new Condition("UserId", userId)) > 0;
+		}
+
+		public bool SetPasswordOptions(int userId, bool changePasswordOnFirstTime = false, byte maxInvalidPasswordAttempts = 3, byte minRequiredPasswordLength = 6, TimeSpan? passwordAttemptWindow = null, DateTime? passwordExpires = null)
+		{
+			var dataAccess = this.EnsureDataAccess();
+
+			var dictionary = new Dictionary<string, object>()
+			{
+				{ "ChangePasswordOnFirstTime", changePasswordOnFirstTime },
+				{ "MaxInvalidPasswordAttempts", maxInvalidPasswordAttempts },
+				{ "MinRequiredPasswordLength", minRequiredPasswordLength },
+			};
+
+			if(passwordAttemptWindow.HasValue)
+				dictionary.Add("PasswordAttemptWindow", passwordAttemptWindow.Value);
+
+			if(passwordExpires.HasValue)
+				dictionary.Add("PasswordExpires", passwordExpires.Value);
+
+			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER, dictionary, new Condition("UserId", userId)) > 0;
 		}
 		#endregion
 
