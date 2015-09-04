@@ -167,6 +167,32 @@ namespace Zongsoft.Security.Membership
 				new Condition("UserId", userId)) > 0;
 		}
 
+		public bool SetEmail(int userId, string email)
+		{
+			var dataAccess = this.EnsureDataAccess();
+
+			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				new
+				{
+					Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim(),
+					ModifiedTime = DateTime.Now,
+				},
+				new Condition("UserId", userId)) > 0;
+		}
+
+		public bool SetPhoneNumber(int userId, string phoneNumber)
+		{
+			var dataAccess = this.EnsureDataAccess();
+
+			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				new
+				{
+					PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim(),
+					ModifiedTime = DateTime.Now,
+				},
+				new Condition("UserId", userId)) > 0;
+		}
+
 		public bool SetFullName(int userId, string fullName)
 		{
 			var dataAccess = this.EnsureDataAccess();
@@ -460,6 +486,23 @@ namespace Zongsoft.Security.Membership
 						PasswordSalt = passwordSalt,
 					}, new Condition("UserId", userId)) > 0;
 			}
+
+			return result;
+		}
+
+		public string[] GetPasswordQuestions(int userId)
+		{
+			var dataAccess = this.EnsureDataAccess();
+			var record = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId), "!, UserId, PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
+
+			if(record == null)
+				return null;
+
+			var result = new string[] {
+				record["PasswordQuestion1"] as string,
+				record["PasswordQuestion2"] as string,
+				record["PasswordQuestion3"] as string,
+			};
 
 			return result;
 		}
