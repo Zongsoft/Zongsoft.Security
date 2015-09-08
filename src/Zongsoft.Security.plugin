@@ -28,9 +28,9 @@
 		        dataAccess="{srv:Security@Data}"
 		        type="Zongsoft.Security.Censorship, Zongsoft.Security" />
 
-		<object name="CertificationProvider"
+		<object name="CredentialProvider"
 		        storage="{srv:Storage}"
-		        type="Zongsoft.Security.CertificationProvider, Zongsoft.Security" />
+		        type="Zongsoft.Security.CredentialProvider, Zongsoft.Security" />
 
 		<object name="RoleProvider"
 		        dataAccess="{srv:Security@Data}"
@@ -67,7 +67,7 @@
 		<object name="IsUnauthorized" value="{path:/Workspace/Security/IsUnauthorized}" />
 
 		<object name="Censorship" value="{path:/Workspace/Security/Censorship}" />
-		<object name="CertificationProvider" value="{path:/Workspace/Security/CertificationProvider}" />
+		<object name="CredentialProvider" value="{path:/Workspace/Security/CredentialProvider}" />
 		<object name="RoleProvider" value="{path:/Workspace/Security/RoleProvider}" />
 		<object name="UserProvider" value="{path:/Workspace/Security/UserProvider}" />
 		<object name="PermissionProvider" value="{path:/Workspace/Security/PermissionProvider}" />

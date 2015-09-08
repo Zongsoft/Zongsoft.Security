@@ -92,9 +92,9 @@ namespace Zongsoft.Security.Membership
 			if(authorization == null)
 				throw new MissingMemberException(this.GetType().FullName, "Authorization");
 
-			var principal = _applicationContext.Principal as Zongsoft.Security.CertificationPrincipal;
+			var principal = _applicationContext.Principal as Zongsoft.Security.CredentialPrincipal;
 
-			if(principal == null || principal.Identity == null || (!principal.Identity.IsAuthenticated) || principal.Identity.Certification == null || principal.Identity.Certification.User == null)
+			if(principal == null || principal.Identity == null || (!principal.Identity.IsAuthenticated) || principal.Identity.Credential == null || principal.Identity.Credential.User == null)
 				return false;
 
 			var matches = _regex.Matches(text);
@@ -102,7 +102,7 @@ namespace Zongsoft.Security.Membership
 			if(matches.Count != 2)
 				return false;
 
-			return authorization.Authorize(principal.Identity.Certification.User.UserId, matches[0].Value, matches[1].Value);
+			return authorization.Authorize(principal.Identity.Credential.User.UserId, matches[0].Value, matches[1].Value);
 		}
 		#endregion
 
