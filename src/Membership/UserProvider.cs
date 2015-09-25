@@ -372,42 +372,35 @@ namespace Zongsoft.Security.Membership
 				}, new Condition("UserId", userId)) > 0;
 		}
 
-		public bool ForgetPassword(string identity, string @namespace, out int userId, out string secret, out string token)
+		public int ForgetPassword(string identity, string @namespace, string secret, TimeSpan? timeout = null)
 		{
-			userId = 0;
-			secret = null;
-			token = null;
+			if(string.IsNullOrWhiteSpace(secret))
+				throw new ArgumentNullException("secret");
 
+			int userId;
 			var dataAccess = this.EnsureDataAccess();
 
 			if(!MembershipHelper.GetUserId(dataAccess, identity, @namespace, out userId))
-				return false;
-
-			secret = Zongsoft.Common.RandomGenerator.GenerateInt64().ToString();
-
-			if(secret.Length > 6)
-				secret = secret.Substring(0, 6);
+				return -1;
 
 			var cache = this.EnsureCache();
 
-			if(!cache.SetValue(this.GetCacheKeyOfResetPassword(userId), secret, TimeSpan.FromHours(24), true))
+			if(!cache.SetValue(this.GetCacheKeyOfResetPassword(userId), secret, timeout ?? TimeSpan.FromHours(1), true))
 				secret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
 
-			token = this.GetSecretToken(userId, secret);
-
-			return secret != null && secret.Length > 0;
+			return userId;
 		}
 
-		public bool ResetPassword(int userId, string token, string newPassword = null)
+		public bool ResetPassword(int userId, string secret, string newPassword = null)
 		{
-			if(string.IsNullOrEmpty(token))
+			if(string.IsNullOrEmpty(secret))
 				return false;
 
 			var cache = this.EnsureCache();
-			var secret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
-			var result = secret != null && string.Equals(token, this.GetSecretToken(userId, secret), StringComparison.Ordinal);
+			var cachedSecret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
+			var succeed = cachedSecret != null && string.Equals(secret, cachedSecret, StringComparison.Ordinal);
 
-			if(result && newPassword != null && newPassword.Length > 0)
+			if(succeed && newPassword != null && newPassword.Length > 0)
 			{
 				var dataAccess = this.EnsureDataAccess();
 
@@ -422,7 +415,7 @@ namespace Zongsoft.Security.Membership
 					}, new Condition("UserId", userId)) > 0;
 			}
 
-			return result;
+			return succeed;
 		}
 
 		public bool ResetPassword(string identity, string @namespace, string secret, string newPassword = null)
@@ -438,9 +431,9 @@ namespace Zongsoft.Security.Membership
 
 			var cache = this.EnsureCache();
 			var cachedSecret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
-			var result = cachedSecret != null && string.Equals(cachedSecret, secret, StringComparison.Ordinal);
+			var succeed = cachedSecret != null && string.Equals(cachedSecret, secret, StringComparison.Ordinal);
 
-			if(result && newPassword != null && newPassword.Length > 0)
+			if(succeed && newPassword != null && newPassword.Length > 0)
 			{
 				//重新生成密码随机数
 				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
@@ -453,7 +446,7 @@ namespace Zongsoft.Security.Membership
 					}, new Condition("UserId", userId)) > 0;
 			}
 
-			return result;
+			return succeed;
 		}
 
 		public bool ResetPassword(string identity, string @namespace, string[] passwordAnswers, string newPassword = null)
@@ -603,18 +596,6 @@ namespace Zongsoft.Security.Membership
 
 			var salt = this.GetPasswordAnswerSalt(userId, index);
 			return PasswordUtility.HashPassword(answer, salt);
-		}
-
-		private string GetSecretToken(int userId, string secret)
-		{
-			if(string.IsNullOrEmpty(secret))
-				return null;
-
-			using(var hash = System.Security.Cryptography.MD5.Create())
-			{
-				var code = hash.ComputeHash(Encoding.ASCII.GetBytes(userId.ToString() + secret));
-				return Zongsoft.Common.Convert.ToHexString(code);
-			}
 		}
 
 		private string GetCacheKeyOfResetPassword(int userId)
