@@ -458,7 +458,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool ResetPassword(string identity, string @namespace, string[] passwordAnswers, string newPassword = null)
 		{
-			if(string.IsNullOrWhiteSpace(identity) || passwordAnswers == null || passwordAnswers.Length != 3)
+			if(string.IsNullOrWhiteSpace(identity) || passwordAnswers == null || passwordAnswers.Length < 3)
 				return false;
 
 			var dataAccess = this.EnsureDataAccess();
@@ -470,11 +470,11 @@ namespace Zongsoft.Security.Membership
 
 			var userId = Zongsoft.Common.Convert.ConvertValue<int>(record["UserId"]);
 
-			var result = (string.Equals(passwordAnswers[0], (string)record["PasswordAnswer1"], StringComparison.Ordinal) &&
-			              string.Equals(passwordAnswers[1], (string)record["PasswordAnswer2"], StringComparison.Ordinal) &&
-			              string.Equals(passwordAnswers[2], (string)record["PasswordAnswer3"], StringComparison.Ordinal));
+			var succeed = PasswordUtility.VerifyPassword(passwordAnswers[0], record["PasswordAnswer1"] as byte[], this.GetPasswordAnswerSalt(userId, 1)) &&
+			              PasswordUtility.VerifyPassword(passwordAnswers[1], record["PasswordAnswer2"] as byte[], this.GetPasswordAnswerSalt(userId, 2)) &&
+			              PasswordUtility.VerifyPassword(passwordAnswers[2], record["PasswordAnswer3"] as byte[], this.GetPasswordAnswerSalt(userId, 3));
 
-			if(result && newPassword != null && newPassword.Length > 0)
+			if(succeed && newPassword != null && newPassword.Length > 0)
 			{
 				//重新生成密码随机数
 				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
@@ -487,7 +487,7 @@ namespace Zongsoft.Security.Membership
 					}, new Condition("UserId", userId)) > 0;
 			}
 
-			return result;
+			return succeed;
 		}
 
 		public string[] GetPasswordQuestions(int userId)
@@ -527,10 +527,10 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetPasswordQuestionsAndAnswers(int userId, string password, string[] passwordQuestions, string[] passwordAnswers)
 		{
-			if(passwordQuestions == null || passwordQuestions.Length == 0)
+			if(passwordQuestions == null || passwordQuestions.Length < 3)
 				throw new ArgumentNullException("passwordQuestions");
 
-			if(passwordAnswers == null || passwordAnswers.Length == 0)
+			if(passwordAnswers == null || passwordAnswers.Length < 3)
 				throw new ArgumentNullException("passwordAnswers");
 
 			if(passwordQuestions.Length != passwordAnswers.Length)
@@ -551,11 +551,11 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
 			{
 				PasswordQuestion1 = passwordQuestions.Length > 0 ? passwordQuestions[0] : null,
-				PasswordAnswer1 = passwordAnswers.Length > 0 ? passwordAnswers[0] : null,
+				PasswordAnswer1 = passwordAnswers.Length > 0 ? this.HashPasswordAnswer(passwordAnswers[0], userId, 1) : null,
 				PasswordQuestion2 = passwordQuestions.Length > 1 ? passwordQuestions[1] : null,
-				PasswordAnswer2 = passwordAnswers.Length > 1 ? passwordAnswers[1] : null,
+				PasswordAnswer2 = passwordAnswers.Length > 1 ? this.HashPasswordAnswer(passwordAnswers[1], userId, 2) : null,
 				PasswordQuestion3 = passwordQuestions.Length > 2 ? passwordQuestions[2] : null,
-				PasswordAnswer3 = passwordAnswers.Length > 2 ? passwordAnswers[2] : null,
+				PasswordAnswer3 = passwordAnswers.Length > 2 ? this.HashPasswordAnswer(passwordAnswers[2], userId, 3) : null,
 			}, new Condition("UserId", userId)) > 0;
 		}
 
@@ -589,6 +589,20 @@ namespace Zongsoft.Security.Membership
 				throw new MissingMemberException(this.GetType().FullName, "Cache");
 
 			return cache;
+		}
+
+		private byte[] GetPasswordAnswerSalt(int userId, int index)
+		{
+			return Encoding.ASCII.GetBytes(string.Format("Zongsoft.Security.User:{0}:PasswordAnswer[{1}]", userId.ToString(), index.ToString()));
+		}
+
+		private byte[] HashPasswordAnswer(string answer, int userId, int index)
+		{
+			if(string.IsNullOrEmpty(answer))
+				return null;
+
+			var salt = this.GetPasswordAnswerSalt(userId, index);
+			return PasswordUtility.HashPassword(answer, salt);
 		}
 
 		private string GetSecretToken(int userId, string secret)
