@@ -385,8 +385,7 @@ namespace Zongsoft.Security.Membership
 
 			var cache = this.EnsureCache();
 
-			if(!cache.SetValue(this.GetCacheKeyOfResetPassword(userId), secret, timeout ?? TimeSpan.FromHours(1), true))
-				secret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
+			cache.SetValue(this.GetCacheKeyOfResetPassword(userId), secret, timeout.HasValue && timeout.Value > TimeSpan.Zero ? timeout.Value : TimeSpan.FromHours(1));
 
 			return userId;
 		}
@@ -407,12 +406,17 @@ namespace Zongsoft.Security.Membership
 				//重新生成密码随机数
 				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
 
-				return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				var affectedRows = dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 					new
 					{
 						Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
 						PasswordSalt = passwordSalt,
-					}, new Condition("UserId", userId)) > 0;
+					}, new Condition("UserId", userId));
+
+				if(affectedRows > 0)
+					cache.Remove(this.GetCacheKeyOfResetPassword(userId));
+
+				return affectedRows > 0;
 			}
 
 			return succeed;
@@ -438,12 +442,17 @@ namespace Zongsoft.Security.Membership
 				//重新生成密码随机数
 				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
 
-				return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				var affectedRows = dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 					new
 					{
 						Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
 						PasswordSalt = passwordSalt,
-					}, new Condition("UserId", userId)) > 0;
+					}, new Condition("UserId", userId));
+
+				if(affectedRows > 0)
+					cache.Remove(this.GetCacheKeyOfResetPassword(userId));
+
+				return affectedRows > 0;
 			}
 
 			return succeed;
