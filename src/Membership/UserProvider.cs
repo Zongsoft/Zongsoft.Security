@@ -347,6 +347,26 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 密码管理
+		public bool HasPassword(int userId)
+		{
+			var dataAccess = this.EnsureDataAccess();
+
+			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER,
+				new ConditionCollection(ConditionCombine.And,
+					new Condition("UserId", userId),
+					new Condition("Password", null, ConditionOperator.NotEqual)));
+		}
+
+		public bool HasPassword(string identity, string @namespace)
+		{
+			var dataAccess = this.EnsureDataAccess();
+			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
+
+			conditions.Add(new Condition("Password", null, ConditionOperator.NotEqual));
+
+			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, conditions);
+		}
+
 		public bool ChangePassword(int userId, string oldPassword, string newPassword)
 		{
 			var dataAccess = this.EnsureDataAccess();
