@@ -36,6 +36,15 @@ namespace Zongsoft.Security.Membership
 {
 	internal static class MembershipHelper
 	{
+		#region 枚举定义
+		internal enum UserIdentityType
+		{
+			Name,
+			Phone,
+			Email,
+		}
+		#endregion
+
 		#region 常量定义
 		internal const string DATA_CONTAINER_NAME = "Security";
 
@@ -98,6 +107,12 @@ namespace Zongsoft.Security.Membership
 		#region 内部方法
 		internal static ConditionCollection GetUserIdentityConditions(string identity, string @namespace)
 		{
+			UserIdentityType identityType;
+			return GetUserIdentityConditions(identity, @namespace, out identityType);
+		}
+
+		internal static ConditionCollection GetUserIdentityConditions(string identity, string @namespace, out UserIdentityType identityType)
+		{
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
 
@@ -106,11 +121,20 @@ namespace Zongsoft.Security.Membership
 			conditions[0] = new Condition("Namespace", TrimNamespace(@namespace));
 
 			if(Zongsoft.Text.TextRegular.Web.Email.IsMatch(identity, out text))
+			{
+				identityType = UserIdentityType.Email;
 				conditions[1] = new Condition("Email", text);
+			}
 			else if(Zongsoft.Text.TextRegular.Chinese.Cellphone.IsMatch(identity, out text))
+			{
+				identityType = UserIdentityType.Phone;
 				conditions[1] = new Condition("PhoneNumber", text);
+			}
 			else
+			{
+				identityType = UserIdentityType.Name;
 				conditions[1] = new Condition("Name", identity);
+			}
 
 			return new ConditionCollection(ConditionCombine.And, conditions);
 		}

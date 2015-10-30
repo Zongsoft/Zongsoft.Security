@@ -143,14 +143,32 @@ namespace Zongsoft.Security.Membership
 
 		public bool Exists(int userId)
 		{
+			if(userId == 0)
+				return true;
+
 			var dataAccess = this.EnsureDataAccess();
 			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId));
 		}
 
 		public bool Exists(string identity, string @namespace)
 		{
+			if(string.IsNullOrWhiteSpace(identity))
+				return false;
+
 			var dataAccess = this.EnsureDataAccess();
-			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
+			MembershipHelper.UserIdentityType identityType;
+			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace, out identityType);
+
+			if(identityType == MembershipHelper.UserIdentityType.Name)
+			{
+				//确保所有用户名是有效的
+				MembershipHelper.EnsureName(identity);
+
+				//确保用户名是审核通过的
+				if(_censorship != null && _censorship.IsBlocked(identity, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
+					throw new CensorshipException(string.Format("Illegal '{0}' name of user.", identity));
+			}
+
 			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, conditions);
 		}
 
@@ -188,6 +206,29 @@ namespace Zongsoft.Security.Membership
 				new
 				{
 					PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim(),
+					ModifiedTime = DateTime.Now,
+				},
+				new Condition("UserId", userId)) > 0;
+		}
+
+		public bool SetName(int userId, string name)
+		{
+			if(string.IsNullOrWhiteSpace(name))
+				throw new ArgumentNullException("name");
+
+			//确保所有用户名是有效的
+			MembershipHelper.EnsureName(name);
+
+			//确保用户名是审核通过的
+			if(_censorship != null && _censorship.IsBlocked(name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
+				throw new CensorshipException(string.Format("Illegal '{0}' name of user.", name));
+
+			var dataAccess = this.EnsureDataAccess();
+
+			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				new
+				{
+					Name = name.Trim(),
 					ModifiedTime = DateTime.Now,
 				},
 				new Condition("UserId", userId)) > 0;
