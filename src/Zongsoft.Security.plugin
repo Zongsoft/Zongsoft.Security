@@ -25,42 +25,46 @@
 		<object name="IsUnauthorized" type="Zongsoft.Security.Membership.IsUnauthorizedPredication, Zongsoft.Security" />
 
 		<object name="Censorship"
-		        dataAccess="{srv:Security@Data}"
+		        dataAccess="{srv:~}"
 		        type="Zongsoft.Security.Censorship, Zongsoft.Security" />
 
 		<object name="CredentialProvider"
-		        storage="{srv:Storage}"
+		        storage="{srv:~}"
 		        type="Zongsoft.Security.CredentialProvider, Zongsoft.Security" />
 
 		<object name="RoleProvider"
-		        dataAccess="{srv:Security@Data}"
-		        sequence="{srv:.}"
-		        censorship="{srv:.@Security}"
+		        dataAccess="{srv:~}"
+		        sequence="{srv:~}"
+		        censorship="{srv:~}"
 		        type="Zongsoft.Security.Membership.RoleProvider, Zongsoft.Security" />
 
 		<object name="UserProvider"
-		        dataAccess="{srv:Security@Data}"
-		        sequence="{srv:.}"
-		        cache="{srv:.}"
-		        censorship="{srv:.@Security}"
+		        dataAccess="{srv:~}"
+		        sequence="{srv:~}"
+		        cache="{srv:~}"
+		        censorship="{srv:~}"
 		        type="Zongsoft.Security.Membership.UserProvider, Zongsoft.Security" />
 
 		<object name="PermissionProvider"
-		        dataAccess="{srv:Security@Data}"
+		        dataAccess="{srv:~}"
 		        type="Zongsoft.Security.Membership.PermissionProvider, Zongsoft.Security" />
 
 		<object name="Authentication"
-		        dataAccess="{srv:Security@Data}"
+		        dataAccess="{srv:~}"
 		        type="Zongsoft.Security.Membership.Authentication, Zongsoft.Security" />
 
 		<object name="Authorization"
-		        permissionProvider="{path:../PermissionProvider}"
-		        memberProvider="{path:../RoleProvider}"
+		        permissionProvider="{srv:~}"
+		        memberProvider="{srv:~}"
 		        type="Zongsoft.Security.Membership.Authorization, Zongsoft.Security" />
 	</extension>
 
 	<!-- 挂载“安全”相关的各种服务 -->
 	<extension path="/Workspace/Services/Security">
+		<object name="DataAccess" value="{srv:Security@Data}" />
+		<object name="Sequence" value="{srv:Sequence@}" />
+		<object name="Storage" value="{srv:Storage@}" />
+
 		<object name="IsAuthenticated" value="{path:/Workspace/Security/IsAuthenticated}" />
 		<object name="IsUnauthenticated" value="{path:/Workspace/Security/IsUnauthenticated}" />
 		<object name="IsAuthorized" value="{path:/Workspace/Security/IsAuthorized}" />
