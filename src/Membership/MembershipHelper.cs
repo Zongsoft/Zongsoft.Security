@@ -143,22 +143,6 @@ namespace Zongsoft.Security.Membership
 		{
 			return string.IsNullOrWhiteSpace(@namespace) ? null : @namespace.Trim();
 		}
-
-		internal static void EnsureName(string name)
-		{
-			if(string.IsNullOrWhiteSpace(name))
-				throw new InvalidOperationException("The value of 'Name' property cann't is null or empty.");
-
-			name = name.Trim();
-
-			if(name.Length < 2)
-				throw new InvalidOperationException("The value of 'Name' property length must greater than 1.");
-
-			var firstChar = name[0];
-
-			if(firstChar < 'A' || (firstChar > 'Z' && firstChar < 'a') || firstChar > 'z')
-				throw new InvalidOperationException("The value of 'Name' property first character must is letters of an alphabet");
-		}
 		#endregion
 
 		#region 私有方法
