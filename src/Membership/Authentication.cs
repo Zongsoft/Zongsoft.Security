@@ -33,14 +33,14 @@ using Zongsoft.Options;
 
 namespace Zongsoft.Security.Membership
 {
-	public class Authentication : MembershipProviderBase, IAuthentication
+	public class Authentication : Zongsoft.Services.ServiceBase, IAuthentication
 	{
 		#region 事件声明
 		public event EventHandler<AuthenticatedEventArgs> Authenticated;
 		#endregion
 
 		#region 构造函数
-		public Authentication()
+		public Authentication(Zongsoft.Services.IServiceProvider serviceProvider) : base(serviceProvider)
 		{
 		}
 		#endregion
@@ -99,7 +99,7 @@ namespace Zongsoft.Security.Membership
 			}
 
 			//获取指定用户编号对应的用户对象
-			var user = MembershipHelper.GetUser(this.EnsureDataAccess(), userId.Value);
+			var user = MembershipHelper.GetUser(this.EnsureService<IDataAccess>(), userId.Value);
 
 			//创建“Authenticated”事件参数
 			var eventArgs = new AuthenticatedEventArgs(identity, @namespace, true, user);
@@ -118,7 +118,7 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
 
-			return MembershipHelper.GetPassword(this.EnsureDataAccess(), identity, @namespace, out password, out passwordSalt, out isApproved, out isSuspended);
+			return MembershipHelper.GetPassword(this.EnsureService<IDataAccess>(), identity, @namespace, out password, out passwordSalt, out isApproved, out isSuspended);
 		}
 		#endregion
 

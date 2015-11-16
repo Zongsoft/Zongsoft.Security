@@ -48,7 +48,6 @@
     <Compile Include="Membership\AuthorizationPredications.cs" />
     <Compile Include="Membership\MembershipHelper.cs" />
     <Compile Include="Membership\PermissionProvider.cs" />
-    <Compile Include="Membership\MembershipProviderBase.cs" />
     <Compile Include="Membership\RoleProvider.cs" />
     <Compile Include="Membership\UserProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

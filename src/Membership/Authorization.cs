@@ -31,47 +31,16 @@ using System.Collections.Concurrent;
 
 namespace Zongsoft.Security.Membership
 {
-	public class Authorization : IAuthorization
+	public class Authorization : Zongsoft.Services.ServiceBase, IAuthorization
 	{
 		#region 事件定义
 		public event EventHandler<AuthorizationEventArgs> Authorizing;
 		public event EventHandler<AuthorizationEventArgs> Authorized;
 		#endregion
 
-		#region 成员字段
-		private IPermissionProvider _permissionProvider;
-		private IMemberProvider _memberProvider;
-		#endregion
-
-		#region 公共属性
-		public IPermissionProvider PermissionProvider
+		#region 构造函数
+		public Authorization(Zongsoft.Services.IServiceProvider serviceProvider) : base(serviceProvider)
 		{
-			get
-			{
-				return _permissionProvider;
-			}
-			set
-			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_permissionProvider = value;
-			}
-		}
-
-		public IMemberProvider MemberProvider
-		{
-			get
-			{
-				return _memberProvider;
-			}
-			set
-			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_memberProvider = value;
-			}
 		}
 		#endregion
 
@@ -116,16 +85,10 @@ namespace Zongsoft.Security.Membership
 		#region 虚拟方法
 		protected virtual IEnumerable<AuthorizationState> GetAuthorizedStatesCore(int memberId, MemberType memberType)
 		{
-			if(_memberProvider == null)
-				throw new InvalidOperationException("The value of 'RoleProvider' property is null.");
-
-			if(_permissionProvider == null)
-				throw new InvalidOperationException("The value of 'PermissionProvider' property is null.");
-
 			var stack = new Stack<IEnumerable<Role>>();
 
 			//递归获取当前成员所属角色信息，并将其所属上级角色依次压入指定的栈中
-			this.RecursiveRoles(null, stack, _memberProvider.GetRoles(memberId, memberType));
+			this.RecursiveRoles(null, stack, this.EnsureService<IMemberProvider>().GetRoles(memberId, memberType));
 
 			//创建授权状态集
 			var grantedStates = new HashSet<AuthorizationState>();
@@ -192,7 +155,7 @@ namespace Zongsoft.Security.Membership
 		#region 私有方法
 		private void SlicePermission(int memberId, MemberType memberType, HashSet<AuthorizationState> grantedStates, HashSet<AuthorizationState> deniedStates)
 		{
-			var permissions = _permissionProvider.GetPermissions(memberId, memberType);
+			var permissions = this.EnsureService<IPermissionProvider>().GetPermissions(memberId, memberType);
 
 			foreach(var permission in permissions)
 			{
@@ -207,6 +170,9 @@ namespace Zongsoft.Security.Membership
 		{
 			if(roles == null)
 				return;
+
+			//获取必须的用户角色成员服务
+			var memberProvider = this.EnsureService<IMemberProvider>();
 
 			var availableRoles = new List<Role>();
 
@@ -232,7 +198,7 @@ namespace Zongsoft.Security.Membership
 			foreach(var role in availableRoles)
 			{
 				//获取指定角色所属的的父级角色集
-				roles = _memberProvider.GetRoles(role.RoleId, MemberType.Role);
+				roles = memberProvider.GetRoles(role.RoleId, MemberType.Role);
 
 				if(roles != null)
 					parents.AddRange(roles);

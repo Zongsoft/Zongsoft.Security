@@ -32,7 +32,7 @@ using System.Linq;
 
 namespace Zongsoft.Security
 {
-	public class CredentialProvider : ICredentialProvider
+	public class CredentialProvider : Zongsoft.Services.ServiceBase, ICredentialProvider
 	{
 		#region 私有常量
 		private const string DefaultCacheName = "Zongsoft.Security.Membership.Credentials";
@@ -40,26 +40,12 @@ namespace Zongsoft.Security
 
 		#region 成员字段
 		private TimeSpan _renewalPeriod;
-		private Zongsoft.Runtime.Caching.ICache _storage;
 		private Zongsoft.Runtime.Caching.MemoryCache _memoryCache;
 		#endregion
 
 		#region 构造函数
-		public CredentialProvider()
+		public CredentialProvider(Zongsoft.Services.IServiceProvider serviceProvider) : base(serviceProvider)
 		{
-			_renewalPeriod = TimeSpan.FromHours(2);
-			_memoryCache = new Runtime.Caching.MemoryCache("Zongsoft.Security.CredentialProvider.MemoryCache");
-
-			//挂载内存缓存容器的事件
-			_memoryCache.Changed += MemoryCache_Changed;
-		}
-
-		public CredentialProvider(Zongsoft.Runtime.Caching.ICache storage)
-		{
-			if(storage == null)
-				throw new ArgumentNullException("storage");
-
-			_storage = storage;
 			_renewalPeriod = TimeSpan.FromHours(2);
 			_memoryCache = new Runtime.Caching.MemoryCache("Zongsoft.Security.CredentialProvider.MemoryCache");
 
@@ -69,24 +55,6 @@ namespace Zongsoft.Security
 		#endregion
 
 		#region 公共属性
-		/// <summary>
-		/// 获取或设置凭证提供程序的数据存储容器。
-		/// </summary>
-		public Zongsoft.Runtime.Caching.ICache Storage
-		{
-			get
-			{
-				return _storage;
-			}
-			set
-			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_storage = value;
-			}
-		}
-
 		/// <summary>
 		/// 获取或设置凭证的默认续约周期，不能小于60秒。
 		/// </summary>
@@ -124,7 +92,7 @@ namespace Zongsoft.Security
 			if(string.IsNullOrWhiteSpace(credentialId))
 				return;
 
-			var storage = this.EnsureStorage();
+			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
 
 			//获取指定编号的凭证对象
 			var credential = this.GetCredential(credentialId);
@@ -153,7 +121,7 @@ namespace Zongsoft.Security
 			if(string.IsNullOrWhiteSpace(credentialId))
 				throw new ArgumentNullException("credentialId");
 
-			var storage = this.EnsureStorage();
+			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
 
 			//查找指定编号的凭证对象
 			var credential = this.GetCredential(credentialId);
@@ -207,7 +175,7 @@ namespace Zongsoft.Security
 
 		public int GetCount(string @namespace)
 		{
-			var storage = this.EnsureStorage();
+			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
 			var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(@namespace)) as ICollection;
 
 			if(namespaces == null)
@@ -245,7 +213,7 @@ namespace Zongsoft.Security
 			if(credential != null)
 				return credential.Namespace;
 
-			var storage = this.EnsureStorage();
+			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
 
 			//在物理存储层中查找指定编号的凭证对象的缓存字典
 			var dictionary = storage.GetValue(this.GetCacheKeyOfCredential(credentialId)) as IDictionary;
@@ -274,7 +242,7 @@ namespace Zongsoft.Security
 
 		public Credential GetCredential(int userId, string scene)
 		{
-			var storage = this.EnsureStorage();
+			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
 			var credentialId = storage.GetValue(this.GetCacheKeyOfUser(userId, scene)) as string;
 
 			if(string.IsNullOrWhiteSpace(credentialId))
@@ -285,7 +253,7 @@ namespace Zongsoft.Security
 
 		public IEnumerable<Credential> GetCredentials(string @namespace)
 		{
-			var storage = this.EnsureStorage();
+			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
 			var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(@namespace)) as IDictionary;
 
 			if(namespaces == null)
@@ -311,7 +279,7 @@ namespace Zongsoft.Security
 
 		protected virtual void Register(Credential credential)
 		{
-			var storage = this.EnsureStorage();
+			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
 
 			//声明命名空间对应的所有凭证的集合
 			ICollection<string> namespaces = null;
@@ -379,23 +347,12 @@ namespace Zongsoft.Security
 		#endregion
 
 		#region 私有方法
-		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-		private Zongsoft.Runtime.Caching.ICache EnsureStorage()
-		{
-			var storage = this.Storage;
-
-			if(storage == null)
-				throw new MissingMemberException(this.GetType().FullName, "Storage");
-
-			return storage;
-		}
-
 		private Credential EnsureCredentialsTimeout(string credentialId, DateTime timestamp)
 		{
 			if(string.IsNullOrWhiteSpace(credentialId))
 				throw new ArgumentNullException("credentialId");
 
-			var storage = this.EnsureStorage();
+			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
 
 			//在缓存容器中查找指定编号的凭证对象的序列化后的JSON文本
 			var text = storage.GetValue(this.GetCacheKeyOfCredential(credentialId)) as string;

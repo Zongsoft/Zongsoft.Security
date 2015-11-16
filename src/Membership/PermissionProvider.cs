@@ -32,10 +32,10 @@ using Zongsoft.Options;
 
 namespace Zongsoft.Security.Membership
 {
-	public class PermissionProvider : MembershipProviderBase, IPermissionProvider
+	public class PermissionProvider : Zongsoft.Services.ServiceBase, IPermissionProvider
 	{
 		#region 构造函数
-		public PermissionProvider()
+		public PermissionProvider(Zongsoft.Services.IServiceProvider serviceProvider) : base(serviceProvider)
 		{
 		}
 		#endregion
@@ -43,7 +43,7 @@ namespace Zongsoft.Security.Membership
 		#region 公共方法
 		public IEnumerable<Permission> GetPermissions(int memberId, MemberType memberType)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			return dataAccess.Select<Permission>(MembershipHelper.DATA_ENTITY_PERMISSION,
 			                                       new ConditionCollection(ConditionCombine.And)
@@ -63,7 +63,7 @@ namespace Zongsoft.Security.Membership
 
 		public IEnumerable<PermissionFilter> GetPermissionFilters(int memberId, MemberType memberType)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			return dataAccess.Select<PermissionFilter>(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER,
 												         new ConditionCollection(ConditionCombine.And)
@@ -88,7 +88,7 @@ namespace Zongsoft.Security.Membership
 			if(permissions == null)
 				throw new ArgumentNullException("permissions");
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			foreach(var permission in permissions)
 			{

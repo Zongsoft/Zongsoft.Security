@@ -34,51 +34,20 @@ using Zongsoft.Options;
 
 namespace Zongsoft.Security.Membership
 {
-	public class UserProvider : MembershipProviderBase, IUserProvider
+	public class UserProvider : Zongsoft.Services.ServiceBase, IUserProvider
 	{
 		#region 成员字段
 		private ICensorship _censorship;
-		private Zongsoft.Common.ISequence _sequence;
-		private Zongsoft.Runtime.Caching.ICache _cache;
 		#endregion
 
 		#region 构造函数
-		public UserProvider()
+		public UserProvider(Zongsoft.Services.IServiceProvider serviceProvider) : base(serviceProvider)
 		{
 		}
 		#endregion
 
 		#region 公共属性
-		public Zongsoft.Common.ISequence Sequence
-		{
-			get
-			{
-				return _sequence;
-			}
-			set
-			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_sequence = value;
-			}
-		}
-
-		public Zongsoft.Runtime.Caching.ICache Cache
-		{
-			get
-			{
-				return _cache;
-			}
-			set
-			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_cache = value;
-			}
-		}
-
+		[Zongsoft.Services.Service]
 		public ICensorship Censorship
 		{
 			get
@@ -87,9 +56,6 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				if(value == null)
-					throw new ArgumentNullException();
-
 				_censorship = value;
 			}
 		}
@@ -98,7 +64,7 @@ namespace Zongsoft.Security.Membership
 		#region 用户管理
 		public bool Approve(int userId, bool approved = true)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -111,7 +77,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool Suspend(int userId, bool suspended = true)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -124,20 +90,20 @@ namespace Zongsoft.Security.Membership
 
 		public User GetUser(int userId)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			return MembershipHelper.GetUser(dataAccess, userId);
 		}
 
 		public User GetUser(string identity, string @namespace)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
 			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, conditions).FirstOrDefault();
 		}
 
 		public IEnumerable<User> GetAllUsers(string @namespace, Paging paging = null)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)), null, paging ?? new Paging(1, 20));
 		}
 
@@ -146,7 +112,7 @@ namespace Zongsoft.Security.Membership
 			if(userId == 0)
 				return true;
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId));
 		}
 
@@ -155,18 +121,14 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity))
 				return false;
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			MembershipHelper.UserIdentityType identityType;
 			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace, out identityType);
 
 			if(identityType == MembershipHelper.UserIdentityType.Name)
 			{
-				//确保所有用户名是有效的
-				MembershipHelper.EnsureName(identity);
-
 				//确保用户名是审核通过的
-				if(_censorship != null && _censorship.IsBlocked(identity, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
-					throw new CensorshipException(string.Format("Illegal '{0}' name of user.", identity));
+				this.Censor(identity);
 			}
 
 			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, conditions);
@@ -174,7 +136,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetAvatar(int userId, string avatar)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -187,7 +149,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetEmail(int userId, string email)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -200,7 +162,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetPhoneNumber(int userId, string phoneNumber)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -216,14 +178,10 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(name))
 				throw new ArgumentNullException("name");
 
-			//确保所有用户名是有效的
-			MembershipHelper.EnsureName(name);
-
 			//确保用户名是审核通过的
-			if(_censorship != null && _censorship.IsBlocked(name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
-				throw new CensorshipException(string.Format("Illegal '{0}' name of user.", name));
+			this.Censor(name);
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -236,7 +194,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetFullName(int userId, string fullName)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -249,7 +207,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetPrincipalId(int userId, string principalId)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -262,7 +220,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetDescription(int userId, string description)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -278,7 +236,7 @@ namespace Zongsoft.Security.Membership
 			if(userIds == null || userIds.Length < 1)
 				return 0;
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			return dataAccess.Delete(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userIds, ConditionOperator.In));
 		}
 
@@ -287,24 +245,16 @@ namespace Zongsoft.Security.Membership
 			if(user == null)
 				throw new ArgumentNullException("user");
 
+			if(string.IsNullOrWhiteSpace(user.Name))
+				throw new ArgumentException("The user name is empty.");
+
 			if(user.UserId < 1)
-			{
-				var sequence = this.Sequence;
-
-				if(sequence == null)
-					throw new MissingMemberException(this.GetType().FullName, "Sequence");
-
-				user.UserId = (int)sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
-			}
-
-			//确保所有用户名是有效的
-			MembershipHelper.EnsureName(user.Name);
+				user.UserId = (int)this.EnsureService<Zongsoft.Common.ISequence>().GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 
 			//确保用户名是审核通过的
-			if(_censorship != null && _censorship.IsBlocked(user.Name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
-				throw new CensorshipException(string.Format("Illegal '{0}' name of user.", user.Name));
+			this.Censor(user.Name);
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
@@ -340,30 +290,25 @@ namespace Zongsoft.Security.Membership
 				if(user == null)
 					continue;
 
+				if(string.IsNullOrWhiteSpace(user.Name))
+					throw new ArgumentException("The user name is empty.");
+
 				if(user.UserId < 1)
-				{
-					var sequence = this.Sequence;
-
-					if(sequence == null)
-						throw new MissingMemberException(this.GetType().FullName, "Sequence");
-
-					user.UserId = (int)sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
-				}
-
-				//确保所有用户名是有效的
-				MembershipHelper.EnsureName(user.Name);
+					user.UserId = (int)this.EnsureService<Zongsoft.Common.ISequence>().GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 
 				//确保用户名是审核通过的
-				if(_censorship != null && _censorship.IsBlocked(user.Name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
-					throw new CensorshipException(string.Format("Illegal '{0}' name of user.", user.Name));
+				this.Censor(user.Name);
 			}
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			return dataAccess.Insert(MembershipHelper.DATA_ENTITY_USER, users);
 		}
 
 		public int UpdateUsers(params User[] users)
 		{
+			if(users == null || users.Length < 1)
+				return 0;
+
 			return this.UpdateUsers((IEnumerable<User>)users);
 		}
 
@@ -374,15 +319,17 @@ namespace Zongsoft.Security.Membership
 
 			foreach(var user in users)
 			{
-				//确保所有用户名是有效的
-				MembershipHelper.EnsureName(user.Name);
+				if(user == null)
+					continue;
+
+				if(string.IsNullOrWhiteSpace(user.Name))
+					throw new ArgumentException("The user name is empty.");
 
 				//确保用户名是审核通过的
-				if(_censorship != null && _censorship.IsBlocked(user.Name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
-					throw new CensorshipException(string.Format("Illegal '{0}' name of user.", user.Name));
+				this.Censor(user.Name);
 			}
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER, users);
 		}
 		#endregion
@@ -390,7 +337,7 @@ namespace Zongsoft.Security.Membership
 		#region 密码管理
 		public bool HasPassword(int userId)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER,
 				new ConditionCollection(ConditionCombine.And,
@@ -400,7 +347,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool HasPassword(string identity, string @namespace)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
 
 			conditions.Add(new Condition("Password", null, ConditionOperator.NotEqual));
@@ -410,7 +357,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool ChangePassword(int userId, string oldPassword, string newPassword)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
@@ -439,12 +386,12 @@ namespace Zongsoft.Security.Membership
 				throw new ArgumentNullException("secret");
 
 			int userId;
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			if(!MembershipHelper.GetUserId(dataAccess, identity, @namespace, out userId))
 				return -1;
 
-			var cache = this.EnsureCache();
+			var cache = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
 
 			cache.SetValue(this.GetCacheKeyOfResetPassword(userId), secret, timeout.HasValue && timeout.Value > TimeSpan.Zero ? timeout.Value : TimeSpan.FromHours(1));
 
@@ -456,13 +403,13 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrEmpty(secret))
 				return false;
 
-			var cache = this.EnsureCache();
+			var cache = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
 			var cachedSecret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
 			var succeed = cachedSecret != null && string.Equals(secret, cachedSecret, StringComparison.Ordinal);
 
 			if(succeed && newPassword != null && newPassword.Length > 0)
 			{
-				var dataAccess = this.EnsureDataAccess();
+				var dataAccess = this.EnsureService<IDataAccess>();
 
 				//重新生成密码随机数
 				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
@@ -489,12 +436,12 @@ namespace Zongsoft.Security.Membership
 				return false;
 
 			var userId = 0;
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			if(!MembershipHelper.GetUserId(dataAccess, identity, @namespace, out userId))
 				return false;
 
-			var cache = this.EnsureCache();
+			var cache = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
 			var cachedSecret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
 			var succeed = cachedSecret != null && string.Equals(cachedSecret, secret, StringComparison.Ordinal);
 
@@ -524,7 +471,7 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity) || passwordAnswers == null || passwordAnswers.Length < 3)
 				return false;
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
 			var record = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, conditions, "!, UserId, PasswordAnswer1, PasswordAnswer2, PasswordAnswer3").FirstOrDefault();
 
@@ -555,7 +502,7 @@ namespace Zongsoft.Security.Membership
 
 		public string[] GetPasswordQuestions(int userId)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			var record = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId), "!, UserId, PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
 
 			if(record == null)
@@ -572,7 +519,7 @@ namespace Zongsoft.Security.Membership
 
 		public string[] GetPasswordQuestions(string identity, string @namespace)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
 			var record = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, conditions, "!, UserId, PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
 
@@ -599,7 +546,7 @@ namespace Zongsoft.Security.Membership
 			if(passwordQuestions.Length != passwordAnswers.Length)
 				throw new ArgumentException();
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
@@ -624,7 +571,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetPasswordOptions(int userId, bool changePasswordOnFirstTime = false, byte maxInvalidPasswordAttempts = 3, byte minRequiredPasswordLength = 6, TimeSpan? passwordAttemptWindow = null, DateTime? passwordExpires = null)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			var dictionary = new Dictionary<string, object>()
 			{
@@ -644,14 +591,12 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 私有方法
-		private Zongsoft.Runtime.Caching.ICache EnsureCache()
+		private void Censor(string name)
 		{
-			var cache = this.Cache;
+			var censorship = this.Censorship;
 
-			if(cache == null)
-				throw new MissingMemberException(this.GetType().FullName, "Cache");
-
-			return cache;
+			if(censorship != null && censorship.IsBlocked(name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
+				throw new CensorshipException(string.Format("Illegal '{0}' name of user.", name));
 		}
 
 		private byte[] GetPasswordAnswerSalt(int userId, int index)

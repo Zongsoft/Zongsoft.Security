@@ -34,35 +34,20 @@ using Zongsoft.Options;
 
 namespace Zongsoft.Security.Membership
 {
-	public class RoleProvider : MembershipProviderBase, IRoleProvider, IMemberProvider
+	public class RoleProvider : Zongsoft.Services.ServiceBase, IRoleProvider, IMemberProvider
 	{
 		#region 成员字段
-		private Zongsoft.Common.ISequence _sequence;
 		private ICensorship _censorship;
 		#endregion
 
 		#region 构造函数
-		public RoleProvider()
+		public RoleProvider(Zongsoft.Services.IServiceProvider serviceProvider) : base(serviceProvider)
 		{
 		}
 		#endregion
 
 		#region 公共属性
-		public Zongsoft.Common.ISequence Sequence
-		{
-			get
-			{
-				return _sequence;
-			}
-			set
-			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_sequence = value;
-			}
-		}
-
+		[Zongsoft.Services.Service]
 		public ICensorship Censorship
 		{
 			get
@@ -71,9 +56,6 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				if(value == null)
-					throw new ArgumentNullException();
-
 				_censorship = value;
 			}
 		}
@@ -82,13 +64,13 @@ namespace Zongsoft.Security.Membership
 		#region 角色管理
 		public Role GetRole(int roleId)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			return dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleId)).FirstOrDefault();
 		}
 
 		public IEnumerable<Role> GetAllRoles(string @namespace, Paging paging = null)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			return dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)), null, paging ?? new Paging(1, 20));
 		}
 
@@ -97,12 +79,15 @@ namespace Zongsoft.Security.Membership
 			if(roleIds == null || roleIds.Length < 1)
 				return 0;
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			return dataAccess.Delete(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleIds, ConditionOperator.In));
 		}
 
 		public int CreateRoles(params Role[] roles)
 		{
+			if(roles == null || roles.Length < 1)
+				return 0;
+
 			return this.CreateRoles((IEnumerable<Role>)roles);
 		}
 
@@ -116,30 +101,25 @@ namespace Zongsoft.Security.Membership
 				if(role == null)
 					continue;
 
+				if(string.IsNullOrWhiteSpace(role.Name))
+					throw new ArgumentException("The role name is empty.");
+
 				if(role.RoleId < 1)
-				{
-					var sequence = this.Sequence;
-
-					if(sequence == null)
-						throw new MissingMemberException(this.GetType().FullName, "Sequence");
-
-					role.RoleId = (int)sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_ROLEID, 1, MembershipHelper.MINIMUM_ID);
-				}
-
-				//确保所有角色名是有效的
-				MembershipHelper.EnsureName(role.Name);
+					role.RoleId = (int)this.EnsureService<Zongsoft.Common.ISequence>().GetSequenceNumber(MembershipHelper.SEQUENCE_ROLEID, 1, MembershipHelper.MINIMUM_ID);
 
 				//确保角色名是审核通过的
-				if(_censorship != null && _censorship.IsBlocked(role.Name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
-					throw new CensorshipException(string.Format("Illegal '{0}' name of role.", role.Name));
+				this.Censor(role.Name);
 			}
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			return dataAccess.Insert(MembershipHelper.DATA_ENTITY_ROLE, roles);
 		}
 
 		public int UpdateRoles(params Role[] roles)
 		{
+			if(roles == null || roles.Length < 1)
+				return 0;
+
 			return this.UpdateRoles((IEnumerable<Role>)roles);
 		}
 
@@ -150,15 +130,17 @@ namespace Zongsoft.Security.Membership
 
 			foreach(var role in roles)
 			{
-				//确保所有角色名是有效的
-				MembershipHelper.EnsureName(role.Name);
+				if(role == null)
+					continue;
+
+				if(string.IsNullOrWhiteSpace(role.Name))
+					throw new ArgumentException("The role name is empty.");
 
 				//确保角色名是审核通过的
-				if(_censorship != null && _censorship.IsBlocked(role.Name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
-					throw new CensorshipException(string.Format("Illegal '{0}' name of role.", role.Name));
+				this.Censor(role.Name);
 			}
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			return dataAccess.Update(MembershipHelper.DATA_ENTITY_ROLE, roles);
 		}
 		#endregion
@@ -179,7 +161,7 @@ namespace Zongsoft.Security.Membership
 
 		public IEnumerable<Role> GetRoles(int memberId, MemberType memberType)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			var members = dataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER, new ConditionCollection(ConditionCombine.And, new Condition[] {
 				new Condition("MemberId", memberId),
@@ -196,7 +178,7 @@ namespace Zongsoft.Security.Membership
 
 		public IEnumerable<Member> GetMembers(int roleId)
 		{
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			return dataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER, new Condition("RoleId", roleId));
 		}
 
@@ -210,7 +192,7 @@ namespace Zongsoft.Security.Membership
 			if(members == null)
 				return;
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			foreach(var member in members)
 			{
@@ -232,6 +214,9 @@ namespace Zongsoft.Security.Membership
 
 		public int DeleteMembers(params Member[] members)
 		{
+			if(members == null || members.Length < 1)
+				return 0;
+
 			return this.DeleteMembers((IEnumerable<Member>)members);
 		}
 
@@ -240,7 +225,7 @@ namespace Zongsoft.Security.Membership
 			if(members == null)
 				return 0;
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
@@ -265,6 +250,9 @@ namespace Zongsoft.Security.Membership
 
 		public int CreateMembers(params Member[] members)
 		{
+			if(members == null || members.Length < 1)
+				return 0;
+
 			return this.CreateMembers((IEnumerable<Member>)members);
 		}
 
@@ -273,8 +261,18 @@ namespace Zongsoft.Security.Membership
 			if(members == null)
 				return 0;
 
-			var dataAccess = this.EnsureDataAccess();
+			var dataAccess = this.EnsureService<IDataAccess>();
 			return dataAccess.Insert(MembershipHelper.DATA_ENTITY_MEMBER, members);
+		}
+		#endregion
+
+		#region 私有方法
+		private void Censor(string name)
+		{
+			var censorship = this.Censorship;
+
+			if(censorship != null && censorship.IsBlocked(name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
+				throw new CensorshipException(string.Format("Illegal '{0}' name of role.", name));
 		}
 		#endregion
 	}

@@ -31,7 +31,7 @@ using Zongsoft.Data;
 
 namespace Zongsoft.Security
 {
-	public class Censorship : ICensorship
+	public class Censorship : Zongsoft.Services.ServiceBase, ICensorship
 	{
 		#region 常量定义
 		private const string DATA_ENTITY_CENSORSHIP = "Security.Censorship";
@@ -42,15 +42,14 @@ namespace Zongsoft.Security
 
 		#region 成员字段
 		private string[] _keys;
-		private IDataAccess _dataAccess;
 		#endregion
 
 		#region 构造函数
-		public Censorship()
+		public Censorship(Zongsoft.Services.IServiceProvider serviceProvider) : base(serviceProvider)
 		{
 		}
 
-		public Censorship(string[] keys)
+		public Censorship(Zongsoft.Services.IServiceProvider serviceProvider, params string[] keys) : base(serviceProvider)
 		{
 			_keys = keys;
 		}
@@ -74,21 +73,6 @@ namespace Zongsoft.Security
 				_keys = value;
 			}
 		}
-
-		public IDataAccess DataAccess
-		{
-			get
-			{
-				return _dataAccess;
-			}
-			set
-			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_dataAccess = value;
-			}
-		}
 		#endregion
 
 		#region 公共方法
@@ -97,15 +81,19 @@ namespace Zongsoft.Security
 			if(string.IsNullOrWhiteSpace(word))
 				return false;
 
-			var dataAccess = this.DataAccess;
+			//处理空键参数
+			if(keys == null || keys.Length < 1)
+				keys = _keys;
 
-			if(dataAccess == null)
-				throw new MissingMemberException(this.GetType().FullName, "DataAccess");
+			var dataAccess = this.EnsureService<IDataAccess>();
 
-			return dataAccess.Count(DATA_ENTITY_CENSORSHIP,
+			if(keys == null || keys.Length < 1)
+				return dataAccess.Exists(DATA_ENTITY_CENSORSHIP, new Condition("Word", word.Trim()));
+
+			return dataAccess.Exists(DATA_ENTITY_CENSORSHIP,
 				new ConditionCollection(ConditionCombine.And,
-					new Condition("Name", keys ?? _keys, ConditionOperator.In),
-					new Condition("Word", word.Trim()))) > 0;
+					new Condition("Name", keys, ConditionOperator.In),
+					new Condition("Word", word.Trim())));
 		}
 		#endregion
 	}
