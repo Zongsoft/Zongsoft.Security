@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <licenseUrl>http://www.gnu.org/licenses/lgpl-2.1.html</licenseUrl>
+    <projectUrl>https://github.com/Zongsoft/Zongsoft.Security</projectUrl>
+    <iconUrl>https://avatars.githubusercontent.com/u/4804332</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>$description$</description>
+    <summary>提供安全与基于角色权限控制相关的功能。</summary>
+    <releaseNotes>提供安全与基于角色权限控制相关的功能。</releaseNotes>
+    <copyright>$copyright$</copyright>
+    <tags>Zongsoft Security Permission Role User Membership Authentication Authorization</tags>
+    <dependencies>
+        <dependency id="Zongsoft.CoreLibrary" version="4.1" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="Zongsoft.Security.plugin"                  target="content\plugins\Zongsoft.Security\Zongsoft.Security.plugin" />
+    <file src="bin\$configuration$\Zongsoft.Security.dll" target="content\plugins\Zongsoft.Security\Zongsoft.Security.dll" />
+  </files>
+</package>
