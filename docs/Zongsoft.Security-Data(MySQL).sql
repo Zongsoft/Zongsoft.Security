@@ -1,8 +1,11 @@
-INSERT INTO `Security_Role` (`RoleId`, `Name`, `Description`) VALUES (1, 'Administrators', 'ϵͳ������ɫ(ϵͳ���ý�ɫ)');
-INSERT INTO `Security_User` (`UserId`, `Name`, `Description`) VALUES (1, 'Administrator', 'ϵͳ����Ա(ϵͳ�����ʺ�)');
-INSERT INTO `Security_User` (`UserId`, `Name`, `Description`) VALUES (2, 'Guest', '������(ϵͳ�����ʺ�)');
+# 添加系统内置角色
+INSERT INTO `Security_Role` (`RoleId`, `Name`, `Description`) VALUES (1, 'Administrators', '系统管理角色(系统内置角色)');
 
+# 添加系统内置用户
+INSERT INTO `Security_User` (`UserId`, `Name`, `Description`) VALUES (1, 'Administrator', '系统管理员(系统内置帐号)');
+INSERT INTO `Security_User` (`UserId`, `Name`, `Description`) VALUES (2, 'Guest', '；来宾(系统内置帐号)');
 
+# 添加系统内置保留名字
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Automao');
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Zongsoft');
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'SaaS');
@@ -38,6 +41,6 @@ INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Services');
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Security');
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Securities');
 
-
+# 添加非法关键字
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Sensitives', 'fuck');
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Sensitives', 'bitch');

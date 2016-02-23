@@ -1,4 +1,4 @@
-﻿SET NAMES utf8;
+SET NAMES utf8;
 SET TIME_ZONE='+08:00';
 
 CREATE TABLE IF NOT EXISTS `Security_Role` (
@@ -25,9 +25,9 @@ CREATE TABLE IF NOT EXISTS `Security_User` (
   `PrincipalId` VARCHAR(100) NULL COMMENT '用户对应到业务系统中的负责人标识',
   `Email` VARCHAR(50) NULL COMMENT '用户的电子邮箱，该邮箱地址在所属命名空间内具有唯一性',
   `PhoneNumber` VARCHAR(50) NULL COMMENT '用户的手机号码，该手机号码在所属命名空间内具有唯一性',
-  `Approved` TINYINT(1) NOT NULL COMMENT '帐户是否已审核通过',
-  `Suspended` TINYINT(1) NOT NULL COMMENT '帐户是否暂停使用',
-  `ChangePasswordOnFirstTime` TINYINT(1) NOT NULL COMMENT '用户第一次登入是否必须变更密码',
+  `Approved` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '帐户是否已审核通过',
+  `Suspended` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '帐户是否暂停使用',
+  `ChangePasswordOnFirstTime` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '用户第一次登入是否必须变更密码',
   `MaxInvalidPasswordAttempts` TINYINT NULL DEFAULT 3 COMMENT '锁定用户前允许的无效密码或无效密码提示问题答案尝试次数',
   `MinRequiredPasswordLength` TINYINT NULL DEFAULT 6 COMMENT '密码所要求的最小长度',
   `PasswordAttemptWindow` INT NULL DEFAULT 30 COMMENT '无效密码被锁定后到下次解锁的间隔分钟数',
@@ -58,8 +58,8 @@ ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='角色成员表';
 CREATE TABLE IF NOT EXISTS `Security_Permission` (
   `MemberId` int NOT NULL COMMENT '主键，成员编号',
   `MemberType` TINYINT(1) NOT NULL COMMENT '主键，成员类型',
-  `SchemaId` VARCHAR(50) NOT NULL COMMENT '授权目标的标识',
-  `ActionId` VARCHAR(50) NOT NULL COMMENT '授权行为的标识',
+  `SchemaId` VARCHAR(50) NOT NULL COMMENT '主键，授权目标的标识',
+  `ActionId` VARCHAR(50) NOT NULL COMMENT '主键，授权行为的标识',
   `Granted` TINYINT(1) NOT NULL COMMENT '是否授权(0: 表示拒绝; 1: 表示授予)',
   PRIMARY KEY (`MemberId`, `MemberType`, `SchemaId`, `ActionId`))
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='权限表';
@@ -67,8 +67,8 @@ ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='权限表';
 CREATE TABLE IF NOT EXISTS `Security_PermissionFilter` (
   `MemberId` int NOT NULL COMMENT '主键，成员编号',
   `MemberType` TINYINT(1) NOT NULL COMMENT '主键，成员类型',
-  `SchemaId` VARCHAR(50) NOT NULL COMMENT '授权目标的标识',
-  `ActionId` VARCHAR(50) NOT NULL COMMENT '授权行为的标识',
+  `SchemaId` VARCHAR(50) NOT NULL COMMENT '主键，授权目标的标识',
+  `ActionId` VARCHAR(50) NOT NULL COMMENT '主键，授权行为的标识',
   `Filter` VARCHAR(4000) NOT NULL COMMENT '拒绝授权的过滤表达式',
   PRIMARY KEY (`MemberId`, `MemberType`, `SchemaId`, `ActionId`))
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='权限表';
@@ -81,17 +81,17 @@ ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='词汇审查表';
 
 
 # COMMENT '角色名在命名空间范围内的唯一索引'
-ALTER TABLE `Automao`.`Security_Role` 
-ADD UNIQUE INDEX `IX_Unique_Name` (`Namespace` ASC, `Name` ASC);
+ALTER TABLE `Security_Role` 
+ADD UNIQUE INDEX `UX_Role_Name` (`Namespace` ASC, `Name` ASC);
 
 # COMMENT '用户名在命名空间范围内的唯一索引'
-ALTER TABLE `Automao`.`Security_User` 
-ADD UNIQUE INDEX `IX_Unique_Name` (`Namespace` ASC, `Name` ASC);
+ALTER TABLE `Security_User` 
+ADD UNIQUE INDEX `UX_User_Name` (`Namespace` ASC, `Name` ASC);
 
 # COMMENT '邮箱地址在命名空间范围内的唯一索引'
-ALTER TABLE `Automao`.`Security_User` 
-ADD UNIQUE INDEX `IX_Unique_Email` (`Namespace` ASC, `Email` ASC);
+ALTER TABLE `Security_User` 
+ADD UNIQUE INDEX `UX_User_Email` (`Namespace` ASC, `Email` ASC);
 
 # COMMENT '手机号码在命名空间范围内的唯一索引'
-ALTER TABLE `Automao`.`Security_User` 
-ADD UNIQUE INDEX `IX_Unique_PhoneNumber` (`Namespace` ASC, `PhoneNumber` ASC);
+ALTER TABLE `Security_User` 
+ADD UNIQUE INDEX `UX_User_PhoneNumber` (`Namespace` ASC, `PhoneNumber` ASC);
