@@ -63,6 +63,13 @@ namespace Zongsoft.Security.Membership
 			if(!args.IsAuthorized)
 				return false;
 
+			//获取必须的用户角色成员服务
+			var memberProvider = this.EnsureService<IMemberProvider>();
+
+			//如果指定的用户属于系统内置的管理员角色则立即返回授权通过
+			if(memberProvider.InRoles(userId, Role.Administrators))
+				return true;
+
 			//获取指定的安全凭证对应的有效的授权状态集
 			var states = this.GetAuthorizedStates(userId, MemberType.User);
 
@@ -78,7 +85,11 @@ namespace Zongsoft.Security.Membership
 
 		public IEnumerable<AuthorizationState> GetAuthorizedStates(int memberId, MemberType memberType)
 		{
-			return this.GetAuthorizedStatesCore(memberId, memberType);
+			//return this.GetAuthorizedStatesCore(memberId, memberType);
+
+			//将结果缓存在内存容器中，默认有效期为10分钟
+			return Zongsoft.Runtime.Caching.MemoryCache.Default.GetValue("Zongsoft.Security.Authorization:" + memberType.ToString() + ":" + memberId.ToString(),
+				key => new Tuple<object, TimeSpan>(this.GetAuthorizedStatesCore(memberId, memberType), TimeSpan.FromMinutes(10))) as IEnumerable<AuthorizationState>;
 		}
 		#endregion
 
