@@ -248,13 +248,13 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(user.Name))
 				throw new ArgumentException("The user name is empty.");
 
-			if(user.UserId < 1)
-				user.UserId = (int)this.EnsureService<Zongsoft.Common.ISequence>().GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
-
 			//确保用户名是审核通过的
 			this.Censor(user.Name);
 
 			var dataAccess = this.EnsureService<IDataAccess>();
+
+			if(user.UserId < 1)
+				user.UserId = (int)this.EnsureService<Zongsoft.Common.ISequence>().GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
@@ -293,11 +293,15 @@ namespace Zongsoft.Security.Membership
 				if(string.IsNullOrWhiteSpace(user.Name))
 					throw new ArgumentException("The user name is empty.");
 
-				if(user.UserId < 1)
-					user.UserId = (int)this.EnsureService<Zongsoft.Common.ISequence>().GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
-
 				//确保用户名是审核通过的
 				this.Censor(user.Name);
+			}
+
+			foreach(var user in users)
+			{
+				//处理未指定有效编号的用户对象
+				if(user != null && user.UserId < 1)
+					user.UserId = (int)this.EnsureService<Zongsoft.Common.ISequence>().GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 			}
 
 			var dataAccess = this.EnsureService<IDataAccess>();

@@ -105,11 +105,15 @@ namespace Zongsoft.Security.Membership
 				if(string.IsNullOrWhiteSpace(role.Name))
 					throw new ArgumentException("The role name is empty.");
 
-				if(role.RoleId < 1)
-					role.RoleId = (int)this.EnsureService<Zongsoft.Common.ISequence>().GetSequenceNumber(MembershipHelper.SEQUENCE_ROLEID, 1, MembershipHelper.MINIMUM_ID);
-
 				//确保角色名是审核通过的
 				this.Censor(role.Name);
+			}
+
+			foreach(var role in roles)
+			{
+				//处理未指定有效编号的角色对象
+				if(role != null && role.RoleId < 1)
+					role.RoleId = (int)this.EnsureService<Zongsoft.Common.ISequence>().GetSequenceNumber(MembershipHelper.SEQUENCE_ROLEID, 1, MembershipHelper.MINIMUM_ID);
 			}
 
 			var dataAccess = this.EnsureService<IDataAccess>();
