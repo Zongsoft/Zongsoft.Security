@@ -16,7 +16,7 @@
     <copyright>$copyright$</copyright>
     <tags>Zongsoft Security Permission Role User Membership Authentication Authorization</tags>
     <dependencies>
-        <dependency id="Zongsoft.CoreLibrary" version="4.1" />
+        <dependency id="Zongsoft.CoreLibrary" version="4.2" />
     </dependencies>
   </metadata>
   <files>
