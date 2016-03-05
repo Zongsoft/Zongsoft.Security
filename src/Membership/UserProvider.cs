@@ -104,7 +104,7 @@ namespace Zongsoft.Security.Membership
 		public IEnumerable<User> GetAllUsers(string @namespace, Paging paging = null)
 		{
 			var dataAccess = this.EnsureService<IDataAccess>();
-			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)), null, paging ?? new Paging(1, 20));
+			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("Namespace", MembershipHelper.TrimNamespace(@namespace)), paging);
 		}
 
 		public bool Exists(int userId)

@@ -72,7 +72,7 @@ namespace Zongsoft.Security.Membership
 		public IEnumerable<Role> GetAllRoles(string @namespace, Paging paging = null)
 		{
 			var dataAccess = this.EnsureService<IDataAccess>();
-			return dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("Namespace", MembershipHelper.TrimNamespace(@namespace)), null, paging ?? new Paging(1, 20));
+			return dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("Namespace", MembershipHelper.TrimNamespace(@namespace)), paging);
 		}
 
 		public int DeleteRoles(params int[] roleIds)
