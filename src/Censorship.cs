@@ -90,10 +90,7 @@ namespace Zongsoft.Security
 			if(keys == null || keys.Length < 1)
 				return dataAccess.Exists(DATA_ENTITY_CENSORSHIP, new Condition("Word", word.Trim()));
 
-			return dataAccess.Exists(DATA_ENTITY_CENSORSHIP,
-				new ConditionCollection(ConditionCombine.And,
-					new Condition("Name", keys, ConditionOperator.In),
-					new Condition("Word", word.Trim())));
+			return dataAccess.Exists(DATA_ENTITY_CENSORSHIP, Condition.In("Name", keys) & Condition.Equal("Word", word.Trim()));
 		}
 		#endregion
 	}

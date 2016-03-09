@@ -48,7 +48,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共属性
-		[Zongsoft.Services.Service]
+		[Zongsoft.Services.ServiceDependency]
 		public ICensorship Censorship
 		{
 			get
@@ -194,9 +194,7 @@ namespace Zongsoft.Security.Membership
 			var dataAccess = this.EnsureService<IDataAccess>();
 
 			var members = dataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
-													new ConditionCollection(ConditionCombine.And, new Condition[] {
-														new Condition("MemberId", memberId),
-														new Condition("MemberType", memberType)}),
+													Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType),
 													"Role");
 
 			return members.Select(m => m.Role);
@@ -279,12 +277,10 @@ namespace Zongsoft.Security.Membership
 					if(member == null)
 						continue;
 
-					count += dataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER, new ConditionCollection(ConditionCombine.And)
-					{
-						new Condition("RoleId", member.RoleId),
-						new Condition("MemberId", member.MemberId),
-						new Condition("MemberType", member.MemberType),
-					});
+					count += dataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER,
+						Condition.Equal("RoleId", member.RoleId) &
+						Condition.Equal("MemberId", member.MemberId) &
+						Condition.Equal("MemberType", member.MemberType));
 				}
 
 				return count;
@@ -323,9 +319,7 @@ namespace Zongsoft.Security.Membership
 			var dataAccess = this.EnsureService<IDataAccess>();
 
 			var parents = dataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
-													new ConditionCollection(ConditionCombine.And, new Condition[] {
-														new Condition("MemberId", memberId),
-														new Condition("MemberType", memberType)}),
+													Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType),
 													"Role.RoleId, Role.Name");
 
 			var result = new List<Tuple<int, string>>();
@@ -336,9 +330,7 @@ namespace Zongsoft.Security.Membership
 			while(index++ < result.Count)
 			{
 				parents = dataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
-													new ConditionCollection(ConditionCombine.And, new Condition[] {
-														new Condition("MemberId", result[index]),
-														new Condition("MemberType", MemberType.Role)}),
+													Condition.Equal("MemberId", result[index]) & Condition.Equal("MemberType", MemberType.Role),
 													"Role.RoleId, Role.Name");
 
 				result.AddRange(parents.Where(p => !result.Exists(it => it.Item1 == p.RoleId)).Select(p => new Tuple<int, string>(p.RoleId, p.Role.Name)));

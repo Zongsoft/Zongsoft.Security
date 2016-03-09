@@ -136,7 +136,7 @@ namespace Zongsoft.Security.Membership
 				conditions[1] = new Condition("Name", identity);
 			}
 
-			return new ConditionCollection(ConditionCombine.And, conditions);
+			return new ConditionCollection(ConditionCombination.And, conditions);
 		}
 
 		internal static string TrimNamespace(string @namespace)

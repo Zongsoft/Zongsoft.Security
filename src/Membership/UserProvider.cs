@@ -47,7 +47,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共属性
-		[Zongsoft.Services.Service]
+		[Zongsoft.Services.ServiceDependency]
 		public ICensorship Censorship
 		{
 			get
@@ -344,9 +344,7 @@ namespace Zongsoft.Security.Membership
 			var dataAccess = this.EnsureService<IDataAccess>();
 
 			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER,
-				new ConditionCollection(ConditionCombine.And,
-					new Condition("UserId", userId),
-					new Condition("Password", null, ConditionOperator.NotEqual)));
+									 Condition.Equal("UserId", userId) & Condition.NotEqual("Password", null));
 		}
 
 		public bool HasPassword(string identity, string @namespace)
@@ -354,7 +352,7 @@ namespace Zongsoft.Security.Membership
 			var dataAccess = this.EnsureService<IDataAccess>();
 			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
 
-			conditions.Add(new Condition("Password", null, ConditionOperator.NotEqual));
+			conditions.Add(Condition.NotEqual("Password", null));
 
 			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, conditions);
 		}
