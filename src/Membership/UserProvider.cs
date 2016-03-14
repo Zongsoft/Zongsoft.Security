@@ -327,7 +327,7 @@ namespace Zongsoft.Security.Membership
 					user.UserId = (int)this.Sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 			}
 
-			return this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_USER, users);
+			return this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_USER, users);
 		}
 
 		public int UpdateUsers(params User[] users)
@@ -355,7 +355,7 @@ namespace Zongsoft.Security.Membership
 				this.Censor(user.Name);
 			}
 
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, users);
+			return this.DataAccess.UpdateMany(MembershipHelper.DATA_ENTITY_USER, users);
 		}
 		#endregion
 

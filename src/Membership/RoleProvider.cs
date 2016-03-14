@@ -97,6 +97,19 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 角色管理
+		public bool Exists(int roleId)
+		{
+			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("RoleId", roleId));
+		}
+
+		public bool Exists(string name, string @namespace)
+		{
+			if(string.IsNullOrWhiteSpace(name))
+				return false;
+
+			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("Name", name) & Condition.Equal("Namespace", MembershipHelper.TrimNamespace(@namespace)));
+		}
+
 		public Role GetRole(int roleId)
 		{
 			return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleId)).FirstOrDefault();
@@ -150,7 +163,7 @@ namespace Zongsoft.Security.Membership
 					role.RoleId = (int)this.Sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_ROLEID, 1, MembershipHelper.MINIMUM_ID);
 			}
 
-			return this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_ROLE, roles);
+			return this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_ROLE, roles);
 		}
 
 		public int UpdateRoles(params Role[] roles)
@@ -178,7 +191,7 @@ namespace Zongsoft.Security.Membership
 				this.Censor(role.Name);
 			}
 
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_ROLE, roles);
+			return this.DataAccess.UpdateMany(MembershipHelper.DATA_ENTITY_ROLE, roles);
 		}
 		#endregion
 
@@ -252,27 +265,56 @@ namespace Zongsoft.Security.Membership
 			return members;
 		}
 
-		public void SetMembers(int roleId, IEnumerable<Member> members)
+		public int SetMembers(int roleId, IEnumerable<Member> members)
 		{
 			if(members == null)
-				return;
+				return 0;
+
+			//如果指定角色编号不存在则退出
+			if(!this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("RoleId", roleId)))
+				return -1;
+
+			var userIds = new List<int>();
+			var roleIds = new List<int>();
 
 			foreach(var member in members)
 			{
 				member.RoleId = roleId;
+
+				if(member.MemberType == MemberType.Role)
+					roleIds.Add(member.MemberId);
+				else
+					userIds.Add(member.MemberId);
 			}
+
+			int count = 0;
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
 				//清空指定角色的所有成员
 				this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER, Condition.Equal("RoleId", roleId));
 
-				//插入指定的角色成员集到数据库中
-				this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_MEMBER, members);
+				foreach(var member in members)
+				{
+					bool existed;
+
+					if(member.MemberType == MemberType.Role)
+						existed = this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("RoleId", member.MemberId));
+					else
+						existed = this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("UserId", member.MemberId));
+
+					if(existed)
+					{
+						//插入指定的角色成员集到数据库中
+						count += this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_MEMBER, member);
+					}
+				}
 
 				//提交事务
 				transaction.Commit();
 			}
+
+			return count;
 		}
 
 		public int DeleteMembers(params Member[] members)
@@ -320,7 +362,7 @@ namespace Zongsoft.Security.Membership
 			if(members == null)
 				return 0;
 
-			return this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_MEMBER, members);
+			return this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_MEMBER, members);
 		}
 		#endregion
 
