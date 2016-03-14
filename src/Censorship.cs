@@ -26,6 +26,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Zongsoft.Data;
 using Zongsoft.Services;
@@ -47,9 +48,19 @@ namespace Zongsoft.Security
 		#endregion
 
 		#region 构造函数
-		public Censorship(params string[] keys)
+		public Censorship()
+		{
+		}
+
+		public Censorship(string[] keys)
 		{
 			_keys = keys;
+		}
+
+		public Censorship(IEnumerable<string> keys)
+		{
+			if(keys != null)
+				_keys = keys.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 		}
 		#endregion
 
