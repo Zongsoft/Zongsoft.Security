@@ -74,6 +74,7 @@ namespace Zongsoft.Security
 			}
 		}
 
+		[ServiceDependency]
 		public ICache Storage
 		{
 			get
