@@ -30,9 +30,12 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 
+using Zongsoft.Services;
+using Zongsoft.Runtime.Caching;
+
 namespace Zongsoft.Security
 {
-	public class CredentialProvider : Zongsoft.Services.ServiceBase, ICredentialProvider
+	public class CredentialProvider : MarshalByRefObject, ICredentialProvider
 	{
 		#region 私有常量
 		private const string DefaultCacheName = "Zongsoft.Security.Membership.Credentials";
@@ -40,11 +43,12 @@ namespace Zongsoft.Security
 
 		#region 成员字段
 		private TimeSpan _renewalPeriod;
+		private ICache _storage;
 		private Zongsoft.Runtime.Caching.MemoryCache _memoryCache;
 		#endregion
 
 		#region 构造函数
-		public CredentialProvider(Zongsoft.Services.IServiceProvider serviceProvider) : base(serviceProvider)
+		public CredentialProvider()
 		{
 			_renewalPeriod = TimeSpan.FromHours(2);
 			_memoryCache = new Runtime.Caching.MemoryCache("Zongsoft.Security.CredentialProvider.MemoryCache");
@@ -67,6 +71,21 @@ namespace Zongsoft.Security
 			set
 			{
 				_renewalPeriod = value.TotalMinutes < 1 ? TimeSpan.FromMinutes(1) : value;
+			}
+		}
+
+		public ICache Storage
+		{
+			get
+			{
+				return _storage;
+			}
+			set
+			{
+				if(value == null)
+					throw new ArgumentNullException();
+
+				_storage = value;
 			}
 		}
 		#endregion
@@ -92,8 +111,6 @@ namespace Zongsoft.Security
 			if(string.IsNullOrWhiteSpace(credentialId))
 				return;
 
-			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
-
 			//获取指定编号的凭证对象
 			var credential = this.GetCredential(credentialId);
 
@@ -103,12 +120,12 @@ namespace Zongsoft.Security
 			if(credential != null)
 			{
 				//将凭证资料从缓存容器中删除
-				storage.Remove(this.GetCacheKeyOfCredential(credentialId));
+				this.Storage.Remove(this.GetCacheKeyOfCredential(credentialId));
 				//将当前用户及场景对应的凭证号记录删除
-				storage.Remove(this.GetCacheKeyOfUser(credential.User.UserId, credential.Scene));
+				this.Storage.Remove(this.GetCacheKeyOfUser(credential.User.UserId, credential.Scene));
 
 				//获取当前命名空间包含的所有凭证集合
-				var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(credential.Namespace)) as ICollection<string>;
+				var namespaces = this.Storage.GetValue(this.GetCacheKeyOfNamespace(credential.Namespace)) as ICollection<string>;
 
 				//将当前凭证号从命名空间集合中删除
 				if(namespaces != null)
@@ -121,8 +138,6 @@ namespace Zongsoft.Security
 			if(string.IsNullOrWhiteSpace(credentialId))
 				throw new ArgumentNullException("credentialId");
 
-			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
-
 			//查找指定编号的凭证对象
 			var credential = this.GetCredential(credentialId);
 
@@ -134,16 +149,16 @@ namespace Zongsoft.Security
 			credential = this.CreateCredential(credential.User, credential.Scene, (credential.HasExtendedProperties ? credential.ExtendedProperties : null));
 
 			//将新的凭证对象以JSON文本的方式保存到物理存储层中
-			storage.SetValue(this.GetCacheKeyOfCredential(credential.CredentialId), this.SerializeCertificationToJson(credential), credential.Duration);
+			this.Storage.SetValue(this.GetCacheKeyOfCredential(credential.CredentialId), this.SerializeCertificationToJson(credential), credential.Duration);
 
 			//将当前用户及场景对应的凭证号更改为新创建的凭证号
-			storage.SetValue(this.GetCacheKeyOfUser(credential.User.UserId, credential.Scene), credential.CredentialId, credential.Duration);
+			this.Storage.SetValue(this.GetCacheKeyOfUser(credential.User.UserId, credential.Scene), credential.CredentialId, credential.Duration);
 
 			//将原来的凭证从物理存储层中删除
-			storage.Remove(credentialId);
+			this.Storage.Remove(credentialId);
 
 			//获取当前凭证所在的命名空间集
-			var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(credential.Namespace)) as ICollection<string>;
+			var namespaces = this.Storage.GetValue(this.GetCacheKeyOfNamespace(credential.Namespace)) as ICollection<string>;
 
 			if(namespaces != null)
 			{
@@ -155,7 +170,7 @@ namespace Zongsoft.Security
 			}
 			else
 			{
-				storage.SetValue(this.GetCacheKeyOfNamespace(credential.Namespace), new string[]{ credential.CredentialId });
+				this.Storage.SetValue(this.GetCacheKeyOfNamespace(credential.Namespace), new string[]{ credential.CredentialId });
 			}
 
 			//将原来的凭证从本地内存缓存中删除
@@ -175,8 +190,7 @@ namespace Zongsoft.Security
 
 		public int GetCount(string @namespace)
 		{
-			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
-			var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(@namespace)) as ICollection;
+			var namespaces = this.Storage.GetValue(this.GetCacheKeyOfNamespace(@namespace)) as ICollection;
 
 			if(namespaces == null)
 				return 0;
@@ -213,10 +227,8 @@ namespace Zongsoft.Security
 			if(credential != null)
 				return credential.Namespace;
 
-			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
-
 			//在物理存储层中查找指定编号的凭证对象的缓存字典
-			var dictionary = storage.GetValue(this.GetCacheKeyOfCredential(credentialId)) as IDictionary;
+			var dictionary = this.Storage.GetValue(this.GetCacheKeyOfCredential(credentialId)) as IDictionary;
 
 			if(dictionary == null || dictionary.Count < 1)
 				return null;
@@ -242,8 +254,7 @@ namespace Zongsoft.Security
 
 		public Credential GetCredential(int userId, string scene)
 		{
-			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
-			var credentialId = storage.GetValue(this.GetCacheKeyOfUser(userId, scene)) as string;
+			var credentialId = this.Storage.GetValue(this.GetCacheKeyOfUser(userId, scene)) as string;
 
 			if(string.IsNullOrWhiteSpace(credentialId))
 				return null;
@@ -253,8 +264,7 @@ namespace Zongsoft.Security
 
 		public IEnumerable<Credential> GetCredentials(string @namespace)
 		{
-			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
-			var namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(@namespace)) as IDictionary;
+			var namespaces = this.Storage.GetValue(this.GetCacheKeyOfNamespace(@namespace)) as IDictionary;
 
 			if(namespaces == null)
 				yield break;
@@ -279,22 +289,20 @@ namespace Zongsoft.Security
 
 		protected virtual void Register(Credential credential)
 		{
-			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
-
 			//声明命名空间对应的所有凭证的集合
 			ICollection<string> namespaces = null;
 
 			//获取要注册的用户及应用场景已经注册的凭证号
-			var originalCredentialId = storage.GetValue(this.GetCacheKeyOfUser(credential.User.UserId, credential.Scene)) as string;
+			var originalCredentialId = this.Storage.GetValue(this.GetCacheKeyOfUser(credential.User.UserId, credential.Scene)) as string;
 
 			//确保同个用户在相同场景下只能存在一个凭证：如果获取的凭证号不为空并且有值，则
 			if(originalCredentialId != null && originalCredentialId.Length > 0)
 			{
 				//将同名用户及场景下的原来的凭证删除（即踢下线）
-				storage.Remove(this.GetCacheKeyOfCredential(originalCredentialId));
+				this.Storage.Remove(this.GetCacheKeyOfCredential(originalCredentialId));
 
 				//获取命名空间的凭证集合
-				namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(credential.Namespace)) as ICollection<string>;
+				namespaces = this.Storage.GetValue(this.GetCacheKeyOfNamespace(credential.Namespace)) as ICollection<string>;
 
 				//将原来的凭证号从对应的命名空间集合中删除
 				if(namespaces != null)
@@ -306,19 +314,19 @@ namespace Zongsoft.Security
 			}
 
 			//设置当前用户及场景所对应的唯一凭证号为新注册的凭证号
-			storage.SetValue(this.GetCacheKeyOfUser(credential.User.UserId, credential.Scene), credential.CredentialId, credential.Duration);
+			this.Storage.SetValue(this.GetCacheKeyOfUser(credential.User.UserId, credential.Scene), credential.CredentialId, credential.Duration);
 
 			//将当前凭证信息以JSON文本的方式保存到物理存储层中
-			storage.SetValue(this.GetCacheKeyOfCredential(credential.CredentialId), this.SerializeCertificationToJson(credential), credential.Duration);
+			this.Storage.SetValue(this.GetCacheKeyOfCredential(credential.CredentialId), this.SerializeCertificationToJson(credential), credential.Duration);
 
 			if(namespaces == null)
 			{
 				//获取当前凭证所在的命名空间的集合
-				namespaces = storage.GetValue(this.GetCacheKeyOfNamespace(credential.Namespace)) as ICollection<string>;
+				namespaces = this.Storage.GetValue(this.GetCacheKeyOfNamespace(credential.Namespace)) as ICollection<string>;
 
 				//如果命名空间集合为空则创建它，并初始化包含当前凭证号，否则直接在集合中添加当前凭证号
 				if(namespaces == null)
-					storage.SetValue(this.GetCacheKeyOfNamespace(credential.Namespace), new string[] { credential.CredentialId });
+					this.Storage.SetValue(this.GetCacheKeyOfNamespace(credential.Namespace), new string[] { credential.CredentialId });
 				else
 					namespaces.Add(credential.CredentialId);
 			}
@@ -352,10 +360,8 @@ namespace Zongsoft.Security
 			if(string.IsNullOrWhiteSpace(credentialId))
 				throw new ArgumentNullException("credentialId");
 
-			var storage = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
-
 			//在缓存容器中查找指定编号的凭证对象的序列化后的JSON文本
-			var text = storage.GetValue(this.GetCacheKeyOfCredential(credentialId)) as string;
+			var text = this.Storage.GetValue(this.GetCacheKeyOfCredential(credentialId)) as string;
 
 			//如果缓存容器中没有找到指定编号的凭证则说明指定的编号无效或者该编号对应的凭证已经过期
 			if(string.IsNullOrEmpty(text))
@@ -379,10 +385,10 @@ namespace Zongsoft.Security
 			credential.Timestamp = timestamp;
 
 			//将当前凭证信息以JSON文本的方式保存到物理存储层中
-			storage.SetValue(this.GetCacheKeyOfCredential(credentialId), this.SerializeCertificationToJson(credential), duration);
+			this.Storage.SetValue(this.GetCacheKeyOfCredential(credentialId), this.SerializeCertificationToJson(credential), duration);
 
 			//顺延当前用户及场景对应凭证号的缓存项
-			storage.SetDuration(this.GetCacheKeyOfUser(credential.UserId, credential.Scene), duration);
+			this.Storage.SetDuration(this.GetCacheKeyOfUser(credential.UserId, credential.Scene), duration);
 
 			//将缓存对象保存到本地内存缓存中
 			_memoryCache.SetValue(credential.CredentialId, credential, DateTime.Now.AddSeconds(duration.TotalSeconds / 2));

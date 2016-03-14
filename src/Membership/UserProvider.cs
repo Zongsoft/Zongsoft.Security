@@ -30,23 +30,72 @@ using System.Linq;
 using System.Text;
 
 using Zongsoft.Data;
-using Zongsoft.Options;
+using Zongsoft.Common;
+using Zongsoft.Services;
+using Zongsoft.Runtime.Caching;
 
 namespace Zongsoft.Security.Membership
 {
-	public class UserProvider : Zongsoft.Services.ServiceBase, IUserProvider
+	public class UserProvider : MarshalByRefObject, IUserProvider
 	{
 		#region 成员字段
+		private IDataAccess _dataAccess;
+		private ISequence _sequence;
+		private ICache _cache;
 		private ICensorship _censorship;
 		#endregion
 
 		#region 构造函数
-		public UserProvider(Zongsoft.Services.IServiceProvider serviceProvider) : base(serviceProvider)
+		public UserProvider()
 		{
 		}
 		#endregion
 
 		#region 公共属性
+		public IDataAccess DataAccess
+		{
+			get
+			{
+				return _dataAccess;
+			}
+			set
+			{
+				if(value == null)
+					throw new ArgumentNullException();
+
+				_dataAccess = value;
+			}
+		}
+
+		[ServiceDependency]
+		public ISequence Sequence
+		{
+			get
+			{
+				return _sequence;
+			}
+			set
+			{
+				if(value == null)
+					throw new ArgumentNullException();
+
+				_sequence = value;
+			}
+		}
+
+		[ServiceDependency]
+		public ICache Cache
+		{
+			get
+			{
+				return _cache;
+			}
+			set
+			{
+				_cache = value;
+			}
+		}
+
 		[Zongsoft.Services.ServiceDependency]
 		public ICensorship Censorship
 		{
@@ -64,9 +113,7 @@ namespace Zongsoft.Security.Membership
 		#region 用户管理
 		public bool Approve(int userId, bool approved = true)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
 				{
 					Approved = approved,
@@ -77,9 +124,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool Suspend(int userId, bool suspended = true)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
 				{
 					Suspended = suspended,
@@ -90,30 +135,26 @@ namespace Zongsoft.Security.Membership
 
 		public User GetUser(int userId)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-			return MembershipHelper.GetUser(dataAccess, userId);
+			return MembershipHelper.GetUser(this.DataAccess, userId);
 		}
 
 		public User GetUser(string identity, string @namespace)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
-			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, conditions).FirstOrDefault();
+			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
+			return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, condition).FirstOrDefault();
 		}
 
 		public IEnumerable<User> GetAllUsers(string @namespace, Paging paging = null)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-			return dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("Namespace", MembershipHelper.TrimNamespace(@namespace)), paging);
+			if(string.IsNullOrWhiteSpace(@namespace))
+				return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, null, paging);
+			else
+				return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("Namespace", MembershipHelper.TrimNamespace(@namespace)), paging);
 		}
 
 		public bool Exists(int userId)
 		{
-			if(userId == 0)
-				return true;
-
-			var dataAccess = this.EnsureService<IDataAccess>();
-			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId));
+			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("UserId", userId));
 		}
 
 		public bool Exists(string identity, string @namespace)
@@ -121,9 +162,8 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity))
 				return false;
 
-			var dataAccess = this.EnsureService<IDataAccess>();
 			MembershipHelper.UserIdentityType identityType;
-			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace, out identityType);
+			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace, out identityType);
 
 			if(identityType == MembershipHelper.UserIdentityType.Name)
 			{
@@ -131,14 +171,12 @@ namespace Zongsoft.Security.Membership
 				this.Censor(identity);
 			}
 
-			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, conditions);
+			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, condition);
 		}
 
 		public bool SetAvatar(int userId, string avatar)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
 				{
 					Avatar = string.IsNullOrWhiteSpace(avatar) ? null : avatar.Trim(),
@@ -149,9 +187,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetEmail(int userId, string email)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
 				{
 					Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim(),
@@ -162,9 +198,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetPhoneNumber(int userId, string phoneNumber)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
 				{
 					PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim(),
@@ -181,9 +215,7 @@ namespace Zongsoft.Security.Membership
 			//确保用户名是审核通过的
 			this.Censor(name);
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
 				{
 					Name = name.Trim(),
@@ -194,9 +226,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetFullName(int userId, string fullName)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
 				{
 					FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName.Trim(),
@@ -207,9 +237,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetPrincipalId(int userId, string principalId)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
 				{
 					PrincipalId = string.IsNullOrWhiteSpace(principalId) ? null : principalId.Trim(),
@@ -220,9 +248,7 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetDescription(int userId, string description)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
 				{
 					Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
@@ -236,8 +262,7 @@ namespace Zongsoft.Security.Membership
 			if(userIds == null || userIds.Length < 1)
 				return 0;
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-			return dataAccess.Delete(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userIds, ConditionOperator.In));
+			return this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userIds, ConditionOperator.In));
 		}
 
 		public bool CreateUser(User user, string password)
@@ -251,14 +276,12 @@ namespace Zongsoft.Security.Membership
 			//确保用户名是审核通过的
 			this.Censor(user.Name);
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-
 			if(user.UserId < 1)
-				user.UserId = (int)this.EnsureService<Zongsoft.Common.ISequence>().GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
+				user.UserId = (int)this.Sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
-				if(dataAccess.Insert(MembershipHelper.DATA_ENTITY_USER, user) < 1)
+				if(this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_USER, user) < 1)
 					return false;
 
 				if(password != null && password.Length > 0)
@@ -266,7 +289,7 @@ namespace Zongsoft.Security.Membership
 					//生成密码随机数
 					var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
 
-					dataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
+					this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
 					{
 						Password = PasswordUtility.HashPassword(password, passwordSalt),
 						PasswordSalt = passwordSalt,
@@ -301,11 +324,10 @@ namespace Zongsoft.Security.Membership
 			{
 				//处理未指定有效编号的用户对象
 				if(user != null && user.UserId < 1)
-					user.UserId = (int)this.EnsureService<Zongsoft.Common.ISequence>().GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
+					user.UserId = (int)this.Sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 			}
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-			return dataAccess.Insert(MembershipHelper.DATA_ENTITY_USER, users);
+			return this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_USER, users);
 		}
 
 		public int UpdateUsers(params User[] users)
@@ -333,39 +355,30 @@ namespace Zongsoft.Security.Membership
 				this.Censor(user.Name);
 			}
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER, users);
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, users);
 		}
 		#endregion
 
 		#region 密码管理
 		public bool HasPassword(int userId)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER,
-									 Condition.Equal("UserId", userId) & Condition.NotEqual("Password", null));
+			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER,
+										  Condition.Equal("UserId", userId) & Condition.NotEqual("Password", null));
 		}
 
 		public bool HasPassword(string identity, string @namespace)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
-
-			conditions.Add(Condition.NotEqual("Password", null));
-
-			return dataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, conditions);
+			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
+			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, new ConditionCollection(ConditionCombination.And, condition, Condition.NotEqual("Password", null)));
 		}
 
 		public bool ChangePassword(int userId, string oldPassword, string newPassword)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
 			bool isApproved, isSuspended;
 
-			if(!MembershipHelper.GetPassword(dataAccess, userId, out storedPassword, out storedPasswordSalt, out isApproved, out isSuspended))
+			if(!MembershipHelper.GetPassword(this.DataAccess, userId, out storedPassword, out storedPasswordSalt, out isApproved, out isSuspended))
 				return false;
 
 			if(!PasswordUtility.VerifyPassword(oldPassword, storedPassword, storedPasswordSalt))
@@ -374,7 +387,7 @@ namespace Zongsoft.Security.Membership
 			//重新生成密码随机数
 			storedPasswordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
 
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
 				{
 					Password = PasswordUtility.HashPassword(newPassword, storedPasswordSalt),
@@ -387,13 +400,14 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(secret))
 				throw new ArgumentNullException("secret");
 
+			var cache = this.Cache;
+
+			if(cache == null)
+				throw new InvalidOperationException("The dependent cache is null.");
+
 			int userId;
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			if(!MembershipHelper.GetUserId(dataAccess, identity, @namespace, out userId))
+			if(!MembershipHelper.GetUserId(this.DataAccess, identity, @namespace, out userId))
 				return -1;
-
-			var cache = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
 
 			cache.SetValue(this.GetCacheKeyOfResetPassword(userId), secret, timeout.HasValue && timeout.Value > TimeSpan.Zero ? timeout.Value : TimeSpan.FromHours(1));
 
@@ -405,18 +419,20 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrEmpty(secret))
 				return false;
 
-			var cache = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
+			var cache = this.Cache;
+
+			if(cache == null)
+				throw new InvalidOperationException("The dependent cache is null.");
+
 			var cachedSecret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
 			var succeed = cachedSecret != null && string.Equals(secret, cachedSecret, StringComparison.Ordinal);
 
 			if(succeed && newPassword != null && newPassword.Length > 0)
 			{
-				var dataAccess = this.EnsureService<IDataAccess>();
-
 				//重新生成密码随机数
 				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
 
-				var affectedRows = dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				var affectedRows = this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 					new
 					{
 						Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
@@ -437,13 +453,15 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity) || string.IsNullOrWhiteSpace(secret))
 				return false;
 
-			var userId = 0;
-			var dataAccess = this.EnsureService<IDataAccess>();
+			var cache = this.Cache;
 
-			if(!MembershipHelper.GetUserId(dataAccess, identity, @namespace, out userId))
+			if(cache == null)
+				throw new InvalidOperationException("The dependent cache is null.");
+
+			var userId = 0;
+			if(!MembershipHelper.GetUserId(this.DataAccess, identity, @namespace, out userId))
 				return false;
 
-			var cache = this.EnsureService<Zongsoft.Runtime.Caching.ICache>();
 			var cachedSecret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
 			var succeed = cachedSecret != null && string.Equals(cachedSecret, secret, StringComparison.Ordinal);
 
@@ -452,7 +470,7 @@ namespace Zongsoft.Security.Membership
 				//重新生成密码随机数
 				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
 
-				var affectedRows = dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				var affectedRows = this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 					new
 					{
 						Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
@@ -473,9 +491,8 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity) || passwordAnswers == null || passwordAnswers.Length < 3)
 				return false;
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
-			var record = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, conditions, "!, UserId, PasswordAnswer1, PasswordAnswer2, PasswordAnswer3").FirstOrDefault();
+			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
+			var record = this.DataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, PasswordAnswer1, PasswordAnswer2, PasswordAnswer3").FirstOrDefault();
 
 			if(record == null || record.Count < 1)
 				return false;
@@ -491,7 +508,7 @@ namespace Zongsoft.Security.Membership
 				//重新生成密码随机数
 				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
 
-				return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 					new
 					{
 						Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
@@ -504,8 +521,7 @@ namespace Zongsoft.Security.Membership
 
 		public string[] GetPasswordQuestions(int userId)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-			var record = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId), "!, UserId, PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
+			var record = this.DataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId), "!, UserId, PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
 
 			if(record == null)
 				return null;
@@ -521,9 +537,8 @@ namespace Zongsoft.Security.Membership
 
 		public string[] GetPasswordQuestions(string identity, string @namespace)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
-			var record = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, conditions, "!, UserId, PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
+			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
+			var record = this.DataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
 
 			if(record == null)
 				return null;
@@ -548,19 +563,17 @@ namespace Zongsoft.Security.Membership
 			if(passwordQuestions.Length != passwordAnswers.Length)
 				throw new ArgumentException();
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
 			bool isApproved, isSuspended;
 
-			if(!MembershipHelper.GetPassword(dataAccess, userId, out storedPassword, out storedPasswordSalt, out isApproved, out isSuspended))
+			if(!MembershipHelper.GetPassword(this.DataAccess, userId, out storedPassword, out storedPasswordSalt, out isApproved, out isSuspended))
 				return false;
 
 			if(!PasswordUtility.VerifyPassword(password, storedPassword, storedPasswordSalt))
 				return false;
 
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
 			{
 				PasswordQuestion1 = passwordQuestions.Length > 0 ? passwordQuestions[0] : null,
 				PasswordAnswer1 = passwordAnswers.Length > 0 ? this.HashPasswordAnswer(passwordAnswers[0], userId, 1) : null,
@@ -573,8 +586,6 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetPasswordOptions(int userId, bool changePasswordOnFirstTime = false, byte maxInvalidPasswordAttempts = 3, byte minRequiredPasswordLength = 6, TimeSpan? passwordAttemptWindow = null, DateTime? passwordExpires = null)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
 			var dictionary = new Dictionary<string, object>()
 			{
 				{ "ChangePasswordOnFirstTime", changePasswordOnFirstTime },
@@ -588,7 +599,7 @@ namespace Zongsoft.Security.Membership
 			if(passwordExpires.HasValue)
 				dictionary.Add("PasswordExpires", passwordExpires.Value);
 
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_USER, dictionary, new Condition("UserId", userId)) > 0;
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, dictionary, new Condition("UserId", userId)) > 0;
 		}
 		#endregion
 

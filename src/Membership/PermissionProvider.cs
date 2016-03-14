@@ -28,24 +28,44 @@ using System;
 using System.Collections.Generic;
 
 using Zongsoft.Data;
-using Zongsoft.Options;
+using Zongsoft.Services;
 
 namespace Zongsoft.Security.Membership
 {
-	public class PermissionProvider : Zongsoft.Services.ServiceBase, IPermissionProvider
+	public class PermissionProvider : MarshalByRefObject, IPermissionProvider
 	{
+		#region 成员字段
+		private IDataAccess _dataAccess;
+		#endregion
+
 		#region 构造函数
-		public PermissionProvider(Zongsoft.Services.IServiceProvider serviceProvider) : base(serviceProvider)
+		public PermissionProvider()
 		{
+		}
+		#endregion
+
+		#region 公共属性
+		[ServiceDependency]
+		public IDataAccess DataAccess
+		{
+			get
+			{
+				return _dataAccess;
+			}
+			set
+			{
+				if(value == null)
+					throw new ArgumentNullException();
+
+				_dataAccess = value;
+			}
 		}
 		#endregion
 
 		#region 公共方法
 		public IEnumerable<Permission> GetPermissions(int memberId, MemberType memberType)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			return dataAccess.Select<Permission>(MembershipHelper.DATA_ENTITY_PERMISSION,
+			return this.DataAccess.Select<Permission>(MembershipHelper.DATA_ENTITY_PERMISSION,
 												 Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType));
 		}
 
@@ -59,10 +79,8 @@ namespace Zongsoft.Security.Membership
 
 		public IEnumerable<PermissionFilter> GetPermissionFilters(int memberId, MemberType memberType)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			return dataAccess.Select<PermissionFilter>(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER,
-													   Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType));
+			return this.DataAccess.Select<PermissionFilter>(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER,
+														    Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType));
 		}
 
 		public void SetPermissionFilters(int memberId, MemberType memberType, IEnumerable<PermissionFilter> permissionFilters)
@@ -80,8 +98,6 @@ namespace Zongsoft.Security.Membership
 			if(permissions == null)
 				throw new ArgumentNullException("permissions");
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-
 			foreach(var permission in permissions)
 			{
 				permission.MemberId = memberId;
@@ -91,10 +107,10 @@ namespace Zongsoft.Security.Membership
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
 				//清空指定成员的所有权限设置
-				dataAccess.Delete(name, Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType));
+				this.DataAccess.Delete(name, Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType));
 
 				//插入指定的权限设置集到数据库中
-				dataAccess.Insert(name, permissions);
+				this.DataAccess.Insert(name, permissions);
 
 				//提交事务
 				transaction.Commit();

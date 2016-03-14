@@ -26,22 +26,43 @@
 
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 
 using Zongsoft.Data;
-using Zongsoft.Options;
+using Zongsoft.Services;
 
 namespace Zongsoft.Security.Membership
 {
-	public class Authentication : Zongsoft.Services.ServiceBase, IAuthentication
+	public class Authentication : MarshalByRefObject, IAuthentication
 	{
+		#region 成员字段
+		private IDataAccess _dataAccess;
+		#endregion
+
 		#region 事件声明
 		public event EventHandler<AuthenticatedEventArgs> Authenticated;
 		#endregion
 
 		#region 构造函数
-		public Authentication(Zongsoft.Services.IServiceProvider serviceProvider) : base(serviceProvider)
+		public Authentication()
 		{
+		}
+		#endregion
+
+		#region 公共属性
+		[ServiceDependency]
+		public IDataAccess DataAccess
+		{
+			get
+			{
+				return _dataAccess;
+			}
+			set
+			{
+				if(value == null)
+					throw new ArgumentNullException();
+
+				_dataAccess = value;
+			}
 		}
 		#endregion
 
@@ -99,7 +120,7 @@ namespace Zongsoft.Security.Membership
 			}
 
 			//获取指定用户编号对应的用户对象
-			var user = MembershipHelper.GetUser(this.EnsureService<IDataAccess>(), userId.Value);
+			var user = MembershipHelper.GetUser(this.DataAccess, userId.Value);
 
 			//创建“Authenticated”事件参数
 			var eventArgs = new AuthenticatedEventArgs(identity, @namespace, true, user);
@@ -118,7 +139,7 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
 
-			return MembershipHelper.GetPassword(this.EnsureService<IDataAccess>(), identity, @namespace, out password, out passwordSalt, out isApproved, out isSuspended);
+			return MembershipHelper.GetPassword(this.DataAccess, identity, @namespace, out password, out passwordSalt, out isApproved, out isSuspended);
 		}
 		#endregion
 

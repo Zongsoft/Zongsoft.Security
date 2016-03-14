@@ -28,27 +28,61 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 using Zongsoft.Data;
-using Zongsoft.Options;
+using Zongsoft.Common;
+using Zongsoft.Services;
 
 namespace Zongsoft.Security.Membership
 {
-	public class RoleProvider : Zongsoft.Services.ServiceBase, IRoleProvider, IMemberProvider
+	public class RoleProvider : MarshalByRefObject, IRoleProvider, IMemberProvider
 	{
 		#region 成员字段
+		private IDataAccess _dataAccess;
+		private ISequence _sequence;
 		private ICensorship _censorship;
 		#endregion
 
 		#region 构造函数
-		public RoleProvider(Zongsoft.Services.IServiceProvider serviceProvider) : base(serviceProvider)
+		public RoleProvider()
 		{
 		}
 		#endregion
 
 		#region 公共属性
-		[Zongsoft.Services.ServiceDependency]
+		[ServiceDependency]
+		public IDataAccess DataAccess
+		{
+			get
+			{
+				return _dataAccess;
+			}
+			set
+			{
+				if(value == null)
+					throw new ArgumentNullException();
+
+				_dataAccess = value;
+			}
+		}
+
+		[ServiceDependency]
+		public ISequence Sequence
+		{
+			get
+			{
+				return _sequence;
+			}
+			set
+			{
+				if(value == null)
+					throw new ArgumentNullException();
+
+				_sequence = value;
+			}
+		}
+
+		[ServiceDependency]
 		public ICensorship Censorship
 		{
 			get
@@ -65,14 +99,15 @@ namespace Zongsoft.Security.Membership
 		#region 角色管理
 		public Role GetRole(int roleId)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-			return dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleId)).FirstOrDefault();
+			return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleId)).FirstOrDefault();
 		}
 
 		public IEnumerable<Role> GetAllRoles(string @namespace, Paging paging = null)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-			return dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("Namespace", MembershipHelper.TrimNamespace(@namespace)), paging);
+			if(string.IsNullOrWhiteSpace(@namespace))
+				return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, null, paging);
+			else
+				return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("Namespace", MembershipHelper.TrimNamespace(@namespace)), paging);
 		}
 
 		public int DeleteRoles(params int[] roleIds)
@@ -80,8 +115,7 @@ namespace Zongsoft.Security.Membership
 			if(roleIds == null || roleIds.Length < 1)
 				return 0;
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-			return dataAccess.Delete(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleIds, ConditionOperator.In));
+			return this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleIds, ConditionOperator.In));
 		}
 
 		public int CreateRoles(params Role[] roles)
@@ -113,11 +147,10 @@ namespace Zongsoft.Security.Membership
 			{
 				//处理未指定有效编号的角色对象
 				if(role != null && role.RoleId < 1)
-					role.RoleId = (int)this.EnsureService<Zongsoft.Common.ISequence>().GetSequenceNumber(MembershipHelper.SEQUENCE_ROLEID, 1, MembershipHelper.MINIMUM_ID);
+					role.RoleId = (int)this.Sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_ROLEID, 1, MembershipHelper.MINIMUM_ID);
 			}
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-			return dataAccess.Insert(MembershipHelper.DATA_ENTITY_ROLE, roles);
+			return this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_ROLE, roles);
 		}
 
 		public int UpdateRoles(params Role[] roles)
@@ -145,24 +178,21 @@ namespace Zongsoft.Security.Membership
 				this.Censor(role.Name);
 			}
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-			return dataAccess.Update(MembershipHelper.DATA_ENTITY_ROLE, roles);
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_ROLE, roles);
 		}
 		#endregion
 
 		#region 成员管理
 		public bool InRole(int userId, int roleId)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
 			//获取指定用户编号对应的用户名
-			var userDictionary = dataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId), "Name").FirstOrDefault();
+			var userDictionary = this.DataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId), "Name").FirstOrDefault();
 
 			//如果指定的用户编号对应的是系统内置管理员（即 Administrator）则进行特殊处理，即系统内置管理员账号只能默认属于内置的管理员角色，它不能隶属于其它角色
 			if(userDictionary != null && string.Equals((string)userDictionary["Name"], User.Administrator, StringComparison.OrdinalIgnoreCase))
 			{
 				//获取指定角色编号对应的角色名
-				var roleDictionary = dataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleId), "Name").FirstOrDefault();
+				var roleDictionary = this.DataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleId), "Name").FirstOrDefault();
 				//如果指定的角色编号对应的是系统内置管理员角色（即 Administrators）则返回真，否则一律返回假。
 				return (roleDictionary != null && string.Equals((string)roleDictionary["Name"], Role.Administrators, StringComparison.OrdinalIgnoreCase));
 			}
@@ -176,10 +206,8 @@ namespace Zongsoft.Security.Membership
 			if(roleNames == null || roleNames.Length < 1)
 				return false;
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-
 			//获取指定用户编号对应的用户名
-			var userDictionary = dataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId), "Name").FirstOrDefault();
+			var userDictionary = this.DataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId), "Name").FirstOrDefault();
 
 			//如果指定的用户编号对应的是系统内置管理员（即 Administrator）则进行特殊处理，即系统内置管理员账号只能默认属于内置的管理员角色，它不能隶属于其它角色
 			if(userDictionary != null && string.Equals((string)userDictionary["Name"], User.Administrator, StringComparison.OrdinalIgnoreCase))
@@ -191,26 +219,22 @@ namespace Zongsoft.Security.Membership
 
 		public IEnumerable<Role> GetRoles(int memberId, MemberType memberType)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			var members = dataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
-													Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType),
-													"Role");
+			var members = this.DataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
+														 Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType),
+														 "Role");
 
 			return members.Select(m => m.Role);
 		}
 
 		public IEnumerable<Member> GetMembers(int roleId)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
 			//查出指定角色的所有子级成员
-			var members = dataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER, new Condition("RoleId", roleId), "Role");
+			var members = this.DataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER, new Condition("RoleId", roleId), "Role");
 
 			//从数据库中查找当前子级成员中的角色成员
-			var roles = dataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", members.Where(m => m.MemberType == MemberType.Role).Select(m => m.MemberId), ConditionOperator.In));
+			var roles = this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", members.Where(m => m.MemberType == MemberType.Role).Select(m => m.MemberId), ConditionOperator.In));
 			//从数据库中查找当前子级成员中的用户成员
-			var users = dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", members.Where(m => m.MemberType == MemberType.User).Select(m => m.MemberId), ConditionOperator.In));
+			var users = this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", members.Where(m => m.MemberType == MemberType.User).Select(m => m.MemberId), ConditionOperator.In));
 
 			foreach(var member in members)
 			{
@@ -233,8 +257,6 @@ namespace Zongsoft.Security.Membership
 			if(members == null)
 				return;
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-
 			foreach(var member in members)
 			{
 				member.RoleId = roleId;
@@ -243,10 +265,10 @@ namespace Zongsoft.Security.Membership
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
 				//清空指定角色的所有成员
-				dataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER, new Condition("RoleId", roleId));
+				this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER, Condition.Equal("RoleId", roleId));
 
 				//插入指定的角色成员集到数据库中
-				dataAccess.Insert(MembershipHelper.DATA_ENTITY_MEMBER, members);
+				this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_MEMBER, members);
 
 				//提交事务
 				transaction.Commit();
@@ -266,8 +288,6 @@ namespace Zongsoft.Security.Membership
 			if(members == null)
 				return 0;
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
 				var count = 0;
@@ -277,7 +297,7 @@ namespace Zongsoft.Security.Membership
 					if(member == null)
 						continue;
 
-					count += dataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER,
+					count += this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER,
 						Condition.Equal("RoleId", member.RoleId) &
 						Condition.Equal("MemberId", member.MemberId) &
 						Condition.Equal("MemberType", member.MemberType));
@@ -300,8 +320,7 @@ namespace Zongsoft.Security.Membership
 			if(members == null)
 				return 0;
 
-			var dataAccess = this.EnsureService<IDataAccess>();
-			return dataAccess.Insert(MembershipHelper.DATA_ENTITY_MEMBER, members);
+			return this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_MEMBER, members);
 		}
 		#endregion
 
@@ -316,11 +335,9 @@ namespace Zongsoft.Security.Membership
 
 		private IEnumerable<Tuple<int, string>> GetRecursiveRoles(int memberId, MemberType memberType)
 		{
-			var dataAccess = this.EnsureService<IDataAccess>();
-
-			var parents = dataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
-													Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType),
-													"Role.RoleId, Role.Name");
+			var parents = this.DataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
+														 Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType),
+														 "Role.RoleId, Role.Name");
 
 			var result = new List<Tuple<int, string>>();
 			result.AddRange(parents.Select(p => new Tuple<int, string>(p.RoleId, p.Role.Name)));
@@ -329,9 +346,9 @@ namespace Zongsoft.Security.Membership
 
 			while(index++ < result.Count)
 			{
-				parents = dataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
-													Condition.Equal("MemberId", result[index]) & Condition.Equal("MemberType", MemberType.Role),
-													"Role.RoleId, Role.Name");
+				parents = this.DataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
+														 Condition.Equal("MemberId", result[index]) & Condition.Equal("MemberType", MemberType.Role),
+														 "Role.RoleId, Role.Name");
 
 				result.AddRange(parents.Where(p => !result.Exists(it => it.Item1 == p.RoleId)).Select(p => new Tuple<int, string>(p.RoleId, p.Role.Name)));
 			}

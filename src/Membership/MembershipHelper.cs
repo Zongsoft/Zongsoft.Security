@@ -71,8 +71,8 @@ namespace Zongsoft.Security.Membership
 
 		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt, out bool isApproved, out bool isSuspended)
 		{
-			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
-			return GetPasswordCore(dataAccess, conditions, out password, out passwordSalt, out isApproved, out isSuspended);
+			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
+			return GetPasswordCore(dataAccess, condition, out password, out passwordSalt, out isApproved, out isSuspended);
 		}
 
 		public static User GetUser(IDataAccess dataAccess, int userId)
@@ -91,8 +91,8 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
 
-			var conditions = MembershipHelper.GetUserIdentityConditions(identity, @namespace);
-			var record = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, conditions, "!, UserId").FirstOrDefault();
+			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
+			var record = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId").FirstOrDefault();
 			var result = record != null && record.Count > 0 && record.ContainsKey("UserId");
 
 			userId = 0;
@@ -105,38 +105,37 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 内部方法
-		internal static ConditionCollection GetUserIdentityConditions(string identity, string @namespace)
+		internal static ICondition GetUserIdentityCondition(string identity, string @namespace)
 		{
 			UserIdentityType identityType;
-			return GetUserIdentityConditions(identity, @namespace, out identityType);
+			return GetUserIdentityCondition(identity, @namespace, out identityType);
 		}
 
-		internal static ConditionCollection GetUserIdentityConditions(string identity, string @namespace, out UserIdentityType identityType)
+		internal static ICondition GetUserIdentityCondition(string identity, string @namespace, out UserIdentityType identityType)
 		{
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
 
 			string text;
-			var conditions = new Condition[2];
-			conditions[0] = new Condition("Namespace", TrimNamespace(@namespace));
+			Condition condition;
 
 			if(Zongsoft.Text.TextRegular.Web.Email.IsMatch(identity, out text))
 			{
 				identityType = UserIdentityType.Email;
-				conditions[1] = new Condition("Email", text);
+				condition = Condition.Equal("Email", text);
 			}
 			else if(Zongsoft.Text.TextRegular.Chinese.Cellphone.IsMatch(identity, out text))
 			{
 				identityType = UserIdentityType.Phone;
-				conditions[1] = new Condition("PhoneNumber", text);
+				condition = Condition.Equal("PhoneNumber", text);
 			}
 			else
 			{
 				identityType = UserIdentityType.Name;
-				conditions[1] = new Condition("Name", identity);
+				condition = Condition.Equal("Name", identity);
 			}
 
-			return new ConditionCollection(ConditionCombination.And, conditions);
+			return condition & Condition.Equal("Namespace", TrimNamespace(@namespace));
 		}
 
 		internal static string TrimNamespace(string @namespace)
