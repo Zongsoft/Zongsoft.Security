@@ -285,7 +285,8 @@ namespace Zongsoft.Security.Membership
 				if(this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_USER, user) < 1)
 					return false;
 
-				if(password != null && password.Length > 0)
+				//有效的密码不能为空或全空格字符串
+				if(!string.IsNullOrWhiteSpace(password))
 				{
 					//生成密码随机数
 					var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
