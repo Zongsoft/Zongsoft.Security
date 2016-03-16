@@ -52,6 +52,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共属性
+		[ServiceDependency]
 		public IDataAccess DataAccess
 		{
 			get
