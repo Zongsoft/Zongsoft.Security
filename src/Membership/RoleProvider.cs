@@ -174,7 +174,7 @@ namespace Zongsoft.Security.Membership
 			return this.UpdateRoles((IEnumerable<Role>)roles);
 		}
 
-		public int UpdateRoles(IEnumerable<Role> roles)
+		public int UpdateRoles(IEnumerable<Role> roles, string scope = null)
 		{
 			if(roles == null)
 				return 0;
@@ -184,14 +184,18 @@ namespace Zongsoft.Security.Membership
 				if(role == null)
 					continue;
 
-				if(string.IsNullOrWhiteSpace(role.Name))
-					throw new ArgumentException("The role name is empty.");
+				//只有当要更新的范围包含“Name”角色名才需要验证该属性值
+				if(MembershipHelper.InScope<User>(scope, "Name"))
+				{
+					if(string.IsNullOrWhiteSpace(role.Name))
+						throw new ArgumentException("The role name is empty.");
 
-				//确保角色名是审核通过的
-				this.Censor(role.Name);
+					//确保角色名是审核通过的
+					this.Censor(role.Name);
+				}
 			}
 
-			return this.DataAccess.UpdateMany(MembershipHelper.DATA_ENTITY_ROLE, roles);
+			return this.DataAccess.UpdateMany(MembershipHelper.DATA_ENTITY_ROLE, roles, scope);
 		}
 		#endregion
 

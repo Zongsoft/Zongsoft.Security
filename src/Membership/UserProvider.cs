@@ -337,10 +337,10 @@ namespace Zongsoft.Security.Membership
 			if(users == null || users.Length < 1)
 				return 0;
 
-			return this.UpdateUsers((IEnumerable<User>)users);
+			return this.UpdateUsers((IEnumerable<User>)users, null);
 		}
 
-		public int UpdateUsers(IEnumerable<User> users)
+		public int UpdateUsers(IEnumerable<User> users, string scope = null)
 		{
 			if(users == null)
 				return 0;
@@ -350,14 +350,18 @@ namespace Zongsoft.Security.Membership
 				if(user == null)
 					continue;
 
-				if(string.IsNullOrWhiteSpace(user.Name))
-					throw new ArgumentException("The user name is empty.");
+				//只有当要更新的范围包含“Name”用户名才需要验证该属性值
+				if(MembershipHelper.InScope<User>(scope, "Name"))
+				{
+					if(string.IsNullOrWhiteSpace(user.Name))
+						throw new ArgumentException("The user name is empty.");
 
-				//确保用户名是审核通过的
-				this.Censor(user.Name);
+					//确保用户名是审核通过的
+					this.Censor(user.Name);
+				}
 			}
 
-			return this.DataAccess.UpdateMany(MembershipHelper.DATA_ENTITY_USER, users);
+			return this.DataAccess.UpdateMany(MembershipHelper.DATA_ENTITY_USER, users, scope);
 		}
 		#endregion
 

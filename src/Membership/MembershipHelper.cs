@@ -142,6 +142,48 @@ namespace Zongsoft.Security.Membership
 		{
 			return string.IsNullOrWhiteSpace(@namespace) ? null : @namespace.Trim();
 		}
+
+		internal static bool InScope<T>(string scope, string memberName)
+		{
+			if(string.IsNullOrWhiteSpace(memberName))
+				throw new ArgumentNullException("memberName");
+
+			if(string.IsNullOrWhiteSpace(scope))
+				return true;
+
+			bool? flag = null;
+			var parts = scope.Split(',', ';');
+
+			for(int i = 0; i < parts.Length; i++)
+			{
+				var part = parts[i].Trim();
+
+				if(part.Length == 0)
+					continue;
+
+				switch(part)
+				{
+					case "-":
+					case "!":
+						flag = false;
+						break;
+					case "*":
+						flag = true;
+						break;
+					default:
+						if(part[0] == '!' || part[0] == '-')
+							flag = !string.Equals(part.Substring(1), memberName, StringComparison.OrdinalIgnoreCase);
+						else
+							flag = string.Equals(part, memberName, StringComparison.OrdinalIgnoreCase);
+						break;
+				}
+			}
+
+			if(flag.HasValue)
+				return flag.Value;
+
+			return System.ComponentModel.TypeDescriptor.GetProperties(typeof(T)).Find(memberName, true) != null;
+		}
 		#endregion
 
 		#region 私有方法
