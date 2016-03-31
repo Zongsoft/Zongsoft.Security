@@ -278,19 +278,6 @@ namespace Zongsoft.Security.Membership
 			if(!this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("RoleId", roleId)))
 				return -1;
 
-			var userIds = new List<int>();
-			var roleIds = new List<int>();
-
-			foreach(var member in members)
-			{
-				member.RoleId = roleId;
-
-				if(member.MemberType == MemberType.Role)
-					roleIds.Add(member.MemberId);
-				else
-					userIds.Add(member.MemberId);
-			}
-
 			int count = 0;
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
@@ -300,6 +287,12 @@ namespace Zongsoft.Security.Membership
 
 				foreach(var member in members)
 				{
+					if(member == null)
+						continue;
+
+					//更新成员的角色编号
+					member.RoleId = roleId;
+
 					bool existed;
 
 					if(member.MemberType == MemberType.Role)
@@ -390,13 +383,15 @@ namespace Zongsoft.Security.Membership
 
 			int index = 0;
 
-			while(index++ < result.Count)
+			while(index < result.Count)
 			{
 				parents = this.DataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
 														 Condition.Equal("MemberId", result[index]) & Condition.Equal("MemberType", MemberType.Role),
 														 "Role.RoleId, Role.Name");
 
 				result.AddRange(parents.Where(p => !result.Exists(it => it.Item1 == p.RoleId)).Select(p => new Tuple<int, string>(p.RoleId, p.Role.Name)));
+
+				index++;
 			}
 
 			return result;
