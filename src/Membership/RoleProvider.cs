@@ -112,7 +112,18 @@ namespace Zongsoft.Security.Membership
 
 		public Role GetRole(int roleId)
 		{
-			return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleId)).FirstOrDefault();
+			return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("RoleId", roleId)).FirstOrDefault();
+		}
+
+		public Role GetRole(string name, string @namespace)
+		{
+			if(string.IsNullOrWhiteSpace(name))
+				throw new ArgumentNullException("name");
+
+			return this.DataAccess.Select<Role>(
+													MembershipHelper.DATA_ENTITY_ROLE,
+													Condition.Equal("Name", name) & Condition.Equal("Namespace", MembershipHelper.TrimNamespace(@namespace))
+												).FirstOrDefault();
 		}
 
 		public IEnumerable<Role> GetAllRoles(string @namespace, Paging paging = null)
@@ -203,13 +214,13 @@ namespace Zongsoft.Security.Membership
 		public bool InRole(int userId, int roleId)
 		{
 			//获取指定用户编号对应的用户名
-			var userDictionary = this.DataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId), "Name").FirstOrDefault();
+			var userDictionary = this.DataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("UserId", userId), "Name").FirstOrDefault();
 
 			//如果指定的用户编号对应的是系统内置管理员（即 Administrator）则进行特殊处理，即系统内置管理员账号只能默认属于内置的管理员角色，它不能隶属于其它角色
 			if(userDictionary != null && string.Equals((string)userDictionary["Name"], User.Administrator, StringComparison.OrdinalIgnoreCase))
 			{
 				//获取指定角色编号对应的角色名
-				var roleDictionary = this.DataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleId), "Name").FirstOrDefault();
+				var roleDictionary = this.DataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("RoleId", roleId), "Name").FirstOrDefault();
 				//如果指定的角色编号对应的是系统内置管理员角色（即 Administrators）则返回真，否则一律返回假。
 				return (roleDictionary != null && string.Equals((string)roleDictionary["Name"], Role.Administrators, StringComparison.OrdinalIgnoreCase));
 			}
@@ -224,7 +235,7 @@ namespace Zongsoft.Security.Membership
 				return false;
 
 			//获取指定用户编号对应的用户名
-			var userDictionary = this.DataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId), "Name").FirstOrDefault();
+			var userDictionary = this.DataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("UserId", userId), "Name").FirstOrDefault();
 
 			//如果指定的用户编号对应的是系统内置管理员（即 Administrator）则进行特殊处理，即系统内置管理员账号只能默认属于内置的管理员角色，它不能隶属于其它角色
 			if(userDictionary != null && string.Equals((string)userDictionary["Name"], User.Administrator, StringComparison.OrdinalIgnoreCase))
@@ -249,9 +260,9 @@ namespace Zongsoft.Security.Membership
 			var members = this.DataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER, new Condition("RoleId", roleId), "Role");
 
 			//从数据库中查找当前子级成员中的角色成员
-			var roles = this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", members.Where(m => m.MemberType == MemberType.Role).Select(m => m.MemberId), ConditionOperator.In));
+			var roles = this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, Condition.In("RoleId", members.Where(m => m.MemberType == MemberType.Role).Select(m => m.MemberId)));
 			//从数据库中查找当前子级成员中的用户成员
-			var users = this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", members.Where(m => m.MemberType == MemberType.User).Select(m => m.MemberId), ConditionOperator.In));
+			var users = this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, Condition.In("UserId", members.Where(m => m.MemberType == MemberType.User).Select(m => m.MemberId)));
 
 			foreach(var member in members)
 			{
@@ -269,7 +280,12 @@ namespace Zongsoft.Security.Membership
 			return members;
 		}
 
-		public int SetMembers(int roleId, IEnumerable<Member> members)
+		public int SetMembers(int roleId, params Member[] members)
+		{
+			return this.SetMembers(roleId, members, false);
+		}
+
+		public int SetMembers(int roleId, IEnumerable<Member> members, bool shouldResetting = false)
 		{
 			if(members == null)
 				return 0;
@@ -283,7 +299,8 @@ namespace Zongsoft.Security.Membership
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
 				//清空指定角色的所有成员
-				this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER, Condition.Equal("RoleId", roleId));
+				if(shouldResetting)
+					this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER, Condition.Equal("RoleId", roleId));
 
 				foreach(var member in members)
 				{
