@@ -17,6 +17,11 @@
 		<serviceProvider name="Security" path="/Workspace/Services/Security" />
 	</extension>
 
+	<!-- 将安全服务提供程序链接到默认服务容器 -->
+	<extension path="/Workspace/Services">
+		<object name="Security" value="{srv:@Security}" />
+	</extension>
+
 	<!-- 挂载安全业务 -->
 	<extension path="/Workspace/Security">
 		<object name="IsAuthenticated" type="Zongsoft.Security.Membership.IsAuthenticatedPredication, Zongsoft.Security" />
@@ -49,8 +54,6 @@
 	<!-- 挂载“安全”相关的各种服务 -->
 	<extension path="/Workspace/Services/Security">
 		<object name="DataAccess" value="{srv:Security@Data}" />
-		<object name="Sequence" value="{srv:Sequence@}" />
-		<object name="Storage" value="{srv:Storage@}" />
 
 		<object name="IsAuthenticated" value="{path:/Workspace/Security/IsAuthenticated}" />
 		<object name="IsUnauthenticated" value="{path:/Workspace/Security/IsUnauthenticated}" />
