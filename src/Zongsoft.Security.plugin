@@ -2,9 +2,9 @@
 <plugin name="Zongsoft.Security"
         title="Zongsoft Security Plugin"
         author="Popeye Zhong(zongsoft@gmail.com)"
-        version="1.0.1507.0"
+        version="1.0.1604.0"
         copyright="Copyright (C) 2010-2015 Zongsoft Corporation. All rights reserved."
-        description="Created Date: 2015-07-17 by Popeye Zhong, Modified Date: 2015-07 by Popeye Zhong.">
+        description="Created Date: 2015-07-17 by Popeye Zhong, Modified Date: 2016-04 by Popeye Zhong.">
 
 	<manifest>
 		<assemblies>
@@ -14,58 +14,29 @@
 
 	<!-- 挂载服务提供程序 -->
 	<extension path="/Workspace/Services/Providers">
-		<serviceProvider name="Security" path="/Workspace/Services/Security" />
+		<serviceProvider name="Security" />
 	</extension>
 
 	<!-- 将安全服务提供程序链接到默认服务容器 -->
 	<extension path="/Workspace/Services">
-		<object name="Security" value="{srv:@Security}" />
-	</extension>
-
-	<!-- 挂载安全业务 -->
-	<extension path="/Workspace/Security">
-		<object name="IsAuthenticated" type="Zongsoft.Security.Membership.IsAuthenticatedPredication, Zongsoft.Security" />
-		<object name="IsUnauthenticated" type="Zongsoft.Security.Membership.IsUnauthenticatedPredication, Zongsoft.Security" />
-		<object name="IsAuthorized" type="Zongsoft.Security.Membership.IsAuthorizedPredication, Zongsoft.Security" />
-		<object name="IsUnauthorized" type="Zongsoft.Security.Membership.IsUnauthorizedPredication, Zongsoft.Security" />
-
-		<object name="Censorship"
-		        type="Zongsoft.Security.Censorship, Zongsoft.Security" />
-
-		<object name="CredentialProvider"
-		        type="Zongsoft.Security.CredentialProvider, Zongsoft.Security" />
-
-		<object name="RoleProvider"
-		        type="Zongsoft.Security.Membership.RoleProvider, Zongsoft.Security" />
-
-		<object name="UserProvider"
-		        type="Zongsoft.Security.Membership.UserProvider, Zongsoft.Security" />
-
-		<object name="PermissionProvider"
-		        type="Zongsoft.Security.Membership.PermissionProvider, Zongsoft.Security" />
-
-		<object name="Authentication"
-		        type="Zongsoft.Security.Membership.Authentication, Zongsoft.Security" />
-
-		<object name="Authorization"
-		        type="Zongsoft.Security.Membership.Authorization, Zongsoft.Security" />
+		<link ref="../Providers/Security" />
 	</extension>
 
 	<!-- 挂载“安全”相关的各种服务 -->
 	<extension path="/Workspace/Services/Security">
 		<object name="DataAccess" value="{srv:Security@Data}" />
 
-		<object name="IsAuthenticated" value="{path:/Workspace/Security/IsAuthenticated}" />
-		<object name="IsUnauthenticated" value="{path:/Workspace/Security/IsUnauthenticated}" />
-		<object name="IsAuthorized" value="{path:/Workspace/Security/IsAuthorized}" />
-		<object name="IsUnauthorized" value="{path:/Workspace/Security/IsUnauthorized}" />
+		<object name="IsAuthenticated" type="Zongsoft.Security.Membership.IsAuthenticatedPredication, Zongsoft.Security" />
+		<object name="IsUnauthenticated" type="Zongsoft.Security.Membership.IsUnauthenticatedPredication, Zongsoft.Security" />
+		<object name="IsAuthorized" type="Zongsoft.Security.Membership.IsAuthorizedPredication, Zongsoft.Security" />
+		<object name="IsUnauthorized" type="Zongsoft.Security.Membership.IsUnauthorizedPredication, Zongsoft.Security" />
 
-		<object name="Censorship" value="{path:/Workspace/Security/Censorship}" />
-		<object name="CredentialProvider" value="{path:/Workspace/Security/CredentialProvider}" />
-		<object name="RoleProvider" value="{path:/Workspace/Security/RoleProvider}" />
-		<object name="UserProvider" value="{path:/Workspace/Security/UserProvider}" />
-		<object name="PermissionProvider" value="{path:/Workspace/Security/PermissionProvider}" />
-		<object name="Authentication" value="{path:/Workspace/Security/Authentication}" />
-		<object name="Authorization" value="{path:/Workspace/Security/Authorization}" />
+		<object name="Authentication" type="Zongsoft.Security.Membership.Authentication, Zongsoft.Security" />
+		<object name="Authorization" type="Zongsoft.Security.Membership.Authorization, Zongsoft.Security" />
+		<object name="Censorship" type="Zongsoft.Security.Censorship, Zongsoft.Security" />
+		<object name="CredentialProvider" type="Zongsoft.Security.CredentialProvider, Zongsoft.Security" />
+		<object name="RoleProvider" type="Zongsoft.Security.Membership.RoleProvider, Zongsoft.Security" />
+		<object name="UserProvider" type="Zongsoft.Security.Membership.UserProvider, Zongsoft.Security" />
+		<object name="PermissionProvider" type="Zongsoft.Security.Membership.PermissionProvider, Zongsoft.Security" />
 	</extension>
 </plugin>
