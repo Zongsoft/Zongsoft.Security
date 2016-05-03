@@ -59,8 +59,10 @@ namespace Zongsoft.Security.Membership
 		#region 公共属性
 		public string Name
 		{
-			get;
-			private set;
+			get
+			{
+				return _name;
+			}
 		}
 
 		public IAuthorization Authorization
