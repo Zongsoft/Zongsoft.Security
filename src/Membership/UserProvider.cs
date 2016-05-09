@@ -175,27 +175,6 @@ namespace Zongsoft.Security.Membership
 			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, condition);
 		}
 
-		public bool Exists(User user)
-		{
-			if(user == null)
-				throw new ArgumentNullException("user");
-
-			var ns = Condition.Equal("Namespace", MembershipHelper.TrimNamespace(user.Namespace));
-			var conditions = new ConditionCollection(ConditionCombination.Or);
-
-			if(!string.IsNullOrWhiteSpace(user.Name))
-				conditions.Add(ns & Condition.Equal("Name", user.Name));
-			if(!string.IsNullOrWhiteSpace(user.Email))
-				conditions.Add(ns & Condition.Equal("Email", user.Email));
-			if(!string.IsNullOrWhiteSpace(user.PhoneNumber))
-				conditions.Add(ns & Condition.Equal("PhoneNumber", user.PhoneNumber));
-
-			if(conditions.Count > 0)
-				return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, conditions);
-
-			return false;
-		}
-
 		public bool SetAvatar(int userId, string avatar)
 		{
 			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
@@ -299,8 +278,7 @@ namespace Zongsoft.Security.Membership
 			this.Censor(user.Name);
 
 			//确认指定用户的用户名、手机号、邮箱地址是否已经存在
-			if(this.Exists(user))
-				throw new DataConflictException(Zongsoft.Resources.ResourceUtility.GetString("Text.CreateUserConflict"));
+			this.EnsureConflict(user, null, false);
 
 			if(user.UserId < 1)
 				user.UserId = (int)this.Sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
@@ -347,8 +325,7 @@ namespace Zongsoft.Security.Membership
 				this.Censor(user.Name);
 
 				//确认指定用户的用户名、手机号、邮箱地址是否已经存在
-				if(this.Exists(user))
-					throw new DataConflictException(Zongsoft.Resources.ResourceUtility.GetString("Text.CreateUserConflict"));
+				this.EnsureConflict(user, null, false);
 			}
 
 			foreach(var user in users)
@@ -388,6 +365,9 @@ namespace Zongsoft.Security.Membership
 					//确保用户名是审核通过的
 					this.Censor(user.Name);
 				}
+
+				//确认指定用户的用户名、手机号、邮箱地址是否已经存在
+				this.EnsureConflict(user, scope, true);
 			}
 
 			return this.DataAccess.UpdateMany(MembershipHelper.DATA_ENTITY_USER, users, scope);
@@ -645,6 +625,25 @@ namespace Zongsoft.Security.Membership
 
 			if(censorship != null && censorship.IsBlocked(name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
 				throw new CensorshipException(string.Format("Illegal '{0}' name of user.", name));
+		}
+
+		private void EnsureConflict(User user, string scope, bool isUpdate)
+		{
+			var ns = Condition.Equal("Namespace", MembershipHelper.TrimNamespace(user.Namespace));
+			var conditions = new ConditionCollection(ConditionCombination.Or);
+
+			if(!string.IsNullOrWhiteSpace(user.Name) && MembershipHelper.InScope<User>(scope, "Name"))
+				conditions.Add(ns & Condition.Equal("Name", user.Name));
+			if(!string.IsNullOrWhiteSpace(user.Email) && MembershipHelper.InScope<User>(scope, "Email"))
+				conditions.Add(ns & Condition.Equal("Email", user.Email));
+			if(!string.IsNullOrWhiteSpace(user.PhoneNumber) && MembershipHelper.InScope<User>(scope, "PhoneNumber"))
+				conditions.Add(ns & Condition.Equal("PhoneNumber", user.PhoneNumber));
+
+			if(isUpdate && conditions.Count > 0)
+				conditions = Condition.NotEqual("UserId", user.UserId) & conditions;
+
+			if(conditions.Count > 0 && this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, conditions))
+				throw new DataConflictException(Zongsoft.Resources.ResourceUtility.GetString("Text.UserConflict"));
 		}
 
 		private byte[] GetPasswordAnswerSalt(int userId, int index)

@@ -117,13 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Text.CreateRoleConflict" xml:space="preserve">
-    <value>创建角色发生冲突，指定的角色名已经存在。</value>
-  </data>
-  <data name="Text.CreateUserConflict" xml:space="preserve">
-    <value>创建用户发生冲突，指定的用户名、手机号码或邮箱地址已经被占用。</value>
-  </data>
   <data name="Text.MissingCommandArguments" xml:space="preserve">
     <value>缺少必要的命令参数。</value>
+  </data>
+  <data name="Text.RoleConflict" xml:space="preserve">
+    <value>创建或更新角色发生冲突，指定的角色名已经存在。</value>
+  </data>
+  <data name="Text.UserConflict" xml:space="preserve">
+    <value>创建或更新用户发生冲突，指定的用户名、手机号码或邮箱地址已经存在。</value>
   </data>
 </root>

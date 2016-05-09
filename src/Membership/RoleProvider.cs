@@ -168,7 +168,7 @@ namespace Zongsoft.Security.Membership
 
 				//确认角色名是否存在
 				if(this.Exists(role.Name, role.Namespace))
-					throw new DataConflictException(Zongsoft.Resources.ResourceUtility.GetString("Text.CreateRoleConflict"));
+					throw new DataConflictException(Zongsoft.Resources.ResourceUtility.GetString("Text.RoleConflict"));
 			}
 
 			foreach(var role in roles)
@@ -207,6 +207,13 @@ namespace Zongsoft.Security.Membership
 
 					//确保角色名是审核通过的
 					this.Censor(role.Name);
+
+					//确认角色名是否存在
+					if(this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_ROLE,
+											  Condition.NotEqual("RoleId", role.RoleId) &
+											  Condition.Equal("Name", role.Name) &
+											  Condition.Equal("Namespace", MembershipHelper.TrimNamespace(role.Namespace))))
+						throw new DataConflictException(Zongsoft.Resources.ResourceUtility.GetString("Text.RoleConflict"));
 				}
 			}
 
