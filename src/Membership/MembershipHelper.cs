@@ -172,9 +172,15 @@ namespace Zongsoft.Security.Membership
 						break;
 					default:
 						if(part[0] == '!' || part[0] == '-')
-							flag = !string.Equals(part.Substring(1), memberName, StringComparison.OrdinalIgnoreCase);
+						{
+							if(string.Equals(part.Substring(1), memberName, StringComparison.OrdinalIgnoreCase))
+								flag = false;
+						}
 						else
-							flag = string.Equals(part, memberName, StringComparison.OrdinalIgnoreCase);
+						{
+							if(string.Equals(part, memberName, StringComparison.OrdinalIgnoreCase))
+								flag = true;
+						}
 						break;
 				}
 			}
