@@ -139,7 +139,23 @@ namespace Zongsoft.Security.Membership
 			if(roleIds == null || roleIds.Length < 1)
 				return 0;
 
-			return this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_ROLE, new Condition("RoleId", roleIds, ConditionOperator.In));
+			int result = 0;
+
+			using(var transaction = new Zongsoft.Transactions.Transaction())
+			{
+				result = this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_ROLE, Condition.In("RoleId", roleIds));
+
+				if(result > 0)
+				{
+					this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER, Condition.Equal("MemberType", MemberType.Role) & Condition.In("MemberId", roleIds));
+					this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_PERMISSION, Condition.Equal("MemberType", MemberType.Role) & Condition.In("MemberId", roleIds));
+					this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER, Condition.Equal("MemberType", MemberType.Role) & Condition.In("MemberId", roleIds));
+				}
+
+				transaction.Commit();
+			}
+
+			return result;
 		}
 
 		public int CreateRoles(params Role[] roles)
