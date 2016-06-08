@@ -112,28 +112,6 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 用户管理
-		public bool Approve(int userId, bool approved = true)
-		{
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-				new
-				{
-					Approved = approved,
-					ApprovedTime = DateTime.Now,
-				},
-				new Condition("UserId", userId)) > 0;
-		}
-
-		public bool Suspend(int userId, bool suspended = true)
-		{
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-				new
-				{
-					Suspended = suspended,
-					SuspendedTime = DateTime.Now,
-				},
-				new Condition("UserId", userId)) > 0;
-		}
-
 		public User GetUser(int userId)
 		{
 			return MembershipHelper.GetUser(this.DataAccess, userId);
@@ -243,6 +221,17 @@ namespace Zongsoft.Security.Membership
 				{
 					PrincipalId = string.IsNullOrWhiteSpace(principalId) ? null : principalId.Trim(),
 					ModifiedTime = DateTime.Now,
+				},
+				new Condition("UserId", userId)) > 0;
+		}
+
+		public bool SetStatus(int userId, UserStatus status)
+		{
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				new
+				{
+					Status = status,
+					StatusTime = DateTime.Now,
 				},
 				new Condition("UserId", userId)) > 0;
 		}

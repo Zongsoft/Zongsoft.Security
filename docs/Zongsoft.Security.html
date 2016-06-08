@@ -132,60 +132,20 @@
 			<td>用户的手机号码，该手机号码在所属命名空间内具有唯一性。</td>
 		</tr>
 		<tr>
-			<td align="center"><font face="Arial">Approved</font></td>
-			<td align="center"><font face="Arial">bool</font></td>
-			<td align="center"><font face="Arial">-</font></td>
-			<td align="center"><input type="checkbox" disabled="1" /></td>
-			<td align="center"><font face="Arial">False</td>
-			<td>帐户是否已审核通过</td>
-		</tr>
-		<tr>
-			<td align="center"><font face="Arial">Suspended</font></td>
-			<td align="center"><font face="Arial">bool</font></td>
-			<td align="center"><font face="Arial">-</font></td>
-			<td align="center"><input type="checkbox" disabled="1" /></td>
-			<td align="center"><font face="Arial">False</td>
-			<td>帐户是否暂停使用</td>
-		</tr>
-		<tr>
-			<td align="center"><font face="Arial">ChangePasswordOnFirstTime</font></td>
-			<td align="center"><font face="Arial">bool</font></td>
-			<td align="center"><font face="Arial">-</font></td>
-			<td align="center"><input type="checkbox" disabled="1" /></td>
-			<td align="center"><font face="Arial">True</td>
-			<td>用户第一次登入是否必须变更密码</td>
-		</tr>
-		<tr>
-			<td align="center"><font face="Arial">MaxInvalidPasswordAttempts</font></td>
+			<td align="center"><font face="Arial">Status</font></td>
 			<td align="center"><font face="Arial">byte</font></td>
 			<td align="center"><font face="Arial">1</font></td>
-			<td align="center"><input type="checkbox" disabled="1" checked="checked" /></td>
-			<td align="center"><font face="Arial">3</td>
-			<td>锁定用户前允许的无效密码或无效密码提示问题答案尝试次数。</td>
+			<td align="center"><input type="checkbox" disabled="1" /></td>
+			<td align="center"><font face="Arial">1<small style="font-family:kaiti, kaiti_gb2312;">(待批准)</small></td>
+			<td>用户状态（0:正常; 1:待批准; 2:已停用; 3:被挂起<small>(密码验证失败超过特定次数)</small>）</td>
 		</tr>
 		<tr>
-			<td align="center"><font face="Arial">MinRequiredPasswordLength</font></td>
-			<td align="center"><font face="Arial">byte</font></td>
-			<td align="center"><font face="Arial">1</font></td>
-			<td align="center"><input type="checkbox" disabled="1" checked="checked" /></td>
-			<td align="center"><font face="Arial">6</td>
-			<td>密码所要求的最小长度。</td>
-		</tr>
-		<tr>
-			<td align="center"><font face="Arial">PasswordAttemptWindow</font></td>
-			<td align="center"><font face="Arial">int</font></td>
-			<td align="center"><font face="Arial">4</font></td>
-			<td align="center"><input type="checkbox" disabled="1" checked="checked" /></td>
-			<td align="center"><font face="Arial">30</td>
-			<td>无效密码被锁定后到下次解锁的间隔分钟数。</td>
-		</tr>
-		<tr>
-			<td align="center"><font face="Arial">PasswordExpires</font></td>
+			<td align="center"><font face="Arial">StatusTime</font></td>
 			<td align="center"><font face="Arial">datetime</font></td>
 			<td align="center"><font face="Arial">-</font></td>
 			<td align="center"><input type="checkbox" disabled="1" checked="checked" /></td>
 			<td align="center"></td>
-			<td>密码的过期时间。</td>
+			<td>状态更改时间</td>
 		</tr>
 		<tr>
 			<td align="center"><font face="Arial">PasswordQuestion1</font></td>
@@ -266,22 +226,6 @@
 			<td align="center"><input type="checkbox" disabled="1" checked="checked" /></td>
 			<td align="center"></td>
 			<td>最后的修改时间</td>
-		</tr>
-		<tr>
-			<td align="center"><font face="Arial">ApprovedTime</font></td>
-			<td align="center"><font face="Arial">datetime</font></td>
-			<td align="center"><font face="Arial">-</font></td>
-			<td align="center"><input type="checkbox" disabled="1" checked="checked" /></td>
-			<td align="center"></td>
-			<td>审核时间</td>
-		</tr>
-		<tr>
-			<td align="center"><font face="Arial">SuspendedTime</font></td>
-			<td align="center"><font face="Arial">datetime</font></td>
-			<td align="center"><font face="Arial">-</font></td>
-			<td align="center"><input type="checkbox" disabled="1" checked="checked" /></td>
-			<td align="center"></td>
-			<td>禁用时间</td>
 		</tr>
 		<tr>
 			<td align="center"><font face="Arial">Description</font></td>
