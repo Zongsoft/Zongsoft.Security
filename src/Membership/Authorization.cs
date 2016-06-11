@@ -91,9 +91,6 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(schemaId))
 				throw new ArgumentNullException("schemaId");
 
-			if(string.IsNullOrWhiteSpace(actionId))
-				throw new ArgumentNullException("actionId");
-
 			//创建授权事件参数
 			var args = new AuthorizationEventArgs(userId, schemaId, actionId, true);
 
@@ -111,8 +108,11 @@ namespace Zongsoft.Security.Membership
 			//获取指定的安全凭证对应的有效的授权状态集
 			var states = this.GetAuthorizedStates(userId, MemberType.User);
 
-			args.IsAuthorized = states != null && states.Any(state => string.Equals(state.SchemaId, schemaId, StringComparison.OrdinalIgnoreCase) &&
-			                                             string.Equals(state.ActionId, actionId, StringComparison.OrdinalIgnoreCase));
+			if(string.IsNullOrWhiteSpace(actionId) || actionId == "*")
+				args.IsAuthorized = states != null && states.Any(state => string.Equals(state.SchemaId, schemaId, StringComparison.OrdinalIgnoreCase));
+			else
+				args.IsAuthorized = states != null && states.Any(state => string.Equals(state.SchemaId, schemaId, StringComparison.OrdinalIgnoreCase) &&
+				                                                          string.Equals(state.ActionId, actionId, StringComparison.OrdinalIgnoreCase));
 
 			//激发“Authorized”事件
 			this.OnAuthorized(args);
