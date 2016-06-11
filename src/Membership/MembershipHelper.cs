@@ -64,15 +64,32 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共方法
-		public static bool GetPassword(IDataAccess dataAccess, int userId, out byte[] password, out byte[] passwordSalt, out bool isApproved, out bool isSuspended)
+		public static bool GetPassword(IDataAccess dataAccess, int userId, out byte[] password, out byte[] passwordSalt)
 		{
-			return GetPasswordCore(dataAccess, new Condition("UserId", userId), out password, out passwordSalt, out isApproved, out isSuspended) != 0;
+			UserStatus status;
+			DateTime? statusTime;
+
+			return GetPasswordCore(dataAccess, new Condition("UserId", userId), out password, out passwordSalt, out status, out statusTime) != 0;
 		}
 
-		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt, out bool isApproved, out bool isSuspended)
+		public static bool GetPassword(IDataAccess dataAccess, int userId, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTime)
+		{
+			return GetPasswordCore(dataAccess, new Condition("UserId", userId), out password, out passwordSalt, out status, out statusTime) != 0;
+		}
+
+		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt)
+		{
+			UserStatus status;
+			DateTime? statusTime;
+
+			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
+			return GetPasswordCore(dataAccess, condition, out password, out passwordSalt, out status, out statusTime);
+		}
+
+		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTime)
 		{
 			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
-			return GetPasswordCore(dataAccess, condition, out password, out passwordSalt, out isApproved, out isSuspended);
+			return GetPasswordCore(dataAccess, condition, out password, out passwordSalt, out status, out statusTime);
 		}
 
 		public static User GetUser(IDataAccess dataAccess, int userId)
@@ -193,7 +210,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 私有方法
-		private static int? GetPasswordCore(IDataAccess dataAccess, ICondition condition, out byte[] password, out byte[] passwordSalt, out bool isApproved, out bool isSuspended)
+		private static int? GetPasswordCore(IDataAccess dataAccess, ICondition condition, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTime)
 		{
 			if(dataAccess == null)
 				throw new ArgumentNullException("dataAccess");
@@ -203,22 +220,22 @@ namespace Zongsoft.Security.Membership
 
 			password = null;
 			passwordSalt = null;
-			isApproved = false;
-			isSuspended = false;
+			status = UserStatus.Active;
+			statusTime = null;
 
 			//从数据引擎中获取指定条件的用户密码数据
-			var dictionary = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, Password, PasswordSalt, Approved, Suspended").FirstOrDefault();
+			var dictionary = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, Password, PasswordSalt, Status, StatusTime").FirstOrDefault();
 
 			if(dictionary == null || dictionary.Count < 1)
 				return null;
 
 			object value;
 
-			if(dictionary.TryGetValue("Approved", out value))
-				isApproved = Zongsoft.Common.Convert.ConvertValue<bool>(value);
+			if(dictionary.TryGetValue("Status", out value))
+				status = Zongsoft.Common.Convert.ConvertValue<UserStatus>(value);
 
-			if(dictionary.TryGetValue("Suspended", out value))
-				isSuspended = Zongsoft.Common.Convert.ConvertValue<bool>(value);
+			if(dictionary.TryGetValue("StatusTime", out value))
+				statusTime = Zongsoft.Common.Convert.ConvertValue<DateTime?>(value);
 
 			object storedPassword;
 			object storedPasswordSalt;

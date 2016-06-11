@@ -74,10 +74,11 @@ namespace Zongsoft.Security.Membership
 
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
-			bool isApproved, isSuspended;
+			UserStatus status;
+			DateTime? statusTime;
 
 			//获取当前用户的密码及密码向量
-			var userId = this.GetPassword(identity, @namespace, out storedPassword, out storedPasswordSalt, out isApproved, out isSuspended);
+			var userId = this.GetPassword(identity, @namespace, out storedPassword, out storedPasswordSalt, out status, out statusTime);
 
 			//如果帐户不存在，则抛出异常
 			if(userId == null)
@@ -90,23 +91,33 @@ namespace Zongsoft.Security.Membership
 			}
 
 			//如果帐户尚未审核批准，则抛出异常
-			if(!isApproved)
+			if(status == UserStatus.Unapproved)
 			{
 				//激发“Authenticated”事件
 				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, false));
 
-				//密码校验失败则抛出验证异常
+				//因为账户状态异常而抛出验证异常
 				throw new AuthenticationException(AuthenticationReason.AccountUnapproved);
 			}
 
-			//如果帐户已被禁用，则抛出异常
-			if(isSuspended)
+			//如果帐户被暂停，则抛出异常
+			if(status == UserStatus.Suspended)
 			{
 				//激发“Authenticated”事件
 				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, false));
 
-				//密码校验失败则抛出验证异常
+				//因为账户状态异常而抛出验证异常
 				throw new AuthenticationException(AuthenticationReason.AccountSuspended);
+			}
+
+			//如果帐户已经禁用(停用)，则抛出异常
+			if(status == UserStatus.Disabled)
+			{
+				//激发“Authenticated”事件
+				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, false));
+
+				//因为账户状态异常而抛出验证异常
+				throw new AuthenticationException(AuthenticationReason.AccountDisabled);
 			}
 
 			//如果验证失败，则抛出异常
@@ -134,12 +145,12 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 虚拟方法
-		protected virtual int? GetPassword(string identity, string @namespace, out byte[] password, out byte[] passwordSalt, out bool isApproved, out bool isSuspended)
+		protected virtual int? GetPassword(string identity, string @namespace, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTime)
 		{
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
 
-			return MembershipHelper.GetPassword(this.DataAccess, identity, @namespace, out password, out passwordSalt, out isApproved, out isSuspended);
+			return MembershipHelper.GetPassword(this.DataAccess, identity, @namespace, out password, out passwordSalt, out status, out statusTime);
 		}
 		#endregion
 

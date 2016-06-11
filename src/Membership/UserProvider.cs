@@ -396,9 +396,8 @@ namespace Zongsoft.Security.Membership
 		{
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
-			bool isApproved, isSuspended;
 
-			if(!MembershipHelper.GetPassword(this.DataAccess, userId, out storedPassword, out storedPasswordSalt, out isApproved, out isSuspended))
+			if(!MembershipHelper.GetPassword(this.DataAccess, userId, out storedPassword, out storedPasswordSalt))
 				return false;
 
 			if(!PasswordUtility.VerifyPassword(oldPassword, storedPassword, storedPasswordSalt))
@@ -585,9 +584,8 @@ namespace Zongsoft.Security.Membership
 
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
-			bool isApproved, isSuspended;
 
-			if(!MembershipHelper.GetPassword(this.DataAccess, userId, out storedPassword, out storedPasswordSalt, out isApproved, out isSuspended))
+			if(!MembershipHelper.GetPassword(this.DataAccess, userId, out storedPassword, out storedPasswordSalt))
 				return false;
 
 			if(!PasswordUtility.VerifyPassword(password, storedPassword, storedPasswordSalt))
