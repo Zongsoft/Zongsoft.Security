@@ -107,7 +107,7 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(name))
 				return false;
 
-			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("Name", name) & Condition.Equal("Namespace", MembershipHelper.TrimNamespace(@namespace)));
+			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("Name", name) & MembershipHelper.GetNamespaceCondition(@namespace));
 		}
 
 		public Role GetRole(int roleId)
@@ -122,16 +122,13 @@ namespace Zongsoft.Security.Membership
 
 			return this.DataAccess.Select<Role>(
 													MembershipHelper.DATA_ENTITY_ROLE,
-													Condition.Equal("Name", name) & Condition.Equal("Namespace", MembershipHelper.TrimNamespace(@namespace))
+													Condition.Equal("Name", name) & MembershipHelper.GetNamespaceCondition(@namespace)
 												).FirstOrDefault();
 		}
 
 		public IEnumerable<Role> GetAllRoles(string @namespace, Paging paging = null)
 		{
-			if(string.IsNullOrWhiteSpace(@namespace))
-				return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, null, paging);
-			else
-				return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("Namespace", MembershipHelper.TrimNamespace(@namespace)), paging);
+			return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, MembershipHelper.GetNamespaceCondition(@namespace), paging);
 		}
 
 		public int DeleteRoles(params int[] roleIds)
@@ -228,7 +225,7 @@ namespace Zongsoft.Security.Membership
 					if(this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_ROLE,
 											  Condition.NotEqual("RoleId", role.RoleId) &
 											  Condition.Equal("Name", role.Name) &
-											  Condition.Equal("Namespace", MembershipHelper.TrimNamespace(role.Namespace))))
+											  MembershipHelper.GetNamespaceCondition(role.Namespace)))
 						throw new DataConflictException(Zongsoft.Resources.ResourceUtility.GetString("Text.RoleConflict"));
 				}
 			}

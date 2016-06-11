@@ -2,7 +2,7 @@
  * Authors:
  *   钟峰(Popeye Zhong) <zongsoft@gmail.com>
  *
- * Copyright (C) 2010-2015 Zongsoft Corporation <http://www.zongsoft.com>
+ * Copyright (C) 2010-2016 Zongsoft Corporation <http://www.zongsoft.com>
  *
  * This file is part of Zongsoft.Security.
  *
@@ -69,12 +69,12 @@ namespace Zongsoft.Security.Membership
 			UserStatus status;
 			DateTime? statusTime;
 
-			return GetPasswordCore(dataAccess, new Condition("UserId", userId), out password, out passwordSalt, out status, out statusTime) != 0;
+			return GetPasswordCore(dataAccess, Condition.Equal("UserId", userId), out password, out passwordSalt, out status, out statusTime) != 0;
 		}
 
 		public static bool GetPassword(IDataAccess dataAccess, int userId, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTime)
 		{
-			return GetPasswordCore(dataAccess, new Condition("UserId", userId), out password, out passwordSalt, out status, out statusTime) != 0;
+			return GetPasswordCore(dataAccess, Condition.Equal("UserId", userId), out password, out passwordSalt, out status, out statusTime) != 0;
 		}
 
 		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt)
@@ -152,12 +152,20 @@ namespace Zongsoft.Security.Membership
 				condition = Condition.Equal("Name", identity);
 			}
 
-			return condition & Condition.Equal("Namespace", TrimNamespace(@namespace));
+			return condition & GetNamespaceCondition(@namespace);
 		}
 
-		internal static string TrimNamespace(string @namespace)
+		internal static Condition GetNamespaceCondition(string @namespace)
 		{
-			return string.IsNullOrWhiteSpace(@namespace) ? null : @namespace.Trim();
+			if(string.IsNullOrWhiteSpace(@namespace))
+				return Condition.Equal("Namespace", null);
+
+			@namespace = @namespace.Trim();
+
+			if(@namespace.Contains('*') || @namespace.Contains('?'))
+				return Condition.Like("Namespace", @namespace.Replace('*', '%').Replace('?', '_'));
+
+			return Condition.Equal("Namespace", @namespace);
 		}
 
 		internal static bool InScope<T>(string scope, string memberName)

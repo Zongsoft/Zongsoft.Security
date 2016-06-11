@@ -125,10 +125,7 @@ namespace Zongsoft.Security.Membership
 
 		public IEnumerable<User> GetAllUsers(string @namespace, Paging paging = null)
 		{
-			if(string.IsNullOrWhiteSpace(@namespace))
-				return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, null, paging);
-			else
-				return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("Namespace", MembershipHelper.TrimNamespace(@namespace)), paging);
+			return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, MembershipHelper.GetNamespaceCondition(@namespace), paging);
 		}
 
 		public bool Exists(int userId)
@@ -632,7 +629,7 @@ namespace Zongsoft.Security.Membership
 
 		private void EnsureConflict(User user, string scope, bool isUpdate)
 		{
-			var ns = Condition.Equal("Namespace", MembershipHelper.TrimNamespace(user.Namespace));
+			var ns = MembershipHelper.GetNamespaceCondition(user.Namespace);
 			var conditions = new ConditionCollection(ConditionCombination.Or);
 
 			if(!string.IsNullOrWhiteSpace(user.Name) && MembershipHelper.InScope<User>(scope, "Name"))
