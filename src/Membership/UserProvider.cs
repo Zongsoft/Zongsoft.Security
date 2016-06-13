@@ -138,15 +138,7 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity))
 				return false;
 
-			MembershipHelper.UserIdentityType identityType;
-			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace, out identityType);
-
-			if(identityType == MembershipHelper.UserIdentityType.Name)
-			{
-				//确保用户名是审核通过的
-				this.Censor(identity);
-			}
-
+			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
 			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, condition);
 		}
 
