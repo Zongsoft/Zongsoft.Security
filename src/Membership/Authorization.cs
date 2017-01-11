@@ -127,7 +127,7 @@ namespace Zongsoft.Security.Membership
 
 			//将结果缓存在内存容器中，默认有效期为10分钟
 			return Zongsoft.Runtime.Caching.MemoryCache.Default.GetValue("Zongsoft.Security.Authorization:" + memberType.ToString() + ":" + memberId.ToString(),
-				key => new Tuple<object, TimeSpan>(this.GetAuthorizedStatesCore(memberId, memberType), TimeSpan.FromMinutes(10))) as IEnumerable<AuthorizationState>;
+				key => new Zongsoft.Runtime.Caching.CacheEntry(this.GetAuthorizedStatesCore(memberId, memberType), TimeSpan.FromMinutes(10))) as IEnumerable<AuthorizationState>;
 		}
 		#endregion
 

@@ -389,7 +389,7 @@ namespace Zongsoft.Security
 			this.Storage.SetValue(this.GetCacheKeyOfCredential(credentialId), this.SerializeCertificationToJson(credential), duration);
 
 			//顺延当前用户及场景对应凭证号的缓存项
-			this.Storage.SetDuration(this.GetCacheKeyOfUser(credential.UserId, credential.Scene), duration);
+			this.Storage.SetExpiry(this.GetCacheKeyOfUser(credential.UserId, credential.Scene), duration);
 
 			//将缓存对象保存到本地内存缓存中
 			_memoryCache.SetValue(credential.CredentialId, credential, DateTime.Now.AddSeconds(duration.TotalSeconds / 2));
