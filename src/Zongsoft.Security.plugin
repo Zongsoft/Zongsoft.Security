@@ -24,8 +24,6 @@
 
 	<!-- 挂载“安全”相关的各种服务 -->
 	<extension path="/Workspace/Services/Security">
-		<object name="DataAccess" value="{srv:Security@Data}" />
-
 		<object name="IsAuthenticated" type="Zongsoft.Security.Membership.IsAuthenticatedPredication, Zongsoft.Security" />
 		<object name="IsUnauthenticated" type="Zongsoft.Security.Membership.IsUnauthenticatedPredication, Zongsoft.Security" />
 		<object name="IsAuthorized" type="Zongsoft.Security.Membership.IsAuthorizedPredication, Zongsoft.Security" />
