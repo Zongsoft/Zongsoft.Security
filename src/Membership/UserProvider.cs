@@ -220,7 +220,7 @@ namespace Zongsoft.Security.Membership
 				new
 				{
 					Status = status,
-					StatusTime = DateTime.Now,
+					StatusTimestamp = DateTime.Now,
 				},
 				new Condition("UserId", userId)) > 0;
 		}

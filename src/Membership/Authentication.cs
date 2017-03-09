@@ -75,10 +75,10 @@ namespace Zongsoft.Security.Membership
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
 			UserStatus status;
-			DateTime? statusTime;
+			DateTime? statusTimestamp;
 
 			//获取当前用户的密码及密码向量
-			var userId = this.GetPassword(identity, @namespace, out storedPassword, out storedPasswordSalt, out status, out statusTime);
+			var userId = this.GetPassword(identity, @namespace, out storedPassword, out storedPasswordSalt, out status, out statusTimestamp);
 
 			//如果帐户不存在，则抛出异常
 			if(userId == null)
@@ -145,12 +145,12 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 虚拟方法
-		protected virtual int? GetPassword(string identity, string @namespace, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTime)
+		protected virtual int? GetPassword(string identity, string @namespace, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
 		{
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
 
-			return MembershipHelper.GetPassword(this.DataAccess, identity, @namespace, out password, out passwordSalt, out status, out statusTime);
+			return MembershipHelper.GetPassword(this.DataAccess, identity, @namespace, out password, out passwordSalt, out status, out statusTimestamp);
 		}
 		#endregion
 

@@ -67,29 +67,29 @@ namespace Zongsoft.Security.Membership
 		public static bool GetPassword(IDataAccess dataAccess, int userId, out byte[] password, out byte[] passwordSalt)
 		{
 			UserStatus status;
-			DateTime? statusTime;
+			DateTime? statusTimestamp;
 
-			return GetPasswordCore(dataAccess, Condition.Equal("UserId", userId), out password, out passwordSalt, out status, out statusTime) != 0;
+			return GetPasswordCore(dataAccess, Condition.Equal("UserId", userId), out password, out passwordSalt, out status, out statusTimestamp) != 0;
 		}
 
-		public static bool GetPassword(IDataAccess dataAccess, int userId, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTime)
+		public static bool GetPassword(IDataAccess dataAccess, int userId, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
 		{
-			return GetPasswordCore(dataAccess, Condition.Equal("UserId", userId), out password, out passwordSalt, out status, out statusTime) != 0;
+			return GetPasswordCore(dataAccess, Condition.Equal("UserId", userId), out password, out passwordSalt, out status, out statusTimestamp) != 0;
 		}
 
 		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt)
 		{
 			UserStatus status;
-			DateTime? statusTime;
+			DateTime? statusTimestamp;
 
 			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
-			return GetPasswordCore(dataAccess, condition, out password, out passwordSalt, out status, out statusTime);
+			return GetPasswordCore(dataAccess, condition, out password, out passwordSalt, out status, out statusTimestamp);
 		}
 
-		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTime)
+		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
 		{
 			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
-			return GetPasswordCore(dataAccess, condition, out password, out passwordSalt, out status, out statusTime);
+			return GetPasswordCore(dataAccess, condition, out password, out passwordSalt, out status, out statusTimestamp);
 		}
 
 		public static User GetUser(IDataAccess dataAccess, int userId)
@@ -218,7 +218,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 私有方法
-		private static int? GetPasswordCore(IDataAccess dataAccess, ICondition condition, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTime)
+		private static int? GetPasswordCore(IDataAccess dataAccess, ICondition condition, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
 		{
 			if(dataAccess == null)
 				throw new ArgumentNullException("dataAccess");
@@ -229,10 +229,10 @@ namespace Zongsoft.Security.Membership
 			password = null;
 			passwordSalt = null;
 			status = UserStatus.Active;
-			statusTime = null;
+			statusTimestamp = null;
 
 			//从数据引擎中获取指定条件的用户密码数据
-			var dictionary = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, Password, PasswordSalt, Status, StatusTime").FirstOrDefault();
+			var dictionary = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, Password, PasswordSalt, Status, StatusTimestamp").FirstOrDefault();
 
 			if(dictionary == null || dictionary.Count < 1)
 				return null;
@@ -242,8 +242,8 @@ namespace Zongsoft.Security.Membership
 			if(dictionary.TryGetValue("Status", out value))
 				status = Zongsoft.Common.Convert.ConvertValue<UserStatus>(value);
 
-			if(dictionary.TryGetValue("StatusTime", out value))
-				statusTime = Zongsoft.Common.Convert.ConvertValue<DateTime?>(value);
+			if(dictionary.TryGetValue("StatusTimestamp", out value))
+				statusTimestamp = Zongsoft.Common.Convert.ConvertValue<DateTime?>(value);
 
 			object storedPassword;
 			object storedPasswordSalt;
