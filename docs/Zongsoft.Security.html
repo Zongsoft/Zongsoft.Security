@@ -2,11 +2,11 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
-	<title>Zongsoft iSecurity&reg; 用户角色安全数据库表结构定义</title>
+	<title>Zongsoft.Security&reg; 用户角色安全数据库表结构定义</title>
 	<style type="text/css">
 		table
 		{
-			font-family:仿宋, 仿宋_gb2312;
+			font-family:Fangsong, Fangsong_gb2312;
 			font-size:12pt;
 			border-right:1px solid gray;
 			border-bottom:1px solid gray;
@@ -25,8 +25,8 @@
 	</style>
 </head>
 
-<body style="font-family:仿宋, 仿宋_gb2312; font-size:12pt">
-	<h1 style="font-family:黑体, 楷体, 楷体_gb2312; font-size:20pt; text-align:center; font-weight:bold">
+<body style="font-family:Fangsong, Fangsong_gb2312; font-size:12pt">
+	<h1 style="font-family:黑体, Kaiti, Kaiti_gb2312; font-size:20pt; text-align:center; font-weight:bold">
 		<font face="Arial"><em>Zongsoft</em> <font face="Monotype Corsiva">i</font><font size="1"> </font>Security<sup>&reg;</sup></font> 用户角色安全数据库表结构定义</strong>
 	</h1>
 
@@ -62,7 +62,7 @@
 		<tr>
 			<td align="center"><font face="Arial"><span style="color:maroon">(Unique#1)</span> Namespace</font></td>
 			<td align="center"><font face="Arial">varchar</font></td>
-			<td align="center"><font face="Arial">50</font></td>
+			<td align="center"><font face="Arial">100</font></td>
 			<td align="center"><input type="checkbox" disabled="1" /></td>
 			<td align="center"></td>
 			<td>用户所属的命名空间，该字段表示应用或组织机构的标识。</td>
@@ -140,7 +140,7 @@
 			<td>用户状态（0:正常; 1:待批准; 2:已停用; 3:被挂起<small>(密码验证失败超过特定次数)</small>）</td>
 		</tr>
 		<tr>
-			<td align="center"><font face="Arial">StatusTime</font></td>
+			<td align="center"><font face="Arial">StatusTimestamp</font></td>
 			<td align="center"><font face="Arial">datetime</font></td>
 			<td align="center"><font face="Arial">-</font></td>
 			<td align="center"><input type="checkbox" disabled="1" checked="checked" /></td>
@@ -265,7 +265,7 @@
 		<tr>
 			<td align="center"><font face="Arial"><span style="color:maroon">(Unique#1)</span> Namespace</font></td>
 			<td align="center"><font face="Arial">varchar</font></td>
-			<td align="center"><font face="Arial">50</font></td>
+			<td align="center"><font face="Arial">100</font></td>
 			<td align="center"><input type="checkbox" disabled="1" /></td>
 			<td align="center"></td>
 			<td>角色所属的命名空间，该字段表示应用或组织机构的标识。</td>

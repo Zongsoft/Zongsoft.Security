@@ -3,7 +3,7 @@ SET TIME_ZONE='+08:00';
 
 CREATE TABLE IF NOT EXISTS `Security_Role` (
   `RoleId` int NOT NULL COMMENT '主键，角色编号',
-  `Namespace` VARCHAR(50) NULL COMMENT '角色所属的命名空间，该字段表示应用或组织机构的标识',
+  `Namespace` VARCHAR(100) NULL COMMENT '角色所属的命名空间，该字段表示应用或组织机构的标识',
   `Name` VARCHAR(50) NOT NULL COMMENT '角色名称，该名称在所属命名空间内具有唯一性',
   `FullName` VARCHAR(50) NULL COMMENT '角色全称',
   `CreatorId` int NULL COMMENT '创建者编号',
@@ -16,7 +16,7 @@ ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='角色表';
 
 CREATE TABLE IF NOT EXISTS `Security_User` (
   `UserId` int NOT NULL COMMENT '主键，用户编号',
-  `Namespace` VARCHAR(50) NULL COMMENT '用户所属的命名空间，该字段表示应用或组织机构的标识',
+  `Namespace` VARCHAR(100) NULL COMMENT '用户所属的命名空间，该字段表示应用或组织机构的标识',
   `Name` VARCHAR(50) NOT NULL COMMENT '用户名称，该名称在所属命名空间内具有唯一性',
   `Password` BINARY(64) NULL COMMENT '用户的登录口令',
   `PasswordSalt` BINARY(8) NULL COMMENT '口令加密向量(随机数)',
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS `Security_User` (
   `Email` VARCHAR(50) NULL COMMENT '用户的电子邮箱，该邮箱地址在所属命名空间内具有唯一性',
   `PhoneNumber` VARCHAR(50) NULL COMMENT '用户的手机号码，该手机号码在所属命名空间内具有唯一性',
   `Status` TINYINT NOT NULL DEFAULT 1 COMMENT '用户状态（0:正常; 1:待批准; 2:已停用; 3:被挂起(密码验证失败超过特定次数)）',
-  `StatusTime` DATETIME NULL COMMENT '状态更新时间',
+  `StatusTimestamp` DATETIME NULL COMMENT '状态更新时间',
   `PasswordQuestion1` VARCHAR(50) NULL COMMENT '用户的密码问答的题面(1)',
   `PasswordAnswer1` VARBINARY(64) NULL COMMENT '用户的密码问答的答案(1)',
   `PasswordQuestion2` VARCHAR(50) NULL COMMENT '用户的密码问答的题面(2)',
