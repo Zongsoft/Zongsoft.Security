@@ -2,8 +2,8 @@
 INSERT INTO `Security_Role` (`RoleId`, `Name`, `FullName`, `Description`, `CreatedTime`) VALUES (1, 'Administrators', 'Administrators', '系统管理角色(系统内置角色)', now());
 
 # 添加系统内置用户
-INSERT INTO `Security_User` (`UserId`, `Name`, `FullName`, `Description`, `CreatedTime`) VALUES (1, 'Administrator', 'Administrator', '系统管理员(系统内置帐号)', now());
-INSERT INTO `Security_User` (`UserId`, `Name`, `FullName`, `Description`, `CreatedTime`) VALUES (2, 'Guest', 'Guest', '来宾(系统内置帐号)', now());
+INSERT INTO `Security_User` (`UserId`, `Name`, `FullName`, `Description`, `Status`, `CreatedTime`) VALUES (1, 'Administrator', 'Administrator', '系统管理员(系统内置帐号)', 0, now());
+INSERT INTO `Security_User` (`UserId`, `Name`, `FullName`, `Description`, `Status`, `CreatedTime`) VALUES (2, 'Guest', 'Guest', '来宾(系统内置帐号)', 0, now());
 
 # 添加系统内置保留名字
 INSERT INTO `Security_Censorship` (`Name`, `Word`) VALUES ('Names', 'Automao');
