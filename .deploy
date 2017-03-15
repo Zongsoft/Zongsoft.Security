@@ -1,3 +1,4 @@
 src/Zongsoft.Security.plugin
 src/Zongsoft.Security.option
+src/Zongsoft.Security.mapping
 src/bin/$(Edition)/Zongsoft.Security.*
