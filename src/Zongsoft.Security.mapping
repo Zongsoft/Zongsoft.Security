@@ -4,8 +4,10 @@
 		<key>
 			<property name="RoleId"/>
 		</key>
-		<property name="Name" constructorName="name" />
-		<property name="Namespace" constructorName="namespace" />
+
+		<property name="Name" constructor.parameter="name" />
+		<property name="Namespace" constructor.parameter="namespace" />
+
 		<property name="Creator" relationTo="Security.User">
 			<join mode="left">
 				<member from="CreatorId" to="UserId"/>
@@ -15,18 +17,20 @@
 
 	<entity name="Security.User" table="Security_User" type="Zongsoft.Security.Membership.User, Zongsoft.CoreLibrary">
 		<key>
-			<property name="UserId" constructorName="userId"/>
+			<property name="UserId" constructor.parameter="userId"/>
 		</key>
-		<property name="Name" constructorName="name" />
-		<property name="Namespace" constructorName="namespace" />
+
+		<property name="Name" constructor.parameter="name" />
+		<property name="Namespace" constructor.parameter="namespace" />
 	</entity>
 
 	<entity name="Security.Member" table="Security_Member" type="Zongsoft.Security.Membership.Member, Zongsoft.CoreLibrary">
 		<key>
-			<property name="RoleId" constructorName="roleId"/>
-			<property name="MemberId" constructorName="memberId" />
-			<property name="MemberType" constructorName="memberType" />
+			<property name="RoleId" constructor.parameter="roleId"/>
+			<property name="MemberId" constructor.parameter="memberId" />
+			<property name="MemberType" constructor.parameter="memberType" />
 		</key>
+
 		<property name="Role" relationTo="Security.Role">
 			<join>
 				<member from="RoleId" to="RoleId"/>
@@ -36,23 +40,25 @@
 
 	<entity name="Security.Permission" table="Security_Permission" type="Zongsoft.Security.Membership.Permission, Zongsoft.CoreLibrary">
 		<key>
-			<property name="MemberId" constructorName="memberId" />
-			<property name="MemberType" constructorName="memberType" />
-			<property name="SchemaId" constructorName="schemaId" />
-			<property name="ActionId" constructorName="actionId" />
+			<property name="MemberId" constructor.parameter="memberId" />
+			<property name="MemberType" constructor.parameter="memberType" />
+			<property name="SchemaId" constructor.parameter="schemaId" />
+			<property name="ActionId" constructor.parameter="actionId" />
 		</key>
-		<property name="Granted" constructorName="granted" />
+
+		<property name="Granted" constructor.parameter="granted" />
 	</entity>
 
 	<entity name="Security.PermissionFilter" table="Security_PermissionFilter" type="Zongsoft.Security.Membership.PermissionFilter, Zongsoft.CoreLibrary">
 		<key>
-			<property name="MemberId" constructorName="memberId" />
-			<property name="MemberType" constructorName="memberType" />
-			<property name="SchemaId" constructorName="schemaId" />
-			<property name="ActionId" constructorName="actionId" />
+			<property name="MemberId" constructor.parameter="memberId" />
+			<property name="MemberType" constructor.parameter="memberType" />
+			<property name="SchemaId" constructor.parameter="schemaId" />
+			<property name="ActionId" constructor.parameter="actionId" />
 		</key>
-		<property name="Filter" constructorName="filter" />
-		<property name="Granted" column=""/>
+
+		<property name="Filter" constructor.parameter="filter" />
+		<property name="Granted" field=""/>
 	</entity>
 
 	<entity name="Security.Censorship" table="Security_Censorship">
