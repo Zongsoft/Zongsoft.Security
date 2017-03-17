@@ -2,7 +2,7 @@
  * Authors:
  *   钟峰(Popeye Zhong) <zongsoft@gmail.com>
  *
- * Copyright (C) 2010-2015 Zongsoft Corporation <http://www.zongsoft.com>
+ * Copyright (C) 2010-2017 Zongsoft Corporation <http://www.zongsoft.com>
  *
  * This file is part of Zongsoft.Security.
  *
@@ -180,6 +180,9 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(name))
 				throw new ArgumentNullException("name");
 
+			//验证指定的名称是否合法
+			this.VerifyName(name);
+
 			//确保用户名是审核通过的
 			this.Censor(name);
 
@@ -268,6 +271,9 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(user.Name))
 				throw new ArgumentException("The user name is empty.");
 
+			//验证指定的名称是否合法
+			this.VerifyName(user.Name);
+
 			//确保用户名是审核通过的
 			this.Censor(user.Name);
 
@@ -315,6 +321,9 @@ namespace Zongsoft.Security.Membership
 				if(string.IsNullOrWhiteSpace(user.Name))
 					throw new ArgumentException("The user name is empty.");
 
+				//验证指定的名称是否合法
+				this.VerifyName(user.Name);
+
 				//确保用户名是审核通过的
 				this.Censor(user.Name);
 
@@ -355,6 +364,9 @@ namespace Zongsoft.Security.Membership
 				{
 					if(string.IsNullOrWhiteSpace(user.Name))
 						throw new ArgumentException("The user name is empty.");
+
+					//验证指定的名称是否合法
+					this.VerifyName(user.Name);
 
 					//确保用户名是审核通过的
 					this.Censor(user.Name);
@@ -607,6 +619,13 @@ namespace Zongsoft.Security.Membership
 				dictionary.Add("PasswordExpires", passwordExpires.Value);
 
 			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, dictionary, new Condition("UserId", userId)) > 0;
+		}
+		#endregion
+
+		#region 虚拟方法
+		protected virtual void VerifyName(string name)
+		{
+			Utility.VerifyName(name);
 		}
 		#endregion
 

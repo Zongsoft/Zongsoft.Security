@@ -2,7 +2,7 @@
  * Authors:
  *   钟峰(Popeye Zhong) <zongsoft@gmail.com>
  *
- * Copyright (C) 2010-2015 Zongsoft Corporation <http://www.zongsoft.com>
+ * Copyright (C) 2010-2017 Zongsoft Corporation <http://www.zongsoft.com>
  *
  * This file is part of Zongsoft.Security.
  *
@@ -176,6 +176,9 @@ namespace Zongsoft.Security.Membership
 				if(string.IsNullOrWhiteSpace(role.Name))
 					throw new ArgumentException("The role name is empty.");
 
+				//验证指定的名称是否合法
+				this.VerifyName(role.Name);
+
 				//确保角色名是审核通过的
 				this.Censor(role.Name);
 
@@ -217,6 +220,9 @@ namespace Zongsoft.Security.Membership
 				{
 					if(string.IsNullOrWhiteSpace(role.Name))
 						throw new ArgumentException("The role name is empty.");
+
+					//验证指定的名称是否合法
+					this.VerifyName(role.Name);
 
 					//确保角色名是审核通过的
 					this.Censor(role.Name);
@@ -401,6 +407,13 @@ namespace Zongsoft.Security.Membership
 				return 0;
 
 			return this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_MEMBER, members);
+		}
+		#endregion
+
+		#region 虚拟方法
+		protected virtual void VerifyName(string name)
+		{
+			Utility.VerifyName(name);
 		}
 		#endregion
 
