@@ -126,9 +126,12 @@ namespace Zongsoft.Security.Membership
 												).FirstOrDefault();
 		}
 
-		public IEnumerable<Role> GetAllRoles(string @namespace, Paging paging = null)
+		public IEnumerable<Role> GetRoles(string @namespace, Paging paging = null)
 		{
-			return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, MembershipHelper.GetNamespaceCondition(@namespace), paging);
+			if(@namespace == null)
+				return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE);
+			else
+				return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, MembershipHelper.GetNamespaceCondition(@namespace), paging);
 		}
 
 		public int DeleteRoles(params int[] roleIds)

@@ -123,9 +123,12 @@ namespace Zongsoft.Security.Membership
 			return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, condition).FirstOrDefault();
 		}
 
-		public IEnumerable<User> GetAllUsers(string @namespace, Paging paging = null)
+		public IEnumerable<User> GetUsers(string @namespace, Paging paging = null)
 		{
-			return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, MembershipHelper.GetNamespaceCondition(@namespace), paging);
+			if(@namespace == null)
+				return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER);
+			else
+				return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, MembershipHelper.GetNamespaceCondition(@namespace), paging);
 		}
 
 		public bool Exists(int userId)
