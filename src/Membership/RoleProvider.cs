@@ -194,7 +194,7 @@ namespace Zongsoft.Security.Membership
 			{
 				//处理未指定有效编号的角色对象
 				if(role != null && role.RoleId < 1)
-					role.RoleId = (int)this.Sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_ROLEID, 1, MembershipHelper.MINIMUM_ID);
+					role.RoleId = (int)this.Sequence.Increment(MembershipHelper.SEQUENCE_ROLEID, 1, MembershipHelper.MINIMUM_ID);
 			}
 
 			return this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_ROLE, roles);

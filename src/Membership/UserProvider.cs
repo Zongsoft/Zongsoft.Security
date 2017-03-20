@@ -284,7 +284,7 @@ namespace Zongsoft.Security.Membership
 			this.EnsureConflict(user, null, false);
 
 			if(user.UserId < 1)
-				user.UserId = (int)this.Sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
+				user.UserId = (int)this.Sequence.Increment(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
@@ -338,7 +338,7 @@ namespace Zongsoft.Security.Membership
 			{
 				//处理未指定有效编号的用户对象
 				if(user != null && user.UserId < 1)
-					user.UserId = (int)this.Sequence.GetSequenceNumber(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
+					user.UserId = (int)this.Sequence.Increment(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 			}
 
 			return this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_USER, users);
