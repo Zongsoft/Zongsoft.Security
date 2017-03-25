@@ -278,9 +278,17 @@ namespace Zongsoft.Security
 		#endregion
 
 		#region 虚拟方法
+		/// <summary>
+		/// 生成一个随机的凭证号。
+		/// </summary>
+		/// <returns>返回生成的凭证号。</returns>
+		/// <remarks>
+		///		<para>对实现者的建议：凭证号要求以数字打头。</para>
+		/// </remarks>
 		protected virtual string GenerateCredentialId()
 		{
-			return Zongsoft.Common.RandomGenerator.GenerateString(16);
+			//确保凭证号以数字打头
+			return Math.Abs(Zongsoft.Common.RandomGenerator.GenerateInt32()).ToString() + Zongsoft.Common.RandomGenerator.GenerateString(16);
 		}
 
 		protected virtual Credential CreateCredential(Membership.User user, string scene, IDictionary<string, object> extendedProperties)
