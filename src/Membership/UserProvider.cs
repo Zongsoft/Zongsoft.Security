@@ -112,7 +112,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 用户管理
-		public User GetUser(int userId)
+		public User GetUser(uint userId)
 		{
 			return MembershipHelper.GetUser(this.DataAccess, userId);
 		}
@@ -131,7 +131,7 @@ namespace Zongsoft.Security.Membership
 				return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, MembershipHelper.GetNamespaceCondition(@namespace), paging);
 		}
 
-		public bool Exists(int userId)
+		public bool Exists(uint userId)
 		{
 			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("UserId", userId));
 		}
@@ -145,7 +145,7 @@ namespace Zongsoft.Security.Membership
 			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, condition);
 		}
 
-		public bool SetAvatar(int userId, string avatar)
+		public bool SetAvatar(uint userId, string avatar)
 		{
 			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -156,7 +156,7 @@ namespace Zongsoft.Security.Membership
 				new Condition("UserId", userId)) > 0;
 		}
 
-		public bool SetEmail(int userId, string email)
+		public bool SetEmail(uint userId, string email)
 		{
 			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -167,7 +167,7 @@ namespace Zongsoft.Security.Membership
 				new Condition("UserId", userId)) > 0;
 		}
 
-		public bool SetPhoneNumber(int userId, string phoneNumber)
+		public bool SetPhoneNumber(uint userId, string phoneNumber)
 		{
 			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -178,7 +178,7 @@ namespace Zongsoft.Security.Membership
 				new Condition("UserId", userId)) > 0;
 		}
 
-		public bool SetName(int userId, string name)
+		public bool SetName(uint userId, string name)
 		{
 			if(string.IsNullOrWhiteSpace(name))
 				throw new ArgumentNullException("name");
@@ -198,7 +198,7 @@ namespace Zongsoft.Security.Membership
 				new Condition("UserId", userId)) > 0;
 		}
 
-		public bool SetFullName(int userId, string fullName)
+		public bool SetFullName(uint userId, string fullName)
 		{
 			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -209,7 +209,7 @@ namespace Zongsoft.Security.Membership
 				new Condition("UserId", userId)) > 0;
 		}
 
-		public bool SetPrincipalId(int userId, string principalId)
+		public bool SetPrincipalId(uint userId, string principalId)
 		{
 			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -220,7 +220,7 @@ namespace Zongsoft.Security.Membership
 				new Condition("UserId", userId)) > 0;
 		}
 
-		public bool SetStatus(int userId, UserStatus status)
+		public bool SetStatus(uint userId, UserStatus status)
 		{
 			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -231,7 +231,7 @@ namespace Zongsoft.Security.Membership
 				new Condition("UserId", userId)) > 0;
 		}
 
-		public bool SetDescription(int userId, string description)
+		public bool SetDescription(uint userId, string description)
 		{
 			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
@@ -242,7 +242,7 @@ namespace Zongsoft.Security.Membership
 				new Condition("UserId", userId)) > 0;
 		}
 
-		public int DeleteUsers(params int[] userIds)
+		public int DeleteUsers(params uint[] userIds)
 		{
 			if(userIds == null || userIds.Length < 1)
 				return 0;
@@ -284,7 +284,7 @@ namespace Zongsoft.Security.Membership
 			this.EnsureConflict(user, null, false);
 
 			if(user.UserId < 1)
-				user.UserId = (int)this.Sequence.Increment(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
+				user.UserId = (uint)this.Sequence.Increment(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
@@ -338,7 +338,7 @@ namespace Zongsoft.Security.Membership
 			{
 				//处理未指定有效编号的用户对象
 				if(user != null && user.UserId < 1)
-					user.UserId = (int)this.Sequence.Increment(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
+					user.UserId = (uint)this.Sequence.Increment(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 			}
 
 			return this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_USER, users);
@@ -384,7 +384,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 密码管理
-		public bool HasPassword(int userId)
+		public bool HasPassword(uint userId)
 		{
 			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER,
 										  Condition.Equal("UserId", userId) & Condition.NotEqual("Password", null));
@@ -396,7 +396,7 @@ namespace Zongsoft.Security.Membership
 			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, new ConditionCollection(ConditionCombination.And, condition, Condition.NotEqual("Password", null)));
 		}
 
-		public bool ChangePassword(int userId, string oldPassword, string newPassword)
+		public bool ChangePassword(uint userId, string oldPassword, string newPassword)
 		{
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
@@ -418,7 +418,7 @@ namespace Zongsoft.Security.Membership
 				}, new Condition("UserId", userId)) > 0;
 		}
 
-		public int ForgetPassword(string identity, string @namespace, string secret, TimeSpan? timeout = null)
+		public uint ForgetPassword(string identity, string @namespace, string secret, TimeSpan? timeout = null)
 		{
 			if(string.IsNullOrWhiteSpace(secret))
 				throw new ArgumentNullException("secret");
@@ -428,16 +428,16 @@ namespace Zongsoft.Security.Membership
 			if(cache == null)
 				throw new InvalidOperationException("The dependent cache is null.");
 
-			int userId;
+			uint userId;
 			if(!MembershipHelper.GetUserId(this.DataAccess, identity, @namespace, out userId))
-				return -1;
+				return 0;
 
 			cache.SetValue(this.GetCacheKeyOfResetPassword(userId), secret, timeout.HasValue && timeout.Value > TimeSpan.Zero ? timeout.Value : TimeSpan.FromHours(1));
 
 			return userId;
 		}
 
-		public bool ResetPassword(int userId, string secret, string newPassword = null)
+		public bool ResetPassword(uint userId, string secret, string newPassword = null)
 		{
 			if(string.IsNullOrEmpty(secret))
 				return false;
@@ -481,7 +481,7 @@ namespace Zongsoft.Security.Membership
 			if(cache == null)
 				throw new InvalidOperationException("The dependent cache is null.");
 
-			var userId = 0;
+			uint userId = 0;
 			if(!MembershipHelper.GetUserId(this.DataAccess, identity, @namespace, out userId))
 				return false;
 
@@ -520,7 +520,7 @@ namespace Zongsoft.Security.Membership
 			if(record == null || record.Count < 1)
 				return false;
 
-			var userId = Zongsoft.Common.Convert.ConvertValue<int>(record["UserId"]);
+			var userId = Zongsoft.Common.Convert.ConvertValue<uint>(record["UserId"]);
 
 			var succeed = PasswordUtility.VerifyPassword(passwordAnswers[0], record["PasswordAnswer1"] as byte[], this.GetPasswordAnswerSalt(userId, 1)) &&
 			              PasswordUtility.VerifyPassword(passwordAnswers[1], record["PasswordAnswer2"] as byte[], this.GetPasswordAnswerSalt(userId, 2)) &&
@@ -542,7 +542,7 @@ namespace Zongsoft.Security.Membership
 			return succeed;
 		}
 
-		public string[] GetPasswordQuestions(int userId)
+		public string[] GetPasswordQuestions(uint userId)
 		{
 			var record = this.DataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId), "!, UserId, PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
 
@@ -575,7 +575,7 @@ namespace Zongsoft.Security.Membership
 			return result;
 		}
 
-		public bool SetPasswordQuestionsAndAnswers(int userId, string password, string[] passwordQuestions, string[] passwordAnswers)
+		public bool SetPasswordQuestionsAndAnswers(uint userId, string password, string[] passwordQuestions, string[] passwordAnswers)
 		{
 			if(passwordQuestions == null || passwordQuestions.Length < 3)
 				throw new ArgumentNullException("passwordQuestions");
@@ -606,7 +606,7 @@ namespace Zongsoft.Security.Membership
 			}, new Condition("UserId", userId)) > 0;
 		}
 
-		public bool SetPasswordOptions(int userId, bool changePasswordOnFirstTime = false, byte maxInvalidPasswordAttempts = 3, byte minRequiredPasswordLength = 6, TimeSpan? passwordAttemptWindow = null, DateTime? passwordExpires = null)
+		public bool SetPasswordOptions(uint userId, bool changePasswordOnFirstTime = false, byte maxInvalidPasswordAttempts = 3, byte minRequiredPasswordLength = 6, TimeSpan? passwordAttemptWindow = null, DateTime? passwordExpires = null)
 		{
 			var dictionary = new Dictionary<string, object>()
 			{
@@ -660,12 +660,12 @@ namespace Zongsoft.Security.Membership
 				throw new DataConflictException(Zongsoft.Resources.ResourceUtility.GetString("Text.UserConflict"));
 		}
 
-		private byte[] GetPasswordAnswerSalt(int userId, int index)
+		private byte[] GetPasswordAnswerSalt(uint userId, int index)
 		{
 			return Encoding.ASCII.GetBytes(string.Format("Zongsoft.Security.User:{0}:PasswordAnswer[{1}]", userId.ToString(), index.ToString()));
 		}
 
-		private byte[] HashPasswordAnswer(string answer, int userId, int index)
+		private byte[] HashPasswordAnswer(string answer, uint userId, int index)
 		{
 			if(string.IsNullOrEmpty(answer))
 				return null;
@@ -674,7 +674,7 @@ namespace Zongsoft.Security.Membership
 			return PasswordUtility.HashPassword(answer, salt);
 		}
 
-		private string GetCacheKeyOfResetPassword(int userId)
+		private string GetCacheKeyOfResetPassword(uint userId)
 		{
 			return "Zongsoft.Security.Membership.ResetPassword:" + userId.ToString();
 		}

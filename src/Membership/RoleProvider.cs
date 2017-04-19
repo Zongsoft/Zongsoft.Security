@@ -97,7 +97,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 角色管理
-		public bool Exists(int roleId)
+		public bool Exists(uint roleId)
 		{
 			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("RoleId", roleId));
 		}
@@ -110,7 +110,7 @@ namespace Zongsoft.Security.Membership
 			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("Name", name) & MembershipHelper.GetNamespaceCondition(@namespace));
 		}
 
-		public Role GetRole(int roleId)
+		public Role GetRole(uint roleId)
 		{
 			return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("RoleId", roleId)).FirstOrDefault();
 		}
@@ -134,7 +134,7 @@ namespace Zongsoft.Security.Membership
 				return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, MembershipHelper.GetNamespaceCondition(@namespace), paging);
 		}
 
-		public int DeleteRoles(params int[] roleIds)
+		public int DeleteRoles(params uint[] roleIds)
 		{
 			if(roleIds == null || roleIds.Length < 1)
 				return 0;
@@ -194,7 +194,7 @@ namespace Zongsoft.Security.Membership
 			{
 				//处理未指定有效编号的角色对象
 				if(role != null && role.RoleId < 1)
-					role.RoleId = (int)this.Sequence.Increment(MembershipHelper.SEQUENCE_ROLEID, 1, MembershipHelper.MINIMUM_ID);
+					role.RoleId = (uint)this.Sequence.Increment(MembershipHelper.SEQUENCE_ROLEID, 1, MembershipHelper.MINIMUM_ID);
 			}
 
 			return this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_ROLE, roles);
@@ -244,7 +244,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 成员管理
-		public bool InRole(int userId, int roleId)
+		public bool InRole(uint userId, uint roleId)
 		{
 			//获取指定用户编号对应的用户名
 			var userDictionary = this.DataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("UserId", userId), "Name").FirstOrDefault();
@@ -262,7 +262,7 @@ namespace Zongsoft.Security.Membership
 			return this.GetRecursiveRoles(userId, MemberType.User).Any(p => p.Item1 == roleId);
 		}
 
-		public bool InRoles(int userId, params string[] roleNames)
+		public bool InRoles(uint userId, params string[] roleNames)
 		{
 			if(roleNames == null || roleNames.Length < 1)
 				return false;
@@ -278,7 +278,7 @@ namespace Zongsoft.Security.Membership
 			return this.GetRecursiveRoles(userId, MemberType.User).Any(p => roleNames.Contains(p.Item2, StringComparer.OrdinalIgnoreCase));
 		}
 
-		public IEnumerable<Role> GetRoles(int memberId, MemberType memberType)
+		public IEnumerable<Role> GetRoles(uint memberId, MemberType memberType)
 		{
 			var members = this.DataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
 														 Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType),
@@ -287,7 +287,7 @@ namespace Zongsoft.Security.Membership
 			return members.Select(m => m.Role);
 		}
 
-		public IEnumerable<Member> GetMembers(int roleId)
+		public IEnumerable<Member> GetMembers(uint roleId)
 		{
 			//查出指定角色的所有子级成员
 			var members = this.DataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER, new Condition("RoleId", roleId), "Role");
@@ -313,12 +313,12 @@ namespace Zongsoft.Security.Membership
 			return members;
 		}
 
-		public int SetMembers(int roleId, params Member[] members)
+		public int SetMembers(uint roleId, params Member[] members)
 		{
 			return this.SetMembers(roleId, members, false);
 		}
 
-		public int SetMembers(int roleId, IEnumerable<Member> members, bool shouldResetting = false)
+		public int SetMembers(uint roleId, IEnumerable<Member> members, bool shouldResetting = false)
 		{
 			if(members == null)
 				return 0;
@@ -429,14 +429,14 @@ namespace Zongsoft.Security.Membership
 				throw new CensorshipException(string.Format("Illegal '{0}' name of role.", name));
 		}
 
-		private IEnumerable<Tuple<int, string>> GetRecursiveRoles(int memberId, MemberType memberType)
+		private IEnumerable<Tuple<uint, string>> GetRecursiveRoles(uint memberId, MemberType memberType)
 		{
 			var parents = this.DataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
 														 Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType),
 														 "Role.RoleId, Role.Name");
 
-			var result = new List<Tuple<int, string>>();
-			result.AddRange(parents.Select(p => new Tuple<int, string>(p.RoleId, p.Role.Name)));
+			var result = new List<Tuple<uint, string>>();
+			result.AddRange(parents.Select(p => new Tuple<uint, string>(p.RoleId, p.Role.Name)));
 
 			int index = 0;
 
@@ -446,7 +446,7 @@ namespace Zongsoft.Security.Membership
 														 Condition.Equal("MemberId", result[index]) & Condition.Equal("MemberType", MemberType.Role),
 														 "Role.RoleId, Role.Name");
 
-				result.AddRange(parents.Where(p => !result.Exists(it => it.Item1 == p.RoleId)).Select(p => new Tuple<int, string>(p.RoleId, p.Role.Name)));
+				result.AddRange(parents.Where(p => !result.Exists(it => it.Item1 == p.RoleId)).Select(p => new Tuple<uint, string>(p.RoleId, p.Role.Name)));
 
 				index++;
 			}

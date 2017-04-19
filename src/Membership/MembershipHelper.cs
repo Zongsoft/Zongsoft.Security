@@ -64,7 +64,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共方法
-		public static bool GetPassword(IDataAccess dataAccess, int userId, out byte[] password, out byte[] passwordSalt)
+		public static bool GetPassword(IDataAccess dataAccess, uint userId, out byte[] password, out byte[] passwordSalt)
 		{
 			UserStatus status;
 			DateTime? statusTimestamp;
@@ -72,12 +72,12 @@ namespace Zongsoft.Security.Membership
 			return GetPasswordCore(dataAccess, Condition.Equal("UserId", userId), out password, out passwordSalt, out status, out statusTimestamp) != 0;
 		}
 
-		public static bool GetPassword(IDataAccess dataAccess, int userId, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
+		public static bool GetPassword(IDataAccess dataAccess, uint userId, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
 		{
 			return GetPasswordCore(dataAccess, Condition.Equal("UserId", userId), out password, out passwordSalt, out status, out statusTimestamp) != 0;
 		}
 
-		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt)
+		public static uint? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt)
 		{
 			UserStatus status;
 			DateTime? statusTimestamp;
@@ -86,13 +86,13 @@ namespace Zongsoft.Security.Membership
 			return GetPasswordCore(dataAccess, condition, out password, out passwordSalt, out status, out statusTimestamp);
 		}
 
-		public static int? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
+		public static uint? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
 		{
 			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
 			return GetPasswordCore(dataAccess, condition, out password, out passwordSalt, out status, out statusTimestamp);
 		}
 
-		public static User GetUser(IDataAccess dataAccess, int userId)
+		public static User GetUser(IDataAccess dataAccess, uint userId)
 		{
 			if(dataAccess == null)
 				throw new ArgumentNullException("dataAccess");
@@ -100,7 +100,7 @@ namespace Zongsoft.Security.Membership
 			return dataAccess.Select<User>(DATA_ENTITY_USER, new Condition("UserId", userId)).FirstOrDefault();
 		}
 
-		public static bool GetUserId(IDataAccess dataAccess, string identity, string @namespace, out int userId)
+		public static bool GetUserId(IDataAccess dataAccess, string identity, string @namespace, out uint userId)
 		{
 			if(dataAccess == null)
 				throw new ArgumentNullException("dataAccess");
@@ -115,7 +115,7 @@ namespace Zongsoft.Security.Membership
 			userId = 0;
 
 			if(result)
-				userId = Zongsoft.Common.Convert.ConvertValue<int>(record["UserId"]);
+				userId = Zongsoft.Common.Convert.ConvertValue<uint>(record["UserId"]);
 
 			return result;
 		}
@@ -218,7 +218,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 私有方法
-		private static int? GetPasswordCore(IDataAccess dataAccess, ICondition condition, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
+		private static uint? GetPasswordCore(IDataAccess dataAccess, ICondition condition, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
 		{
 			if(dataAccess == null)
 				throw new ArgumentNullException("dataAccess");
@@ -257,7 +257,7 @@ namespace Zongsoft.Security.Membership
 			object result;
 
 			if(dictionary.TryGetValue("UserId", out result))
-				return Zongsoft.Common.Convert.ConvertValue<int?>(result, () => null);
+				return Zongsoft.Common.Convert.ConvertValue<uint?>(result, () => null);
 
 			return null;
 		}

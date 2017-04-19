@@ -63,13 +63,13 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共方法
-		public IEnumerable<Permission> GetPermissions(int memberId, MemberType memberType)
+		public IEnumerable<Permission> GetPermissions(uint memberId, MemberType memberType)
 		{
 			return this.DataAccess.Select<Permission>(MembershipHelper.DATA_ENTITY_PERMISSION,
 												 Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType));
 		}
 
-		public void SetPermissions(int memberId, MemberType memberType, IEnumerable<Permission> permissions)
+		public void SetPermissions(uint memberId, MemberType memberType, IEnumerable<Permission> permissions)
 		{
 			if(permissions == null)
 				throw new ArgumentNullException("permissions");
@@ -77,13 +77,13 @@ namespace Zongsoft.Security.Membership
 			this.SetPermissions(MembershipHelper.DATA_ENTITY_PERMISSION, memberId, memberType, permissions);
 		}
 
-		public IEnumerable<PermissionFilter> GetPermissionFilters(int memberId, MemberType memberType)
+		public IEnumerable<PermissionFilter> GetPermissionFilters(uint memberId, MemberType memberType)
 		{
 			return this.DataAccess.Select<PermissionFilter>(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER,
 														    Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType));
 		}
 
-		public void SetPermissionFilters(int memberId, MemberType memberType, IEnumerable<PermissionFilter> permissionFilters)
+		public void SetPermissionFilters(uint memberId, MemberType memberType, IEnumerable<PermissionFilter> permissionFilters)
 		{
 			if(permissionFilters == null)
 				throw new ArgumentNullException("permissionFilters");
@@ -93,7 +93,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 私有方法
-		private void SetPermissions(string name, int memberId, MemberType memberType, IEnumerable<Permission> permissions)
+		private void SetPermissions(string name, uint memberId, MemberType memberType, IEnumerable<Permission> permissions)
 		{
 			if(permissions == null)
 				throw new ArgumentNullException("permissions");

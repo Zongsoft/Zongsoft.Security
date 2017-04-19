@@ -253,7 +253,7 @@ namespace Zongsoft.Security
 			return this.EnsureCredentialsTimeout(credentialId, DateTime.Now);
 		}
 
-		public Credential GetCredential(int userId, string scene)
+		public Credential GetCredential(uint userId, string scene)
 		{
 			var credentialId = this.Storage.GetValue(this.GetCacheKeyOfUser(userId, scene)) as string;
 
@@ -415,7 +415,7 @@ namespace Zongsoft.Security
 			});
 		}
 
-		private string GetCacheKeyOfUser(int userId, string scene)
+		private string GetCacheKeyOfUser(uint userId, string scene)
 		{
 			if(string.IsNullOrWhiteSpace(scene))
 				return "Zongsoft.Security:" + userId.ToString();

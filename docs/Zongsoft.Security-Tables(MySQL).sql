@@ -2,20 +2,20 @@ SET NAMES utf8;
 SET TIME_ZONE='+08:00';
 
 CREATE TABLE IF NOT EXISTS `Security_Role` (
-  `RoleId` int NOT NULL COMMENT '主键，角色编号',
+  `RoleId` int unsigned NOT NULL COMMENT '主键，角色编号',
   `Namespace` VARCHAR(100) NULL COMMENT '角色所属的命名空间，该字段表示应用或组织机构的标识',
   `Name` VARCHAR(50) NOT NULL COMMENT '角色名称，该名称在所属命名空间内具有唯一性',
   `FullName` VARCHAR(50) NULL COMMENT '角色全称',
-  `CreatorId` int NULL COMMENT '创建者编号',
+  `CreatorId` int unsigned NULL COMMENT '创建者编号',
   `CreatedTime` DATETIME NOT NULL COMMENT '创建时间',
-  `ModifierId` VARCHAR(50) NULL COMMENT '最后修改者编号',
+  `ModifierId` int unsigned NULL COMMENT '最后修改者编号',
   `ModifiedTime` DATETIME NULL COMMENT '最后修改时间',
   `Description` VARCHAR(500) NULL COMMENT '描述信息',
   PRIMARY KEY (`RoleId`))
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='角色表';
 
 CREATE TABLE IF NOT EXISTS `Security_User` (
-  `UserId` int NOT NULL COMMENT '主键，用户编号',
+  `UserId` int unsigned NOT NULL COMMENT '主键，用户编号',
   `Namespace` VARCHAR(100) NULL COMMENT '用户所属的命名空间，该字段表示应用或组织机构的标识',
   `Name` VARCHAR(50) NOT NULL COMMENT '用户名称，该名称在所属命名空间内具有唯一性',
   `Password` BINARY(64) NULL COMMENT '用户的登录口令',
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `Security_User` (
   `PrincipalId` VARCHAR(100) NULL COMMENT '用户对应到业务系统中的负责人标识',
   `Email` VARCHAR(50) NULL COMMENT '用户的电子邮箱，该邮箱地址在所属命名空间内具有唯一性',
   `PhoneNumber` VARCHAR(50) NULL COMMENT '用户的手机号码，该手机号码在所属命名空间内具有唯一性',
-  `Status` TINYINT NOT NULL DEFAULT 1 COMMENT '用户状态（0:正常; 1:待批准; 2:已停用; 3:被挂起(密码验证失败超过特定次数)）',
+  `Status` TINYINT unsigned NOT NULL DEFAULT 1 COMMENT '用户状态（0:正常; 1:待批准; 2:已停用; 3:被挂起(密码验证失败超过特定次数)）',
   `StatusTimestamp` DATETIME NULL COMMENT '状态更新时间',
   `PasswordQuestion1` VARCHAR(50) NULL COMMENT '用户的密码问答的题面(1)',
   `PasswordAnswer1` VARBINARY(64) NULL COMMENT '用户的密码问答的答案(1)',
@@ -33,24 +33,24 @@ CREATE TABLE IF NOT EXISTS `Security_User` (
   `PasswordAnswer2` VARBINARY(64) NULL COMMENT '用户的密码问答的答案(2)',
   `PasswordQuestion3` VARCHAR(50) NULL COMMENT '用户的密码问答的题面(3)',
   `PasswordAnswer3` VARBINARY(64) NULL COMMENT '用户的密码问答的答案(3)',
-  `CreatorId` int NULL COMMENT '创建人编号',
+  `CreatorId` int unsigned NULL COMMENT '创建人编号',
   `CreatedTime` DATETIME NOT NULL COMMENT '创建时间',
-  `ModifierId` int NULL COMMENT '最后修改人编号',
+  `ModifierId` int unsigned NULL COMMENT '最后修改人编号',
   `ModifiedTime` DATETIME NULL COMMENT '最后修改时间',
   `Description` VARCHAR(500) NULL COMMENT '描述信息',
   PRIMARY KEY (`UserId`))
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表';
 
 CREATE TABLE IF NOT EXISTS `Security_Member` (
-  `RoleId` int NOT NULL COMMENT '主键，角色编号',
-  `MemberId` int NOT NULL COMMENT '主键，成员编号',
-  `MemberType` TINYINT(1) NOT NULL COMMENT '主键，成员类型',
+  `RoleId` int unsigned NOT NULL COMMENT '主键，角色编号',
+  `MemberId` int unsigned NOT NULL COMMENT '主键，成员编号',
+  `MemberType` TINYINT unsigned NOT NULL COMMENT '主键，成员类型',
   PRIMARY KEY (`RoleId`, `MemberId`, `MemberType`))
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='角色成员表';
 
 CREATE TABLE IF NOT EXISTS `Security_Permission` (
-  `MemberId` int NOT NULL COMMENT '主键，成员编号',
-  `MemberType` TINYINT(1) NOT NULL COMMENT '主键，成员类型',
+  `MemberId` int unsigned NOT NULL COMMENT '主键，成员编号',
+  `MemberType` TINYINT unsigned NOT NULL COMMENT '主键，成员类型',
   `SchemaId` VARCHAR(50) NOT NULL COMMENT '主键，授权目标的标识',
   `ActionId` VARCHAR(50) NOT NULL COMMENT '主键，授权行为的标识',
   `Granted` TINYINT(1) NOT NULL COMMENT '是否授权(0: 表示拒绝; 1: 表示授予)',
@@ -58,8 +58,8 @@ CREATE TABLE IF NOT EXISTS `Security_Permission` (
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='权限表';
 
 CREATE TABLE IF NOT EXISTS `Security_PermissionFilter` (
-  `MemberId` int NOT NULL COMMENT '主键，成员编号',
-  `MemberType` TINYINT(1) NOT NULL COMMENT '主键，成员类型',
+  `MemberId` int unsigned NOT NULL COMMENT '主键，成员编号',
+  `MemberType` TINYINT unsigned NOT NULL COMMENT '主键，成员类型',
   `SchemaId` VARCHAR(50) NOT NULL COMMENT '主键，授权目标的标识',
   `ActionId` VARCHAR(50) NOT NULL COMMENT '主键，授权行为的标识',
   `Filter` VARCHAR(4000) NOT NULL COMMENT '拒绝授权的过滤表达式',

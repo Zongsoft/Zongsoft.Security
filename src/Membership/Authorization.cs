@@ -86,7 +86,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共方法
-		public bool Authorize(int userId, string schemaId, string actionId)
+		public bool Authorize(uint userId, string schemaId, string actionId)
 		{
 			if(string.IsNullOrWhiteSpace(schemaId))
 				throw new ArgumentNullException("schemaId");
@@ -121,7 +121,7 @@ namespace Zongsoft.Security.Membership
 			return args.IsAuthorized;
 		}
 
-		public IEnumerable<AuthorizationState> GetAuthorizedStates(int memberId, MemberType memberType)
+		public IEnumerable<AuthorizationState> GetAuthorizedStates(uint memberId, MemberType memberType)
 		{
 			//return this.GetAuthorizedStatesCore(memberId, memberType);
 
@@ -132,7 +132,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 虚拟方法
-		protected virtual IEnumerable<AuthorizationState> GetAuthorizedStatesCore(int memberId, MemberType memberType)
+		protected virtual IEnumerable<AuthorizationState> GetAuthorizedStatesCore(uint memberId, MemberType memberType)
 		{
 			var stack = new Stack<IEnumerable<Role>>();
 
@@ -202,7 +202,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 私有方法
-		private void SlicePermission(int memberId, MemberType memberType, HashSet<AuthorizationState> grantedStates, HashSet<AuthorizationState> deniedStates)
+		private void SlicePermission(uint memberId, MemberType memberType, HashSet<AuthorizationState> grantedStates, HashSet<AuthorizationState> deniedStates)
 		{
 			var permissions = this.PermissionProvider.GetPermissions(memberId, memberType);
 
