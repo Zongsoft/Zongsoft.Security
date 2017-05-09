@@ -178,6 +178,28 @@ namespace Zongsoft.Security.Membership
 				new Condition("UserId", userId)) > 0;
 		}
 
+		public bool SetNamespace(uint userId, string @namespace)
+		{
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				new
+				{
+					Namespace = string.IsNullOrWhiteSpace(@namespace) ? null : @namespace.Trim(),
+					ModifiedTime = DateTime.Now,
+				},
+				new Condition("UserId", userId)) > 0;
+		}
+
+		public int SetNamespaces(string oldNamespace, string newNamespace)
+		{
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				new
+				{
+					Namespace = string.IsNullOrWhiteSpace(newNamespace) ? null : newNamespace.Trim(),
+					ModifiedTime = DateTime.Now,
+				},
+				new Condition("Namespace", oldNamespace));
+		}
+
 		public bool SetName(uint userId, string name)
 		{
 			if(string.IsNullOrWhiteSpace(name))

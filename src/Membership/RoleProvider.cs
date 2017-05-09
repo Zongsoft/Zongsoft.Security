@@ -134,6 +134,28 @@ namespace Zongsoft.Security.Membership
 				return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, MembershipHelper.GetNamespaceCondition(@namespace), paging);
 		}
 
+		public bool SetNamespace(uint roleId, string @namespace)
+		{
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_ROLE,
+				new
+				{
+					Namespace = string.IsNullOrWhiteSpace(@namespace) ? null : @namespace.Trim(),
+					ModifiedTime = DateTime.Now,
+				},
+				new Condition("UserId", roleId)) > 0;
+		}
+
+		public int SetNamespaces(string oldNamespace, string newNamespace)
+		{
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_ROLE,
+				new
+				{
+					Namespace = string.IsNullOrWhiteSpace(newNamespace) ? null : newNamespace.Trim(),
+					ModifiedTime = DateTime.Now,
+				},
+				new Condition("Namespace", oldNamespace));
+		}
+
 		public int DeleteRoles(params uint[] roleIds)
 		{
 			if(roleIds == null || roleIds.Length < 1)
