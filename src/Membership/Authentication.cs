@@ -67,7 +67,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 验证方法
-		public AuthenticationResult Authenticate(string identity, string password, string @namespace = null)
+		public AuthenticationResult Authenticate(string identity, string password, string @namespace, string scene, IDictionary<string, object> parameters = null)
 		{
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
@@ -84,7 +84,7 @@ namespace Zongsoft.Security.Membership
 			if(userId == null)
 			{
 				//激发“Authenticated”事件
-				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, false));
+				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
 
 				//指定的用户名如果不存在则抛出验证异常
 				throw new AuthenticationException(AuthenticationReason.InvalidIdentity);
@@ -94,7 +94,7 @@ namespace Zongsoft.Security.Membership
 			if(status == UserStatus.Unapproved)
 			{
 				//激发“Authenticated”事件
-				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, false));
+				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
 
 				//因为账户状态异常而抛出验证异常
 				throw new AuthenticationException(AuthenticationReason.AccountUnapproved);
@@ -104,7 +104,7 @@ namespace Zongsoft.Security.Membership
 			if(status == UserStatus.Suspended)
 			{
 				//激发“Authenticated”事件
-				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, false));
+				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
 
 				//因为账户状态异常而抛出验证异常
 				throw new AuthenticationException(AuthenticationReason.AccountSuspended);
@@ -114,7 +114,7 @@ namespace Zongsoft.Security.Membership
 			if(status == UserStatus.Disabled)
 			{
 				//激发“Authenticated”事件
-				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, false));
+				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
 
 				//因为账户状态异常而抛出验证异常
 				throw new AuthenticationException(AuthenticationReason.AccountDisabled);
@@ -124,7 +124,7 @@ namespace Zongsoft.Security.Membership
 			if(!PasswordUtility.VerifyPassword(password, storedPassword, storedPasswordSalt, "SHA1"))
 			{
 				//激发“Authenticated”事件
-				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, false));
+				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
 
 				//密码校验失败则抛出验证异常
 				throw new AuthenticationException(AuthenticationReason.InvalidPassword);
@@ -134,13 +134,13 @@ namespace Zongsoft.Security.Membership
 			var user = MembershipHelper.GetUser(this.DataAccess, userId.Value);
 
 			//创建“Authenticated”事件参数
-			var eventArgs = new AuthenticatedEventArgs(identity, @namespace, true, user);
+			var eventArgs = new AuthenticatedEventArgs(identity, @namespace, user, scene, parameters);
 
 			//激发“Authenticated”事件
 			this.OnAuthenticated(eventArgs);
 
 			//返回成功的验证结果
-			return new AuthenticationResult(eventArgs.User ?? user, (eventArgs.HasExtendedProperties ? eventArgs.ExtendedProperties : null));
+			return new AuthenticationResult(eventArgs.User ?? user, scene, (eventArgs.HasParameters ? eventArgs.Parameters : null));
 		}
 		#endregion
 
