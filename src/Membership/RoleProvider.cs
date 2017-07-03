@@ -235,6 +235,11 @@ namespace Zongsoft.Security.Membership
 			if(roles == null)
 				return 0;
 
+			if(string.IsNullOrWhiteSpace(scope))
+				scope = "!CreatorId, !CreatedTime";
+			else
+				scope += ", !CreatorId, !CreatedTime";
+
 			foreach(var role in roles)
 			{
 				if(role == null)

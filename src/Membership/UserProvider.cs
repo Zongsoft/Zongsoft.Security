@@ -308,6 +308,9 @@ namespace Zongsoft.Security.Membership
 			if(user.UserId < 1)
 				user.UserId = (uint)this.Sequence.Increment(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 
+			//更新创建时间
+			user.CreatedTime = DateTime.Now;
+
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
 				if(this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_USER, user) < 1)
@@ -354,6 +357,9 @@ namespace Zongsoft.Security.Membership
 
 				//确认指定用户的用户名、手机号、邮箱地址是否已经存在
 				this.EnsureConflict(user, null, false);
+
+				//更新创建时间
+				user.CreatedTime = DateTime.Now;
 			}
 
 			foreach(var user in users)
@@ -378,6 +384,11 @@ namespace Zongsoft.Security.Membership
 		{
 			if(users == null)
 				return 0;
+
+			if(string.IsNullOrWhiteSpace(scope))
+				scope = "!CreatorId, !CreatedTime";
+			else
+				scope += ", !CreatorId, !CreatedTime";
 
 			foreach(var user in users)
 			{
