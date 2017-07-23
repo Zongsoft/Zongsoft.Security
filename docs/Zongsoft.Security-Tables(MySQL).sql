@@ -51,8 +51,8 @@ ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='角色成员表';
 CREATE TABLE IF NOT EXISTS `Security_Permission` (
   `MemberId` int unsigned NOT NULL COMMENT '主键，成员编号',
   `MemberType` TINYINT unsigned NOT NULL COMMENT '主键，成员类型',
-  `SchemaId` VARCHAR(50) NOT NULL COMMENT '主键，授权目标的标识',
-  `ActionId` VARCHAR(50) NOT NULL COMMENT '主键，授权行为的标识',
+  `Schema` VARCHAR(50) NOT NULL COMMENT '主键，授权目标的标识',
+  `Action` VARCHAR(50) NOT NULL COMMENT '主键，授权行为的标识',
   `Granted` TINYINT(1) NOT NULL COMMENT '是否授权(0: 表示拒绝; 1: 表示授予)',
   PRIMARY KEY (`MemberId`, `MemberType`, `SchemaId`, `ActionId`))
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='权限表';
@@ -60,8 +60,8 @@ ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='权限表';
 CREATE TABLE IF NOT EXISTS `Security_PermissionFilter` (
   `MemberId` int unsigned NOT NULL COMMENT '主键，成员编号',
   `MemberType` TINYINT unsigned NOT NULL COMMENT '主键，成员类型',
-  `SchemaId` VARCHAR(50) NOT NULL COMMENT '主键，授权目标的标识',
-  `ActionId` VARCHAR(50) NOT NULL COMMENT '主键，授权行为的标识',
+  `Schema` VARCHAR(50) NOT NULL COMMENT '主键，授权目标的标识',
+  `Action` VARCHAR(50) NOT NULL COMMENT '主键，授权行为的标识',
   `Filter` VARCHAR(4000) NOT NULL COMMENT '拒绝授权的过滤表达式',
   PRIMARY KEY (`MemberId`, `MemberType`, `SchemaId`, `ActionId`))
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='权限表';
