@@ -38,7 +38,7 @@ namespace Zongsoft.Security
 	public class CredentialProvider : MarshalByRefObject, ICredentialProvider
 	{
 		#region 私有常量
-		private const string DefaultCacheName = "Zongsoft.Security.Membership.Credentials";
+		private static readonly DateTime EPOCH = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 		#endregion
 
 		#region 成员字段
@@ -287,8 +287,11 @@ namespace Zongsoft.Security
 		/// </remarks>
 		protected virtual string GenerateCredentialId()
 		{
-			//确保凭证号以数字打头
-			return Math.Abs(Zongsoft.Common.RandomGenerator.GenerateInt32()).ToString() + Zongsoft.Common.RandomGenerator.GenerateString(16);
+			//计算以自定义纪元的总秒数的时序值
+			var timing = (ulong)Math.Abs((DateTime.UtcNow - EPOCH).TotalSeconds);
+
+			//注意：必须确保凭证号以数字打头
+			return timing.ToString() + Zongsoft.Common.RandomGenerator.GenerateString(8);
 		}
 
 		protected virtual Credential CreateCredential(Membership.User user, string scene, IDictionary<string, object> extendedProperties)
