@@ -31,8 +31,8 @@ using System.Text;
 
 using Zongsoft.Data;
 using Zongsoft.Common;
+using Zongsoft.Collections;
 using Zongsoft.Services;
-using Zongsoft.Runtime.Caching;
 
 namespace Zongsoft.Security.Membership
 {
@@ -41,8 +41,8 @@ namespace Zongsoft.Security.Membership
 		#region 成员字段
 		private IDataAccess _dataAccess;
 		private ISequence _sequence;
-		private ICache _cache;
 		private ICensorship _censorship;
+		private ISelectable _validators;
 		#endregion
 
 		#region 构造函数
@@ -85,19 +85,6 @@ namespace Zongsoft.Security.Membership
 		}
 
 		[ServiceDependency]
-		public ICache Cache
-		{
-			get
-			{
-				return _cache;
-			}
-			set
-			{
-				_cache = value;
-			}
-		}
-
-		[Zongsoft.Services.ServiceDependency]
 		public ICensorship Censorship
 		{
 			get
@@ -107,6 +94,21 @@ namespace Zongsoft.Security.Membership
 			set
 			{
 				_censorship = value;
+			}
+		}
+
+		/// <summary>
+		/// 获取或设置验证器服务容器。
+		/// </summary>
+		public ISelectable Validators
+		{
+			get
+			{
+				return _validators;
+			}
+			set
+			{
+				_validators = value;
 			}
 		}
 		#endregion
@@ -206,7 +208,7 @@ namespace Zongsoft.Security.Membership
 				throw new ArgumentNullException("name");
 
 			//验证指定的名称是否合法
-			this.VerifyName(name);
+			this.OnVerifyUserName(name);
 
 			//确保用户名是审核通过的
 			this.Censor(name);
@@ -297,7 +299,10 @@ namespace Zongsoft.Security.Membership
 				throw new ArgumentException("The user name is empty.");
 
 			//验证指定的名称是否合法
-			this.VerifyName(user.Name);
+			this.OnVerifyUserName(user.Name);
+
+			//确认新密码是否符合密码规则
+			this.OnVerifyPassword(password);
 
 			//确保用户名是审核通过的
 			this.Censor(user.Name);
@@ -350,7 +355,7 @@ namespace Zongsoft.Security.Membership
 					throw new ArgumentException("The user name is empty.");
 
 				//验证指定的名称是否合法
-				this.VerifyName(user.Name);
+				this.OnVerifyUserName(user.Name);
 
 				//确保用户名是审核通过的
 				this.Censor(user.Name);
@@ -402,7 +407,7 @@ namespace Zongsoft.Security.Membership
 						throw new ArgumentException("The user name is empty.");
 
 					//验证指定的名称是否合法
-					this.VerifyName(user.Name);
+					this.OnVerifyUserName(user.Name);
 
 					//确保用户名是审核通过的
 					this.Censor(user.Name);
@@ -434,6 +439,9 @@ namespace Zongsoft.Security.Membership
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
 
+			//确认新密码是否符合密码规则
+			this.OnVerifyPassword(newPassword);
+
 			if(!MembershipHelper.GetPassword(this.DataAccess, userId, out storedPassword, out storedPasswordSalt))
 				return false;
 
@@ -451,23 +459,22 @@ namespace Zongsoft.Security.Membership
 				}, new Condition("UserId", userId)) > 0;
 		}
 
-		public uint ForgetPassword(string identity, string @namespace, string secret, TimeSpan? timeout = null)
+		public uint ForgetPassword(string identity, string @namespace)
 		{
-			if(string.IsNullOrWhiteSpace(secret))
-				throw new ArgumentNullException("secret");
+			throw new NotImplementedException();
 
-			var cache = this.Cache;
+			//var cache = this.Cache;
 
-			if(cache == null)
-				throw new InvalidOperationException("The dependent cache is null.");
+			//if(cache == null)
+			//	throw new InvalidOperationException("The dependent cache is null.");
 
-			uint userId;
-			if(!MembershipHelper.GetUserId(this.DataAccess, identity, @namespace, out userId))
-				return 0;
+			//uint userId;
+			//if(!MembershipHelper.GetUserId(this.DataAccess, identity, @namespace, out userId))
+			//	return 0;
 
-			cache.SetValue(this.GetCacheKeyOfResetPassword(userId), secret, timeout.HasValue && timeout.Value > TimeSpan.Zero ? timeout.Value : TimeSpan.FromHours(1));
+			//cache.SetValue(this.GetCacheKeyOfResetPassword(userId), secret, timeout.HasValue && timeout.Value > TimeSpan.Zero ? timeout.Value : TimeSpan.FromHours(1));
 
-			return userId;
+			//return userId;
 		}
 
 		public bool ResetPassword(uint userId, string secret, string newPassword = null)
@@ -475,33 +482,38 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrEmpty(secret))
 				return false;
 
-			var cache = this.Cache;
+			//确认新密码是否符合密码规则
+			this.OnVerifyPassword(newPassword);
 
-			if(cache == null)
-				throw new InvalidOperationException("The dependent cache is null.");
+			throw new NotImplementedException();
 
-			var cachedSecret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
-			var succeed = cachedSecret != null && string.Equals(secret, cachedSecret, StringComparison.Ordinal);
+			//var cache = this.Cache;
 
-			if(succeed && newPassword != null && newPassword.Length > 0)
-			{
-				//重新生成密码随机数
-				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
+			//if(cache == null)
+			//	throw new InvalidOperationException("The dependent cache is null.");
 
-				var affectedRows = this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-					new
-					{
-						Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
-						PasswordSalt = passwordSalt,
-					}, new Condition("UserId", userId));
+			//var cachedSecret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
+			//var succeed = cachedSecret != null && string.Equals(secret, cachedSecret, StringComparison.Ordinal);
 
-				if(affectedRows > 0)
-					cache.Remove(this.GetCacheKeyOfResetPassword(userId));
+			//if(succeed && newPassword != null && newPassword.Length > 0)
+			//{
+			//	//重新生成密码随机数
+			//	var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
 
-				return affectedRows > 0;
-			}
+			//	var affectedRows = this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			//		new
+			//		{
+			//			Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
+			//			PasswordSalt = passwordSalt,
+			//		}, new Condition("UserId", userId));
 
-			return succeed;
+			//	if(affectedRows > 0)
+			//		cache.Remove(this.GetCacheKeyOfResetPassword(userId));
+
+			//	return affectedRows > 0;
+			//}
+
+			//return succeed;
 		}
 
 		public bool ResetPassword(string identity, string @namespace, string secret, string newPassword = null)
@@ -509,43 +521,51 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity) || string.IsNullOrWhiteSpace(secret))
 				return false;
 
-			var cache = this.Cache;
+			//确认新密码是否符合密码规则
+			this.OnVerifyPassword(newPassword);
 
-			if(cache == null)
-				throw new InvalidOperationException("The dependent cache is null.");
+			throw new NotImplementedException();
 
-			uint userId = 0;
-			if(!MembershipHelper.GetUserId(this.DataAccess, identity, @namespace, out userId))
-				return false;
+			//var cache = this.Cache;
 
-			var cachedSecret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
-			var succeed = cachedSecret != null && string.Equals(cachedSecret, secret, StringComparison.Ordinal);
+			//if(cache == null)
+			//	throw new InvalidOperationException("The dependent cache is null.");
 
-			if(succeed && newPassword != null && newPassword.Length > 0)
-			{
-				//重新生成密码随机数
-				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
+			//uint userId = 0;
+			//if(!MembershipHelper.GetUserId(this.DataAccess, identity, @namespace, out userId))
+			//	return false;
 
-				var affectedRows = this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-					new
-					{
-						Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
-						PasswordSalt = passwordSalt,
-					}, new Condition("UserId", userId));
+			//var cachedSecret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
+			//var succeed = cachedSecret != null && string.Equals(cachedSecret, secret, StringComparison.Ordinal);
 
-				if(affectedRows > 0)
-					cache.Remove(this.GetCacheKeyOfResetPassword(userId));
+			//if(succeed && newPassword != null && newPassword.Length > 0)
+			//{
+			//	//重新生成密码随机数
+			//	var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
 
-				return affectedRows > 0;
-			}
+			//	var affectedRows = this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			//		new
+			//		{
+			//			Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
+			//			PasswordSalt = passwordSalt,
+			//		}, new Condition("UserId", userId));
 
-			return succeed;
+			//	if(affectedRows > 0)
+			//		cache.Remove(this.GetCacheKeyOfResetPassword(userId));
+
+			//	return affectedRows > 0;
+			//}
+
+			//return succeed;
 		}
 
 		public bool ResetPassword(string identity, string @namespace, string[] passwordAnswers, string newPassword = null)
 		{
 			if(string.IsNullOrWhiteSpace(identity) || passwordAnswers == null || passwordAnswers.Length < 3)
 				return false;
+
+			//确认新密码是否符合密码规则
+			this.OnVerifyPassword(newPassword);
 
 			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
 			var record = this.DataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, PasswordAnswer1, PasswordAnswer2, PasswordAnswer3").FirstOrDefault();
@@ -638,30 +658,30 @@ namespace Zongsoft.Security.Membership
 				PasswordAnswer3 = passwordAnswers.Length > 2 ? this.HashPasswordAnswer(passwordAnswers[2], userId, 3) : null,
 			}, new Condition("UserId", userId)) > 0;
 		}
+		#endregion
 
-		public bool SetPasswordOptions(uint userId, bool changePasswordOnFirstTime = false, byte maxInvalidPasswordAttempts = 3, byte minRequiredPasswordLength = 6, TimeSpan? passwordAttemptWindow = null, DateTime? passwordExpires = null)
+		#region 秘密校验
+		public bool Verify(string name, string secret, object state = null)
 		{
-			var dictionary = new Dictionary<string, object>()
-			{
-				{ "ChangePasswordOnFirstTime", changePasswordOnFirstTime },
-				{ "MaxInvalidPasswordAttempts", maxInvalidPasswordAttempts },
-				{ "MinRequiredPasswordLength", minRequiredPasswordLength },
-			};
-
-			if(passwordAttemptWindow.HasValue)
-				dictionary.Add("PasswordAttemptWindow", passwordAttemptWindow.Value);
-
-			if(passwordExpires.HasValue)
-				dictionary.Add("PasswordExpires", passwordExpires.Value);
-
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, dictionary, new Condition("UserId", userId)) > 0;
+			throw new NotImplementedException();
 		}
 		#endregion
 
 		#region 虚拟方法
-		protected virtual void VerifyName(string name)
+		protected virtual void OnVerifyUserName(string name)
 		{
-			Utility.VerifyName(name);
+			var validator = _validators?.Select<IValidator<string>>("Name");
+
+			if(validator != null)
+				validator.Validate(name, (key, message) => throw new SecurityException("username.illegality", message));
+		}
+
+		protected virtual void OnVerifyPassword(string password)
+		{
+			var validator = _validators?.Select<IValidator<string>>("Password");
+
+			if(validator != null)
+				validator.Validate(password, (key, message) => throw new SecurityException("password.illegality", message));
 		}
 		#endregion
 
@@ -705,11 +725,6 @@ namespace Zongsoft.Security.Membership
 
 			var salt = this.GetPasswordAnswerSalt(userId, index);
 			return PasswordUtility.HashPassword(answer, salt);
-		}
-
-		private string GetCacheKeyOfResetPassword(uint userId)
-		{
-			return "Zongsoft.Security.Membership.ResetPassword:" + userId.ToString();
 		}
 		#endregion
 	}

@@ -30,7 +30,7 @@ using System.Text.RegularExpressions;
 
 namespace Zongsoft.Security.Membership
 {
-	public class AuthorizationPredicationBase : Zongsoft.Services.IMatchable<string>
+	public class AuthorizationPredicationBase : Zongsoft.Collections.IMatchable<string>
 	{
 		#region 静态字段
 		private static readonly Regex _regex = new Regex(@"[^,\s]+", (RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace | RegexOptions.ExplicitCapture));
@@ -114,7 +114,7 @@ namespace Zongsoft.Security.Membership
 			return string.Equals(parameter, this.Name, StringComparison.OrdinalIgnoreCase);
 		}
 
-		bool Zongsoft.Services.IMatchable.IsMatch(object parameter)
+		bool Zongsoft.Collections.IMatchable.IsMatch(object parameter)
 		{
 			return this.IsMatch(parameter as string);
 		}

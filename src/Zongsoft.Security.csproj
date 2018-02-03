@@ -51,6 +51,7 @@
     <Compile Include="Membership\RoleProvider.cs" />
     <Compile Include="Membership\UserProvider.cs" />
     <Compile Include="Membership\Utility.cs" />
+    <Compile Include="Membership\Validators\NameValidator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

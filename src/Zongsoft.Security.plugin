@@ -36,5 +36,7 @@
 		<object name="RoleProvider" type="Zongsoft.Security.Membership.RoleProvider, Zongsoft.Security" />
 		<object name="UserProvider" type="Zongsoft.Security.Membership.UserProvider, Zongsoft.Security" />
 		<object name="PermissionProvider" type="Zongsoft.Security.Membership.PermissionProvider, Zongsoft.Security" />
+
+		<object name="NameValidator" type="Zongsoft.Security.Membership.Validators.NameValidator, Zongsoft.Security" />
 	</extension>
 </plugin>
