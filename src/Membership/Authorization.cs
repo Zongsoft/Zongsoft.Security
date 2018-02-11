@@ -33,7 +33,7 @@ using Zongsoft.Services;
 
 namespace Zongsoft.Security.Membership
 {
-	public class Authorization : MarshalByRefObject, IAuthorization
+	public class Authorization : IAuthorization
 	{
 		#region 成员字段
 		private IMemberProvider _memberProvider;

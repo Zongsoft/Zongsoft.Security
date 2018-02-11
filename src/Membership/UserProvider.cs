@@ -31,23 +31,33 @@ using System.Text;
 
 using Zongsoft.Data;
 using Zongsoft.Common;
-using Zongsoft.Collections;
+using Zongsoft.Communication;
 using Zongsoft.Services;
 
 namespace Zongsoft.Security.Membership
 {
-	public class UserProvider : MarshalByRefObject, IUserProvider
+	public class UserProvider : IUserProvider
 	{
+		#region 常量定义
+		private const string KEY_EMAIL_VERIFICATION = "user.email";
+		private const string KEY_PHONE_VERIFICATION = "user.phone";
+
+		private const string KEY_FORGET_VERIFICATION = "user.forget";
+		private const string KEY_FORGET_EMAIL_NOTIFICATION = "user.forget.email";
+		private const string KEY_FORGET_PHONE_NOTIFICATION = "user.forget.phone";
+		#endregion
+
 		#region 成员字段
 		private IDataAccess _dataAccess;
 		private ISequence _sequence;
 		private ICensorship _censorship;
-		private ISelectable _validators;
+		private Services.IServiceProvider _services;
 		#endregion
 
 		#region 构造函数
-		public UserProvider()
+		public UserProvider(Services.IServiceProvider serviceProvider)
 		{
+			_services = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 		}
 		#endregion
 
@@ -94,21 +104,6 @@ namespace Zongsoft.Security.Membership
 			set
 			{
 				_censorship = value;
-			}
-		}
-
-		/// <summary>
-		/// 获取或设置验证器服务容器。
-		/// </summary>
-		public ISelectable Validators
-		{
-			get
-			{
-				return _validators;
-			}
-			set
-			{
-				_validators = value;
 			}
 		}
 		#endregion
@@ -160,24 +155,46 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetEmail(uint userId, string email)
 		{
+			//获取邮箱地址校验通知器
+			var notifier = _services.Resolve<INotifier>(KEY_EMAIL_VERIFICATION);
+
+			if(notifier != null)
+			{
+				//发送邮箱有效性校验通知
+				var result = notifier.Notify(KEY_EMAIL_VERIFICATION, userId, email);
+
+				//返回通知结果
+				return result == null || result.Succeed;
+			}
+
 			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
 				{
 					Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim(),
 					ModifiedTime = DateTime.Now,
-				},
-				new Condition("UserId", userId)) > 0;
+				}, Condition.Equal("UserId", userId)) > 0;
 		}
 
 		public bool SetPhoneNumber(uint userId, string phoneNumber)
 		{
+			//获取电话号码校验通知器
+			var notifier = _services.Resolve<INotifier>(KEY_PHONE_VERIFICATION);
+
+			if(notifier != null)
+			{
+				//发送电话有效性校验通知
+				var result = notifier.Notify(KEY_PHONE_VERIFICATION, userId, phoneNumber);
+
+				//返回通知结果
+				return result == null || result.Succeed;
+			}
+
 			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
 				new
 				{
 					PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim(),
 					ModifiedTime = DateTime.Now,
-				},
-				new Condition("UserId", userId)) > 0;
+				}, Condition.Equal("UserId", userId)) > 0;
 		}
 
 		public bool SetNamespace(uint userId, string @namespace)
@@ -208,7 +225,7 @@ namespace Zongsoft.Security.Membership
 				throw new ArgumentNullException("name");
 
 			//验证指定的名称是否合法
-			this.OnVerifyUserName(name);
+			this.OnVerifyName(name);
 
 			//确保用户名是审核通过的
 			this.Censor(name);
@@ -299,7 +316,7 @@ namespace Zongsoft.Security.Membership
 				throw new ArgumentException("The user name is empty.");
 
 			//验证指定的名称是否合法
-			this.OnVerifyUserName(user.Name);
+			this.OnVerifyName(user.Name);
 
 			//确认新密码是否符合密码规则
 			this.OnVerifyPassword(password);
@@ -312,6 +329,24 @@ namespace Zongsoft.Security.Membership
 
 			if(user.UserId < 1)
 				user.UserId = (uint)this.Sequence.Increment(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
+
+			//定义新用户要设置的邮箱地址和手机号码
+			string email = null, phone = null;
+			INotifier emailNotifier = null, phoneNotifier = null;
+
+			//如果新用户的“邮箱地址”不为空并且找到了邮箱校验通知器，则将新用户的“邮箱地址”设为空
+			if(!string.IsNullOrWhiteSpace(user.Email) && (emailNotifier = _services?.Resolve<INotifier>(KEY_EMAIL_VERIFICATION)) != null)
+			{
+				email = user.Email;
+				user.Email = null;
+			}
+
+			//如果新用户的“电话号码”不为空并且找到了电话校验通知器，则将新用户的“电话号码”设为空
+			if(!string.IsNullOrWhiteSpace(user.PhoneNumber) && (phoneNotifier = _services?.Resolve<INotifier>(KEY_PHONE_VERIFICATION)) != null)
+			{
+				phone = user.PhoneNumber;
+				user.PhoneNumber = null;
+			}
 
 			//更新创建时间
 			user.CreatedTime = DateTime.Now;
@@ -334,6 +369,14 @@ namespace Zongsoft.Security.Membership
 					}, new Condition("UserId", user.UserId));
 				}
 
+				//发送邮箱校验通知
+				if(emailNotifier != null)
+					emailNotifier.NotifyAsync(KEY_EMAIL_VERIFICATION, user, email);
+
+				//发送电话校验通知
+				if(phoneNotifier != null)
+					phoneNotifier.NotifyAsync(KEY_PHONE_VERIFICATION, user, phone);
+
 				//提交事务
 				transaction.Commit();
 			}
@@ -355,7 +398,7 @@ namespace Zongsoft.Security.Membership
 					throw new ArgumentException("The user name is empty.");
 
 				//验证指定的名称是否合法
-				this.OnVerifyUserName(user.Name);
+				this.OnVerifyName(user.Name);
 
 				//确保用户名是审核通过的
 				this.Censor(user.Name);
@@ -391,9 +434,9 @@ namespace Zongsoft.Security.Membership
 				return 0;
 
 			if(string.IsNullOrWhiteSpace(scope))
-				scope = "!CreatorId, !CreatedTime";
+				scope = "!Name, !Email, !PhoneNumber, !CreatorId, !CreatedTime";
 			else
-				scope += ", !CreatorId, !CreatedTime";
+				scope += ", !Name, !Email, !PhoneNumber, !CreatorId, !CreatedTime";
 
 			foreach(var user in users)
 			{
@@ -407,7 +450,7 @@ namespace Zongsoft.Security.Membership
 						throw new ArgumentException("The user name is empty.");
 
 					//验证指定的名称是否合法
-					this.OnVerifyUserName(user.Name);
+					this.OnVerifyName(user.Name);
 
 					//确保用户名是审核通过的
 					this.Censor(user.Name);
@@ -431,7 +474,7 @@ namespace Zongsoft.Security.Membership
 		public bool HasPassword(string identity, string @namespace)
 		{
 			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
-			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, new ConditionCollection(ConditionCombination.And, condition, Condition.NotEqual("Password", null)));
+			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, ConditionCollection.And(condition, Condition.NotEqual("Password", null)));
 		}
 
 		public bool ChangePassword(uint userId, string oldPassword, string newPassword)
@@ -456,25 +499,54 @@ namespace Zongsoft.Security.Membership
 				{
 					Password = PasswordUtility.HashPassword(newPassword, storedPasswordSalt),
 					PasswordSalt = storedPasswordSalt,
-				}, new Condition("UserId", userId)) > 0;
+				}, Condition.Equal("UserId", userId)) > 0;
 		}
 
 		public uint ForgetPassword(string identity, string @namespace)
 		{
-			throw new NotImplementedException();
+			//解析用户标识的查询条件
+			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace, out var identityType);
 
-			//var cache = this.Cache;
+			//如果查询条件解析失败或用户标识为用户名，则跑出不支持的异常
+			if(condition == null || identityType == MembershipHelper.UserIdentityType.Name)
+				throw new NotSupportedException("Invalid user identity for the forget password operation.");
 
-			//if(cache == null)
-			//	throw new InvalidOperationException("The dependent cache is null.");
+			//获取指定标识的用户信息
+			var user = _dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, condition).FirstOrDefault();
 
-			//uint userId;
-			//if(!MembershipHelper.GetUserId(this.DataAccess, identity, @namespace, out userId))
-			//	return 0;
+			if(user == null)
+				return 0;
 
-			//cache.SetValue(this.GetCacheKeyOfResetPassword(userId), secret, timeout.HasValue && timeout.Value > TimeSpan.Zero ? timeout.Value : TimeSpan.FromHours(1));
+			IExecutionResult result = null;
 
-			//return userId;
+			switch(identityType)
+			{
+				case MembershipHelper.UserIdentityType.Email:
+					//获取邮件通知发送器，如果获取失败则抛出异常
+					var email = _services.ResolveRequired<INotifier>(KEY_FORGET_EMAIL_NOTIFICATION);
+
+					//发送忘记密码的邮件通知
+					result = email.Notify(KEY_FORGET_VERIFICATION, user, user.Email);
+
+					break;
+				case MembershipHelper.UserIdentityType.Phone:
+					//获取短信通知发送器，如果获取失败则抛出异常
+					var phone = _services.ResolveRequired<INotifier>(KEY_FORGET_PHONE_NOTIFICATION);
+
+					//发送忘记密码的短信通知
+					result = phone.Notify(KEY_FORGET_VERIFICATION, user, user.PhoneNumber);
+
+					break;
+				default:
+					throw new SecurityException("Invalid user identity for the forget password operation.");
+			}
+
+			//如果忘记密码通知发送成功则返回对应的用户编号
+			if(result == null || result.Succeed)
+				return user.UserId;
+
+			//忘记密码通知发送失败，抛出异常
+			throw new SecurityException("notify.fail", result.Message);
 		}
 
 		public bool ResetPassword(uint userId, string secret, string newPassword = null)
@@ -485,35 +557,40 @@ namespace Zongsoft.Security.Membership
 			//确认新密码是否符合密码规则
 			this.OnVerifyPassword(newPassword);
 
-			throw new NotImplementedException();
+			//获取忘记密码的重置验证器，如果获取失败则抛出异常
+			var verifier = _services.ResolveRequired<IVerifier>(KEY_FORGET_VERIFICATION);
 
-			//var cache = this.Cache;
+			//如果重置密码的校验码验证成功
+			if(verifier.Verify(KEY_FORGET_VERIFICATION, secret, userId))
+			{
+				IDictionary<string, object> data;
 
-			//if(cache == null)
-			//	throw new InvalidOperationException("The dependent cache is null.");
+				if(string.IsNullOrEmpty(newPassword))
+				{
+					data = new Dictionary<string, object>()
+					{
+						{ "Password", null },
+						{ "PasswordSalt", null },
+					};
+				}
+				else
+				{
+					//重新生成密码随机数
+					var passwordSalt = RandomGenerator.Generate(8);
 
-			//var cachedSecret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
-			//var succeed = cachedSecret != null && string.Equals(secret, cachedSecret, StringComparison.Ordinal);
+					data = new Dictionary<string, object>()
+					{
+						{ "Password", PasswordUtility.HashPassword(newPassword, passwordSalt)},
+						{ "PasswordSalt", passwordSalt},
+					};
+				}
 
-			//if(succeed && newPassword != null && newPassword.Length > 0)
-			//{
-			//	//重新生成密码随机数
-			//	var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
+				//提交修改密码的更新操作
+				return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, data, Condition.Equal("UserId", userId)) > 0;
+			}
 
-			//	var affectedRows = this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-			//		new
-			//		{
-			//			Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
-			//			PasswordSalt = passwordSalt,
-			//		}, new Condition("UserId", userId));
-
-			//	if(affectedRows > 0)
-			//		cache.Remove(this.GetCacheKeyOfResetPassword(userId));
-
-			//	return affectedRows > 0;
-			//}
-
-			//return succeed;
+			//重置密码校验失败，抛出异常
+			throw new SecurityException("verify.fail", "Invalid secret of verification.");
 		}
 
 		public bool ResetPassword(string identity, string @namespace, string secret, string newPassword = null)
@@ -521,42 +598,20 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity) || string.IsNullOrWhiteSpace(secret))
 				return false;
 
-			//确认新密码是否符合密码规则
-			this.OnVerifyPassword(newPassword);
+			//解析用户标识的查询条件
+			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
 
-			throw new NotImplementedException();
+			//如果查询条件解析失败或用户标识为用户名，则跑出不支持的异常
+			if(condition == null)
+				throw new NotSupportedException("Invalid user identity for the reset password operation.");
 
-			//var cache = this.Cache;
+			//获取指定标识的用户信息
+			var user = _dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, Name, Namespace").FirstOrDefault();
 
-			//if(cache == null)
-			//	throw new InvalidOperationException("The dependent cache is null.");
+			if(user == null)
+				return false;
 
-			//uint userId = 0;
-			//if(!MembershipHelper.GetUserId(this.DataAccess, identity, @namespace, out userId))
-			//	return false;
-
-			//var cachedSecret = cache.GetValue(this.GetCacheKeyOfResetPassword(userId)) as string;
-			//var succeed = cachedSecret != null && string.Equals(cachedSecret, secret, StringComparison.Ordinal);
-
-			//if(succeed && newPassword != null && newPassword.Length > 0)
-			//{
-			//	//重新生成密码随机数
-			//	var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
-
-			//	var affectedRows = this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-			//		new
-			//		{
-			//			Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
-			//			PasswordSalt = passwordSalt,
-			//		}, new Condition("UserId", userId));
-
-			//	if(affectedRows > 0)
-			//		cache.Remove(this.GetCacheKeyOfResetPassword(userId));
-
-			//	return affectedRows > 0;
-			//}
-
-			//return succeed;
+			return this.ResetPassword(user.UserId, secret, newPassword);
 		}
 
 		public bool ResetPassword(string identity, string @namespace, string[] passwordAnswers, string newPassword = null)
@@ -589,7 +644,7 @@ namespace Zongsoft.Security.Membership
 					{
 						Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
 						PasswordSalt = passwordSalt,
-					}, new Condition("UserId", userId)) > 0;
+					}, Condition.Equal("UserId", userId)) > 0;
 			}
 
 			return succeed;
@@ -661,16 +716,21 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 秘密校验
-		public bool Verify(string name, string secret, object state = null)
+		public bool Verify(uint userId, string type, string secret)
 		{
-			throw new NotImplementedException();
+			var verifier = _services?.Resolve<IVerifier>(type);
+
+			if(verifier == null)
+				return false;
+
+			return verifier.Verify(type, secret, userId);
 		}
 		#endregion
 
 		#region 虚拟方法
-		protected virtual void OnVerifyUserName(string name)
+		protected virtual void OnVerifyName(string name)
 		{
-			var validator = _validators?.Select<IValidator<string>>("Name");
+			var validator = _services?.Resolve<IValidator<string>>("user.name");
 
 			if(validator != null)
 				validator.Validate(name, (key, message) => throw new SecurityException("username.illegality", message));
@@ -678,7 +738,7 @@ namespace Zongsoft.Security.Membership
 
 		protected virtual void OnVerifyPassword(string password)
 		{
-			var validator = _validators?.Select<IValidator<string>>("Password");
+			var validator = _services?.Resolve<IValidator<string>>("password");
 
 			if(validator != null)
 				validator.Validate(password, (key, message) => throw new SecurityException("password.illegality", message));

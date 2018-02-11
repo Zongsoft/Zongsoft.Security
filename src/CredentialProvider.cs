@@ -35,7 +35,7 @@ using Zongsoft.Runtime.Caching;
 
 namespace Zongsoft.Security
 {
-	public class CredentialProvider : MarshalByRefObject, ICredentialProvider
+	public class CredentialProvider : ICredentialProvider
 	{
 		#region 私有常量
 		private static readonly DateTime EPOCH = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);

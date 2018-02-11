@@ -30,9 +30,9 @@ using System.Collections.Generic;
 using Zongsoft.Common;
 using Zongsoft.Collections;
 
-namespace Zongsoft.Security.Membership.Validators
+namespace Zongsoft.Security.Membership.Common
 {
-	public class NameValidator : Zongsoft.Common.IValidator<string>, IMatchable<string>
+	public class UserNameValidator : IValidator<string>, IMatchable<string>
 	{
 		public bool Validate(string parameter, Func<string, string, bool?> failure = null)
 		{
@@ -85,7 +85,7 @@ namespace Zongsoft.Security.Membership.Validators
 		{
 			return string.Equals(parameter, "Name", StringComparison.OrdinalIgnoreCase) |
 			       string.Equals(parameter, "UserName", StringComparison.OrdinalIgnoreCase) |
-			       string.Equals(parameter, "RoleName", StringComparison.OrdinalIgnoreCase);
+			       string.Equals(parameter, "User.Name", StringComparison.OrdinalIgnoreCase);
 		}
 
 		bool IMatchable.IsMatch(object parameter)

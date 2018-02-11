@@ -35,17 +35,19 @@ using Zongsoft.Services;
 
 namespace Zongsoft.Security.Membership
 {
-	public class RoleProvider : MarshalByRefObject, IRoleProvider, IMemberProvider
+	public class RoleProvider : IRoleProvider, IMemberProvider
 	{
 		#region 成员字段
 		private IDataAccess _dataAccess;
 		private ISequence _sequence;
 		private ICensorship _censorship;
+		private Services.IServiceProvider _services;
 		#endregion
 
 		#region 构造函数
-		public RoleProvider()
+		public RoleProvider(Services.IServiceProvider serviceProvider)
 		{
+			_services = serviceProvider;
 		}
 		#endregion
 
@@ -202,7 +204,7 @@ namespace Zongsoft.Security.Membership
 					throw new ArgumentException("The role name is empty.");
 
 				//验证指定的名称是否合法
-				this.VerifyName(role.Name);
+				this.OnVerifyName(role.Name);
 
 				//确保角色名是审核通过的
 				this.Censor(role.Name);
@@ -252,7 +254,7 @@ namespace Zongsoft.Security.Membership
 						throw new ArgumentException("The role name is empty.");
 
 					//验证指定的名称是否合法
-					this.VerifyName(role.Name);
+					this.OnVerifyName(role.Name);
 
 					//确保角色名是审核通过的
 					this.Censor(role.Name);
@@ -441,9 +443,12 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 虚拟方法
-		protected virtual void VerifyName(string name)
+		protected virtual void OnVerifyName(string name)
 		{
-			Utility.VerifyName(name);
+			var validator = _services?.Resolve<IValidator<string>>("role.name");
+
+			if(validator != null)
+				validator.Validate(name, (key, message) => throw new SecurityException("rolename.illegality", message));
 		}
 		#endregion
 

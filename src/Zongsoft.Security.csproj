@@ -46,12 +46,18 @@
     <Compile Include="Membership\AuthenticationPredications.cs" />
     <Compile Include="Membership\Authorization.cs" />
     <Compile Include="Membership\AuthorizationPredications.cs" />
+    <Compile Include="Membership\Common\UserEmailVerifier.cs" />
+    <Compile Include="Membership\Common\UserPhoneNotifier.cs" />
+    <Compile Include="Membership\Common\UserEmailNotifier.cs" />
+    <Compile Include="Membership\Common\UserPhoneVerifier.cs" />
     <Compile Include="Membership\MembershipHelper.cs" />
     <Compile Include="Membership\PermissionProvider.cs" />
     <Compile Include="Membership\RoleProvider.cs" />
     <Compile Include="Membership\UserProvider.cs" />
     <Compile Include="Membership\Utility.cs" />
-    <Compile Include="Membership\Validators\NameValidator.cs" />
+    <Compile Include="Membership\Common\PasswordValidator.cs" />
+    <Compile Include="Membership\Common\RoleNameValidator.cs" />
+    <Compile Include="Membership\Common\UserNameValidator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

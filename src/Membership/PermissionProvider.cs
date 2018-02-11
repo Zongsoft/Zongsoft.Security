@@ -32,7 +32,7 @@ using Zongsoft.Services;
 
 namespace Zongsoft.Security.Membership
 {
-	public class PermissionProvider : MarshalByRefObject, IPermissionProvider
+	public class PermissionProvider : IPermissionProvider
 	{
 		#region 成员字段
 		private IDataAccess _dataAccess;

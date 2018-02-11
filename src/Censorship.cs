@@ -33,7 +33,7 @@ using Zongsoft.Services;
 
 namespace Zongsoft.Security
 {
-	public class Censorship : MarshalByRefObject, ICensorship
+	public class Censorship : ICensorship
 	{
 		#region 常量定义
 		private const string DATA_ENTITY_CENSORSHIP = "Security.Censorship";

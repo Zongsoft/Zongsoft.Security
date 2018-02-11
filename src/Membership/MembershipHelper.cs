@@ -97,7 +97,7 @@ namespace Zongsoft.Security.Membership
 			if(dataAccess == null)
 				throw new ArgumentNullException("dataAccess");
 
-			return dataAccess.Select<User>(DATA_ENTITY_USER, new Condition("UserId", userId)).FirstOrDefault();
+			return dataAccess.Select<User>(DATA_ENTITY_USER, Condition.Equal("UserId", userId), "!Password, !PasswordSalt").FirstOrDefault();
 		}
 
 		public static bool GetUserId(IDataAccess dataAccess, string identity, string @namespace, out uint userId)
