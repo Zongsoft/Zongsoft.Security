@@ -130,7 +130,7 @@ namespace Zongsoft.Security.Membership
 
 		public IEnumerable<Role> GetRoles(string @namespace, Paging paging = null)
 		{
-			if(@namespace == null)
+			if(@namespace == "*")
 				return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE);
 			else
 				return this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, MembershipHelper.GetNamespaceCondition(@namespace), paging);
@@ -316,38 +316,34 @@ namespace Zongsoft.Security.Membership
 			return members.Select(m => m.Role);
 		}
 
-		public IEnumerable<Member> GetMembers(uint roleId)
+		public IEnumerable<IMember> GetMembers(uint roleId)
 		{
 			//查出指定角色的所有子级成员
-			var members = this.DataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER, new Condition("RoleId", roleId), "Role");
+			var members = this.DataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER, Condition.Equal("RoleId", roleId));
 
 			//从数据库中查找当前子级成员中的角色成员
 			var roles = this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, Condition.In("RoleId", members.Where(m => m.MemberType == MemberType.Role).Select(m => m.MemberId)));
+
+			foreach(var role in roles)
+			{
+				yield return role;
+			}
+
 			//从数据库中查找当前子级成员中的用户成员
 			var users = this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, Condition.In("UserId", members.Where(m => m.MemberType == MemberType.User).Select(m => m.MemberId)));
 
-			foreach(var member in members)
+			foreach(var user in users)
 			{
-				switch(member.MemberType)
-				{
-					case MemberType.Role:
-						member.MemberObject = roles.FirstOrDefault(p => p.RoleId == member.MemberId);
-						break;
-					case MemberType.User:
-						member.MemberObject = users.FirstOrDefault(p => p.UserId == member.MemberId);
-						break;
-				}
+				yield return user;
 			}
-
-			return members;
 		}
 
-		public int SetMembers(uint roleId, params Member[] members)
+		public int SetMembers(uint roleId, params IMember[] members)
 		{
 			return this.SetMembers(roleId, members, false);
 		}
 
-		public int SetMembers(uint roleId, IEnumerable<Member> members, bool shouldResetting = false)
+		public int SetMembers(uint roleId, IEnumerable<IMember> members, bool shouldResetting = false)
 		{
 			if(members == null)
 				return 0;
@@ -364,27 +360,8 @@ namespace Zongsoft.Security.Membership
 				if(shouldResetting)
 					this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER, Condition.Equal("RoleId", roleId));
 
-				foreach(var member in members)
-				{
-					if(member == null)
-						continue;
-
-					//更新成员的角色编号
-					member.RoleId = roleId;
-
-					bool existed;
-
-					if(member.MemberType == MemberType.Role)
-						existed = this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("RoleId", member.MemberId));
-					else
-						existed = this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("UserId", member.MemberId));
-
-					if(existed)
-					{
-						//插入指定的角色成员集到数据库中
-						count += this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_MEMBER, member);
-					}
-				}
+				//插入指定的角色成员集到数据库中
+				this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_MEMBER, members.Select(p => new Member(roleId, p.MemberId, p.MemberType)));
 
 				//提交事务
 				transaction.Commit();
@@ -393,15 +370,23 @@ namespace Zongsoft.Security.Membership
 			return count;
 		}
 
-		public int DeleteMembers(params Member[] members)
+		public bool RemoveMember(uint roleId, uint memberId, MemberType memberType)
+		{
+			return this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER,
+				Condition.Equal("RoleId", roleId) &
+				Condition.Equal("MemberId", memberId) &
+				Condition.Equal("MemberType", memberType)) > 0;
+		}
+
+		public int RemoveMembers(uint roleId, params IMember[] members)
 		{
 			if(members == null || members.Length < 1)
 				return 0;
 
-			return this.DeleteMembers((IEnumerable<Member>)members);
+			return this.RemoveMembers(roleId, (IEnumerable<IMember>)members);
 		}
 
-		public int DeleteMembers(IEnumerable<Member> members)
+		public int RemoveMembers(uint roleId, IEnumerable<IMember> members)
 		{
 			if(members == null)
 				return 0;
@@ -416,29 +401,13 @@ namespace Zongsoft.Security.Membership
 						continue;
 
 					count += this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER,
-						Condition.Equal("RoleId", member.RoleId) &
+						Condition.Equal("RoleId", roleId) &
 						Condition.Equal("MemberId", member.MemberId) &
 						Condition.Equal("MemberType", member.MemberType));
 				}
 
 				return count;
 			}
-		}
-
-		public int CreateMembers(params Member[] members)
-		{
-			if(members == null || members.Length < 1)
-				return 0;
-
-			return this.CreateMembers((IEnumerable<Member>)members);
-		}
-
-		public int CreateMembers(IEnumerable<Member> members)
-		{
-			if(members == null)
-				return 0;
-
-			return this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_MEMBER, members);
 		}
 		#endregion
 

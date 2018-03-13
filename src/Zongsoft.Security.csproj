@@ -46,10 +46,7 @@
     <Compile Include="Membership\AuthenticationPredications.cs" />
     <Compile Include="Membership\Authorization.cs" />
     <Compile Include="Membership\AuthorizationPredications.cs" />
-    <Compile Include="Membership\Common\UserEmailVerifier.cs" />
-    <Compile Include="Membership\Common\UserPhoneNotifier.cs" />
-    <Compile Include="Membership\Common\UserEmailNotifier.cs" />
-    <Compile Include="Membership\Common\UserPhoneVerifier.cs" />
+    <Compile Include="Membership\Member.cs" />
     <Compile Include="Membership\MembershipHelper.cs" />
     <Compile Include="Membership\PermissionProvider.cs" />
     <Compile Include="Membership\RoleProvider.cs" />
@@ -61,6 +58,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Zongsoft.Security.Redis.plugin">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Zongsoft.Security.mapping" />
     <None Include="Zongsoft.Security.plugin">
       <SubType>Designer</SubType>

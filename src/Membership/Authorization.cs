@@ -106,7 +106,7 @@ namespace Zongsoft.Security.Membership
 				return true;
 
 			//获取指定的安全凭证对应的有效的授权状态集
-			var states = this.GetAuthorizedStates(userId, MemberType.User);
+			var states = this.Authorizes(userId, MemberType.User);
 
 			if(string.IsNullOrWhiteSpace(actionId) || actionId == "*")
 				args.IsAuthorized = states != null && states.Any(state => string.Equals(state.SchemaId, schemaId, StringComparison.OrdinalIgnoreCase));
@@ -121,7 +121,7 @@ namespace Zongsoft.Security.Membership
 			return args.IsAuthorized;
 		}
 
-		public IEnumerable<AuthorizationState> GetAuthorizedStates(uint memberId, MemberType memberType)
+		public IEnumerable<AuthorizationState> Authorizes(uint memberId, MemberType memberType)
 		{
 			//return this.GetAuthorizedStatesCore(memberId, memberType);
 

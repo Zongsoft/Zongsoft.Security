@@ -1,4 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
+
 <plugin name="Zongsoft.Security"
         title="Zongsoft Security Plugin"
         author="Popeye Zhong(zongsoft@gmail.com)"
@@ -37,12 +38,9 @@
 		<object name="UserProvider" type="Zongsoft.Security.Membership.UserProvider, Zongsoft.Security" />
 		<object name="PermissionProvider" type="Zongsoft.Security.Membership.PermissionProvider, Zongsoft.Security" />
 
+		<object name="SecretProvider" type="Zongsoft.Security.SecretProvider, Zongsoft.CoreLibrary" />
 		<object name="PasswordValidator" type="Zongsoft.Security.Membership.Common.PasswordValidator, Zongsoft.Security" />
 		<object name="RoleNameValidator" type="Zongsoft.Security.Membership.Common.RoleNameValidator, Zongsoft.Security" />
 		<object name="UserNameValidator" type="Zongsoft.Security.Membership.Common.UserNameValidator, Zongsoft.Security" />
-		<object name="UserEmailNotifier" type="Zongsoft.Security.Membership.Common.UserEmailNotifier, Zongsoft.Security" />
-		<object name="UserEmailVerifier" type="Zongsoft.Security.Membership.Common.UserEmailVerifier, Zongsoft.Security" />
-		<object name="UserPhoneNotifier" type="Zongsoft.Security.Membership.Common.UserPhoneNotifier, Zongsoft.Security" />
-		<object name="UserPhoneVerifier" type="Zongsoft.Security.Membership.Common.UserPhoneVerifier, Zongsoft.Security" />
 	</extension>
 </plugin>

@@ -27,8 +27,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Linq;
 
 using Zongsoft.Services;
 using Zongsoft.Runtime.Caching;
@@ -37,6 +35,13 @@ namespace Zongsoft.Security
 {
 	public class CredentialProvider : ICredentialProvider
 	{
+		#region 事件定义
+		public event EventHandler<CredentialRegisterEventArgs> Registered;
+		public event EventHandler<CredentialRegisterEventArgs> Registering;
+		public event EventHandler<CredentialUnregisterEventArgs> Unregistered;
+		public event EventHandler<CredentialUnregisterEventArgs> Unregistering;
+		#endregion
+
 		#region 私有常量
 		private static readonly DateTime EPOCH = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 		#endregion
@@ -74,7 +79,6 @@ namespace Zongsoft.Security
 			}
 		}
 
-		[ServiceDependency]
 		public ICache Storage
 		{
 			get
@@ -100,8 +104,14 @@ namespace Zongsoft.Security
 			if(credential == null)
 				throw new InvalidOperationException();
 
+			//激发注册开始事件
+			this.OnRegistering(user, scene, extendedProperties);
+
 			//注册新建的凭证
 			this.Register(credential);
+
+			//激发注册完成事件
+			this.OnRegistered(credential);
 
 			//返回注册成功的凭证
 			return credential;
@@ -111,6 +121,9 @@ namespace Zongsoft.Security
 		{
 			if(string.IsNullOrWhiteSpace(credentialId))
 				return;
+
+			//激发准备注销事件
+			this.OnUnregistering(credentialId);
 
 			//获取指定编号的凭证对象
 			var credential = this.GetCredential(credentialId);
@@ -132,6 +145,9 @@ namespace Zongsoft.Security
 				if(namespaces != null)
 					namespaces.Remove(credentialId);
 			}
+
+			//激发注销完成事件
+			this.OnUnregistered(credential);
 		}
 
 		public Credential Renew(string credentialId)
@@ -363,6 +379,28 @@ namespace Zongsoft.Security
 
 			if(credential != null && (now > credential.IssuedTime && now < credential.Expires))
 				this.EnsureCredentialsTimeout(e.OldKey, credential.Timestamp);
+		}
+		#endregion
+
+		#region 激发事件
+		protected virtual void OnRegistered(Credential credential)
+		{
+			this.Registered?.Invoke(this, new CredentialRegisterEventArgs(credential));
+		}
+
+		protected virtual void OnRegistering(Membership.User user, string scene, IDictionary<string, object> extendedProperties = null)
+		{
+			this.Registering?.Invoke(this, new CredentialRegisterEventArgs(user, scene, extendedProperties));
+		}
+
+		protected virtual void OnUnregistered(Credential credential)
+		{
+			this.Unregistered?.Invoke(this, new CredentialUnregisterEventArgs(credential));
+		}
+
+		protected virtual void OnUnregistering(string credentialId)
+		{
+			this.Unregistering?.Invoke(this, new CredentialUnregisterEventArgs(credentialId));
 		}
 		#endregion
 

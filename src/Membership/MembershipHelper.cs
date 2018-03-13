@@ -27,8 +27,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 
 using Zongsoft.Data;
 
@@ -133,24 +131,41 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException("identity");
 
-			string text;
 			Condition condition;
 
-			if(Zongsoft.Text.TextRegular.Web.Email.IsMatch(identity, out text))
+			if(identity.Contains("@"))
 			{
 				identityType = UserIdentityType.Email;
-				condition = Condition.Equal("Email", text);
+				condition = Condition.Equal("Email", identity);
 			}
-			else if(Zongsoft.Text.TextRegular.Chinese.Cellphone.IsMatch(identity, out text))
+			else if(IsNumericString(identity))
 			{
 				identityType = UserIdentityType.Phone;
-				condition = Condition.Equal("PhoneNumber", text);
+				condition = Condition.Equal("PhoneNumber", identity);
 			}
 			else
 			{
 				identityType = UserIdentityType.Name;
 				condition = Condition.Equal("Name", identity);
 			}
+
+			//string text;
+
+			//if(Zongsoft.Text.TextRegular.Web.Email.IsMatch(identity, out text))
+			//{
+			//	identityType = UserIdentityType.Email;
+			//	condition = Condition.Equal("Email", text);
+			//}
+			//else if(Zongsoft.Text.TextRegular.Chinese.Cellphone.IsMatch(identity, out text))
+			//{
+			//	identityType = UserIdentityType.Phone;
+			//	condition = Condition.Equal("PhoneNumber", text);
+			//}
+			//else
+			//{
+			//	identityType = UserIdentityType.Name;
+			//	condition = Condition.Equal("Name", identity);
+			//}
 
 			return condition & GetNamespaceCondition(@namespace);
 		}
@@ -161,6 +176,9 @@ namespace Zongsoft.Security.Membership
 				return Condition.Equal("Namespace", null);
 
 			@namespace = @namespace.Trim();
+
+			if(@namespace == "*")
+				return null;
 
 			if(@namespace.Contains('*') || @namespace.Contains('?'))
 				return Condition.Like("Namespace", @namespace.Replace('*', '%').Replace('?', '_'));
@@ -260,6 +278,20 @@ namespace Zongsoft.Security.Membership
 				return Zongsoft.Common.Convert.ConvertValue<uint?>(result, () => null);
 
 			return null;
+		}
+
+		private static bool IsNumericString(string text)
+		{
+			if(string.IsNullOrEmpty(text))
+				return false;
+
+			for(var i = 0; i < text.Length; i++)
+			{
+				if(text[i] < '0' || text[i] > '9')
+					return false;
+			}
+
+			return true;
 		}
 		#endregion
 	}

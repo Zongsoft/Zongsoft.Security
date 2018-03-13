@@ -22,15 +22,44 @@
 			margin-top:5px;
 			margin-bottom:5px;
 		}
+		h1{
+			font-family:'Microsoft YaHei', Kaiti, Kaiti_gb2312;
+			font-size:22pt;
+			font-weight: bold;
+			text-align: center;
+		}
+		h2{
+			font-family: Arial, Fangsong, Fangsong_gb2312;
+			font-size:14pt;
+			text-align: center;
+		}
+		.word{
+			font-family: Arial, Helvetica, sans-serif;
+			color:maroon;
+			margin-left: 0.4em;
+			margin-right: 0.4em;
+		}
+		.code{
+			font-family: 'Courier New', Courier, monospace, Fangsong, Fangsong_gb2312;
+			color:navy;
+		}
+		.warn{
+			color:red;
+			font-weight: bold;
+		}
+		.remark{
+			color:#606060;
+			font-style: italic;
+		}
 	</style>
 </head>
 
-<body style="font-family:Fangsong, Fangsong_gb2312; font-size:12pt">
-	<h1 style="font-family:黑体, Kaiti, Kaiti_gb2312; font-size:20pt; text-align:center; font-weight:bold">
+<body style="font-family:Fangsong, Fangsong_gb2312; font-size:14pt">
+	<h1>
 		<font face="Arial"><em>Zongsoft</em> <font face="Monotype Corsiva">i</font><font size="1"> </font>Security<sup>&reg;</sup></font> 用户角色安全数据库表结构定义</strong>
 	</h1>
 
-	<h2 style="font-family:Arial, 仿宋, 仿宋_gb2312; font-size:14pt; text-align:center">
+	<h2>
 		版权所有 2001-2015 &nbsp;&nbsp;<a href="http://www.zongsoft.com">Zongsoft Corporation</a><br/>2015年06月15日　　版本4.1
 	</h2>
 
@@ -113,7 +142,7 @@
 			<td align="center"><font face="Arial">100</font></td>
 			<td align="center"><input type="checkbox" disabled="1" checked="checked" /></td>
 			<td align="center"></td>
-			<td>用户对应的主体标识<br/><span style="font-family:楷体, 楷体_gb2312"><em>通常通过该字段来关联对应于业务系统内的员工。</em></span></td>
+			<td>用户对应的主体标识<br/><span style="font-family:Kaiti, Kaiti_gb2312"><em>通常通过该字段来关联对应于业务系统内的员工。</em></span></td>
 		</tr>
 		<tr>
 			<td align="center"><font face="Arial">Email</font></td>
@@ -493,7 +522,7 @@
 			<td align="center"><font face="Arial">4000</font></td>
 			<td align="center"><input type="checkbox" disabled="1" /></td>
 			<td align="center"></td>
-			<td>拒绝授权的数据成员（如：<font face="Courier New" color="navy">TableName.FieldName</font>）</td>
+			<td>过滤授权的数据成员（如：<span class="code">NavigationProperty.ScalarProperty, ScalarProperty</span>）</td>
 		</tr>
 	</table>
 
@@ -504,7 +533,7 @@
 	<div>
 		<h3>其它说明&middot;<font face="Arial"><strong>Remark</strong></font></h3>
 
-		<div style="font-family:楷体, 楷体_gb2312; font-size:12pt; text-indent:2em">
+		<div style="font-family:Kaiti, Kaiti_gb2312; font-size:12pt; text-indent:2em">
 			<p>假设有角色 <font face="Arial" color="navy">Market</font> 和用户 <font face="Arial" color="navy">Jack</font>，其中 <font face="Arial" color="navy">Jack</font> 是 <font face="Arial" color="navy">Market</font> 角色的成员之一。在 <font face="Arial" color="navy">Permission</font> 授权表有记录如下：</p>
 
 			<table align="center" cellspacing="0" cellpadding="2" width="60%" style="margin-top:5px; margin-bottom:5px">
@@ -520,7 +549,7 @@
 					<td align="center">1</td>
 					<td align="center">SalesOrder</td>
 					<td align="center"><font color="maroon"><em>Select</em></font></td>
-					<td align="center">1(Granted)</td>
+					<td align="center">1<span class="remark">(Granted)</span></td>
 				</tr>
 				<tr align="center">
 					<td>...</td>
@@ -547,28 +576,7 @@
 					<td align="center">0</td>
 					<td align="center">SalesOrder</td>
 					<td align="center"><font color="maroon"><em>Select</em></font></td>
-					<td>SalesOrder.CustomerNo</td>
-				</tr>
-				<tr style="font-family:Courier New">
-					<td align="center">#(Jack)</td>
-					<td align="center">0</td>
-					<td align="center">SalesOrder</td>
-					<td align="center"><font color="maroon"><em>Select</em></font></td>
-					<td>SalesOrderDetail.Price</td>
-				</tr>
-				<tr style="font-family:Courier New">
-					<td align="center">#(Jack)</td>
-					<td align="center">0</td>
-					<td align="center">SalesOrder</td>
-					<td align="center"><font color="maroon"><em>Select</em></font></td>
-					<td>SalesOrderDetail.Amount</td>
-				</tr>
-				<tr style="font-family:Courier New">
-					<td align="center">#(Jack)</td>
-					<td align="center">0</td>
-					<td align="center">SalesOrder</td>
-					<td align="center"><font color="maroon"><em>Select</em></font></td>
-					<td>SalesOrderDetail.Quantity</td>
+					<td>!Amount, !Details.Price, !Details.Discount, !Details.Quantity</td>
 				</tr>
 				<tr align="center">
 					<td>...</td>
@@ -582,18 +590,14 @@
 			<p>以上两个授权表中的数据指示出 <font face="Arial" color="navy">Jack</font> 默认拥有 <font face="Arial" color="maroon">Select</font><em>（读取）</em><font face="Arial" color="navy">SalesOrder</font><em>（销售订单）</em>应用模块中所有业务数据的权力（继承自 <font face="Arial" color="navy">Market</font> 角色的授权），但是他却被<strong>拒绝</strong> <font face="Arial" color="maroon">Select</font><em>（读取）</em><font face="Arial" color="navy">SalesOrder</font><em>（销售订单）</em>应用模块中如下字段的数据：<br/></p>
 
 			<ul>
-				<li><font face="Courier New" color="navy">SalesOrder.CustomerNo</font><em>（销售订单所属的客户编号）</em></li>
-				<li><font face="Courier New" color="navy">SalesOrderDetail.Price</font><em>（产品单价）</em></li>
-				<li><font face="Courier New" color="navy">SalesOrderDetail.Amount</font><em>（销售金额）</em></li>
-				<li><font face="Courier New" color="navy">SalesOrderDetail.Quantity</font><em>（销售数量）</em></li>
+				<li><span class="code">SalesOrder.Amount</span><span class="remark">（销售订单总金额）</span></li>
+				<li><span class="code">SalesOrderDetail.Price</span><span class="remark">（单项单价）</span></li>
+				<li><span class="code">SalesOrderDetail.Discount</span><span class="remark">（单项折扣）</span></li>
+				<li><span class="code">SalesOrderDetail.Quantity</span><span class="remark">（单项数量）</span></li>
 			</ul>
 
-			<p style="margin-top:5px">
-			以上过滤器语法可以简写成一行：<span style="font-family:Courier New; color:navy">SalesOrder.CustomerNo, SalesOrderDetail.Price, Amount, Quantity</span>
-			</p>
-
 			<p style="margin-top:10px; margin-bottom:10px">
-				<font color="red"><strong>注意：</strong></font>在 <font face="Arial" color="maroon">PermissionFilter</font> 表中的记录始终表示的是拒绝授权的信息。
+				<span class="warn">注意：</span>在<span class="word">PermissionFilter</span>表中的<span class="word">Filter</span>字段内容以逗号分隔，惊叹号打头表示拒绝。
 			</p>
 	</div>
 </body>
