@@ -134,7 +134,7 @@ namespace Zongsoft.Security.Membership
 		public IEnumerable<User> GetUsers(string @namespace, Paging paging = null)
 		{
 			if(@namespace == "*")
-				return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER);
+				return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, null, paging);
 			else
 				return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, MembershipHelper.GetNamespaceCondition(@namespace), paging);
 		}
@@ -193,7 +193,7 @@ namespace Zongsoft.Security.Membership
 		public bool SetPhoneNumber(uint userId, string phoneNumber)
 		{
 			//判断是否电话号码是否需要校验
-			if(this.IsVerifyEmailRequired())
+			if(this.IsVerifyPhoneRequired())
 			{
 				//获取指定编号的用户
 				var user = this.GetUser(userId);
@@ -202,7 +202,7 @@ namespace Zongsoft.Security.Membership
 					return false;
 
 				//发送电话号码更改的校验通知
-				this.OnChangeEmail(user, phoneNumber);
+				this.OnChangePhone(user, phoneNumber);
 
 				//返回成功
 				return true;
@@ -507,7 +507,7 @@ namespace Zongsoft.Security.Membership
 				return false;
 
 			if(!PasswordUtility.VerifyPassword(oldPassword, storedPassword, storedPasswordSalt))
-				return false;
+				throw new AuthenticationException(AuthenticationReason.InvalidPassword);
 
 			//重新生成密码随机数
 			storedPasswordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
@@ -546,6 +546,10 @@ namespace Zongsoft.Security.Membership
 			switch(identityType)
 			{
 				case MembershipHelper.UserIdentityType.Email:
+					//如果用户的邮箱地址为空，即无法通过邮箱寻回
+					if(string.IsNullOrWhiteSpace(user.Email))
+						throw new InvalidOperationException("The user's email is unset.");
+
 					//生成校验密文
 					secret = secretor.Generate($"{KEY_FORGET_SECRET}:{user.UserId}");
 
@@ -557,10 +561,14 @@ namespace Zongsoft.Security.Membership
 					};
 
 					//发送忘记密码的邮件通知
-					CommandExecutor.Default.Execute($"email.send -template:{KEY_FORGET_SECRET}", parameter);
+					CommandExecutor.Default.Execute($"email.send -template:{KEY_FORGET_SECRET} {user.Email}", parameter);
 
 					break;
 				case MembershipHelper.UserIdentityType.Phone:
+					//如果用户的电话号码为空，即无法通过短信寻回
+					if(string.IsNullOrWhiteSpace(user.PhoneNumber))
+						throw new InvalidOperationException("The user's phone-number is unset.");
+
 					//生成校验密文
 					secret = secretor.Generate($"{KEY_FORGET_SECRET}:{user.UserId}");
 
@@ -572,7 +580,7 @@ namespace Zongsoft.Security.Membership
 					};
 
 					//发送忘记密码的短信通知
-					CommandExecutor.Default.Execute($"sms.send -template:{KEY_FORGET_SECRET}", parameter);
+					CommandExecutor.Default.Execute($"sms.send -template:{KEY_FORGET_SECRET} {user.PhoneNumber}", parameter);
 
 					break;
 				default:
@@ -626,16 +634,16 @@ namespace Zongsoft.Security.Membership
 			}
 
 			//重置密码校验失败，抛出异常
-			throw new SecurityException("verify.fail", "Invalid secret of verification.");
+			throw new SecurityException("verify.fail", "The secret verify fail for the operation.");
 		}
 
-		public bool ResetPassword(string identity, string @namespace, string[] passwordAnswers, string newPassword = null)
+		public bool ResetPassword(string identity, string @namespace, string[] passwordAnswers, string newPassword)
 		{
-			if(string.IsNullOrWhiteSpace(identity) || passwordAnswers == null || passwordAnswers.Length < 3)
-				return false;
+			if(string.IsNullOrWhiteSpace(identity))
+				throw new ArgumentNullException(nameof(identity));
 
-			//确认新密码是否符合密码规则
-			this.OnValidatePassword(newPassword);
+			if(passwordAnswers == null || passwordAnswers.Length < 3)
+				throw new ArgumentNullException(nameof(passwordAnswers));
 
 			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
 			var record = this.DataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, PasswordAnswer1, PasswordAnswer2, PasswordAnswer3").FirstOrDefault();
@@ -644,25 +652,38 @@ namespace Zongsoft.Security.Membership
 				return false;
 
 			var userId = Zongsoft.Common.Convert.ConvertValue<uint>(record["UserId"]);
+			var answer1 = record["PasswordAnswer1"] as byte[];
+			var answer2 = record["PasswordAnswer2"] as byte[];
+			var answer3 = record["PasswordAnswer3"] as byte[];
 
-			var succeed = PasswordUtility.VerifyPassword(passwordAnswers[0], record["PasswordAnswer1"] as byte[], this.GetPasswordAnswerSalt(userId, 1)) &&
-			              PasswordUtility.VerifyPassword(passwordAnswers[1], record["PasswordAnswer2"] as byte[], this.GetPasswordAnswerSalt(userId, 2)) &&
-			              PasswordUtility.VerifyPassword(passwordAnswers[2], record["PasswordAnswer3"] as byte[], this.GetPasswordAnswerSalt(userId, 3));
-
-			if(succeed && newPassword != null && newPassword.Length > 0)
+			//如果指定的用户没有设置密码问答，则抛出安全异常
+			if((answer1 == null || answer1.Length == 0) &&
+			   (answer2 == null || answer2.Length == 0) &&
+			   (answer3 == null || answer3.Length == 0))
 			{
-				//重新生成密码随机数
-				var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
-
-				return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-					new
-					{
-						Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
-						PasswordSalt = passwordSalt,
-					}, Condition.Equal("UserId", userId)) > 0;
+				throw new SecurityException("Can not reset password, because the specified user's password questions and answers is unset.");
 			}
 
-			return succeed;
+			//如果密码问答的答案验证失败，则抛出安全异常
+			if(!PasswordUtility.VerifyPassword(passwordAnswers[0], answer1, this.GetPasswordAnswerSalt(userId, 1)) ||
+			   !PasswordUtility.VerifyPassword(passwordAnswers[1], answer2, this.GetPasswordAnswerSalt(userId, 2)) ||
+			   !PasswordUtility.VerifyPassword(passwordAnswers[2], answer3, this.GetPasswordAnswerSalt(userId, 3)))
+			{
+				throw new SecurityException("Verification:PasswordAnswers", "The password answers verify failed.");
+			}
+
+			//确认新密码是否符合密码规则
+			this.OnValidatePassword(newPassword);
+
+			//重新生成密码随机数
+			var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
+
+			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+				new
+				{
+					Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
+					PasswordSalt = passwordSalt,
+				}, Condition.Equal("UserId", userId)) > 0;
 		}
 
 		public string[] GetPasswordQuestions(uint userId)
@@ -701,13 +722,13 @@ namespace Zongsoft.Security.Membership
 		public bool SetPasswordQuestionsAndAnswers(uint userId, string password, string[] passwordQuestions, string[] passwordAnswers)
 		{
 			if(passwordQuestions == null || passwordQuestions.Length < 3)
-				throw new ArgumentNullException("passwordQuestions");
+				throw new ArgumentNullException(nameof(passwordQuestions));
 
 			if(passwordAnswers == null || passwordAnswers.Length < 3)
-				throw new ArgumentNullException("passwordAnswers");
+				throw new ArgumentNullException(nameof(passwordAnswers));
 
 			if(passwordQuestions.Length != passwordAnswers.Length)
-				throw new ArgumentException();
+				throw new ArgumentException("The password questions and answers count is not equals.");
 
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
@@ -716,7 +737,7 @@ namespace Zongsoft.Security.Membership
 				return false;
 
 			if(!PasswordUtility.VerifyPassword(password, storedPassword, storedPasswordSalt))
-				return false;
+				throw new SecurityException("Verification:Password", "The password verify failed.");
 
 			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
 			{

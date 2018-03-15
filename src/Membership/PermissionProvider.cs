@@ -64,10 +64,14 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共方法
-		public IEnumerable<Permission> GetPermissions(uint memberId, MemberType memberType)
+		public IEnumerable<Permission> GetPermissions(uint memberId, MemberType memberType, string schemaId = null)
 		{
-			return this.DataAccess.Select<Permission>(MembershipHelper.DATA_ENTITY_PERMISSION,
-												 Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType));
+			var conditions = Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType);
+
+			if(!string.IsNullOrWhiteSpace(schemaId))
+				conditions.Add(Condition.Equal("SchemaId", schemaId));
+
+			return this.DataAccess.Select<Permission>(MembershipHelper.DATA_ENTITY_PERMISSION, conditions);
 		}
 
 		public void SetPermissions(uint memberId, MemberType memberType, IEnumerable<Permission> permissions)
@@ -96,10 +100,14 @@ namespace Zongsoft.Security.Membership
 			}
 		}
 
-		public IEnumerable<PermissionFilter> GetPermissionFilters(uint memberId, MemberType memberType)
+		public IEnumerable<PermissionFilter> GetPermissionFilters(uint memberId, MemberType memberType, string schemaId = null)
 		{
-			return this.DataAccess.Select<PermissionFilter>(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER,
-														    Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType));
+			var conditions = Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType);
+
+			if(!string.IsNullOrWhiteSpace(schemaId))
+				conditions.Add(Condition.Equal("SchemaId", schemaId));
+
+			return this.DataAccess.Select<PermissionFilter>(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER, conditions);
 		}
 
 		public void SetPermissionFilters(uint memberId, MemberType memberType, IEnumerable<PermissionFilter> permissionFilters)
@@ -121,7 +129,7 @@ namespace Zongsoft.Security.Membership
 
 				//插入指定的权限设置集到数据库中
 				if(permissionFilters != null)
-					this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER, permissionFilters.Select(p => new PermissionFilterEntity(memberId, memberType, schemaId, p)));
+					this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER, permissionFilters.Select(p => new PermissionFilterEntity(memberId, memberType, schemaId, p)));
 
 				//提交事务
 				transaction.Commit();
@@ -132,6 +140,7 @@ namespace Zongsoft.Security.Membership
 		#region 嵌套子类
 		private struct PermissionEntity
 		{
+			#region 构造函数
 			public PermissionEntity(uint memberId, MemberType memberType, string schemaId, Permission permission)
 			{
 				this.MemberId = memberId;
@@ -140,16 +149,39 @@ namespace Zongsoft.Security.Membership
 				this.ActionId = permission.ActionId;
 				this.Granted = permission.Granted;
 			}
+			#endregion
 
-			public uint MemberId;
-			public MemberType MemberType;
-			public string SchemaId;
-			public string ActionId;
-			public bool Granted;
+			#region 公共属性
+			public uint MemberId
+			{
+				get; set;
+			}
+
+			public MemberType MemberType
+			{
+				get; set;
+			}
+
+			public string SchemaId
+			{
+				get; set;
+			}
+
+			public string ActionId
+			{
+				get; set;
+			}
+
+			public bool Granted
+			{
+				get; set;
+			}
+			#endregion
 		}
 
 		private struct PermissionFilterEntity
 		{
+			#region 构造函数
 			public PermissionFilterEntity(uint memberId, MemberType memberType, string schemaId, PermissionFilter permissionFilter)
 			{
 				this.MemberId = memberId;
@@ -158,12 +190,34 @@ namespace Zongsoft.Security.Membership
 				this.ActionId = permissionFilter.ActionId;
 				this.Filter = permissionFilter.Filter;
 			}
+			#endregion
 
-			public uint MemberId;
-			public MemberType MemberType;
-			public string SchemaId;
-			public string ActionId;
-			public string Filter;
+			#region 公共属性
+			public uint MemberId
+			{
+				get; set;
+			}
+
+			public MemberType MemberType
+			{
+				get; set;
+			}
+
+			public string SchemaId
+			{
+				get; set;
+			}
+
+			public string ActionId
+			{
+				get; set;
+			}
+
+			public string Filter
+			{
+				get; set;
+			}
+			#endregion
 		}
 		#endregion
 	}

@@ -67,12 +67,12 @@ namespace Zongsoft.Security.Membership
 			UserStatus status;
 			DateTime? statusTimestamp;
 
-			return GetPasswordCore(dataAccess, Condition.Equal("UserId", userId), out password, out passwordSalt, out status, out statusTimestamp) != 0;
+			return GetPasswordCore(dataAccess, Condition.Equal("UserId", userId), out password, out passwordSalt, out status, out statusTimestamp) > 0;
 		}
 
 		public static bool GetPassword(IDataAccess dataAccess, uint userId, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
 		{
-			return GetPasswordCore(dataAccess, Condition.Equal("UserId", userId), out password, out passwordSalt, out status, out statusTimestamp) != 0;
+			return GetPasswordCore(dataAccess, Condition.Equal("UserId", userId), out password, out passwordSalt, out status, out statusTimestamp) > 0;
 		}
 
 		public static uint? GetPassword(IDataAccess dataAccess, string identity, string @namespace, out byte[] password, out byte[] passwordSalt)
