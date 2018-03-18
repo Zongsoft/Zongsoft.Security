@@ -266,6 +266,13 @@ namespace Zongsoft.Security.Membership
 											  MembershipHelper.GetNamespaceCondition(role.Namespace)))
 						throw new DataConflictException(Zongsoft.Resources.ResourceUtility.GetString("Text.RoleConflict"));
 				}
+
+				//确认获取当前上下文的用户编号
+				if(MembershipHelper.EnsureCurrentUserId(out var userId))
+					role.ModifierId = userId;
+
+				//设置角色信息的最后变更时间
+				role.ModifiedTime = DateTime.Now;
 			}
 
 			return this.DataAccess.UpdateMany(MembershipHelper.DATA_ENTITY_ROLE, roles, scope);
@@ -275,20 +282,26 @@ namespace Zongsoft.Security.Membership
 		#region 成员管理
 		public bool InRole(uint userId, uint roleId)
 		{
-			//获取指定用户编号对应的用户名
-			var userDictionary = this.DataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("UserId", userId), "Name").FirstOrDefault();
+			//获取指定用户编号对应的用户
+			var user = this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("UserId", userId), "!, UserId, Name, Namespace").FirstOrDefault();
 
 			//如果指定的用户编号对应的是系统内置管理员（即 Administrator）则进行特殊处理，即系统内置管理员账号只能默认属于内置的管理员角色，它不能隶属于其它角色
-			if(userDictionary != null && string.Equals((string)userDictionary["Name"], User.Administrator, StringComparison.OrdinalIgnoreCase))
+			if(user != null && string.Equals(user.Name, User.Administrator, StringComparison.OrdinalIgnoreCase))
 			{
 				//获取指定角色编号对应的角色名
-				var roleDictionary = this.DataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("RoleId", roleId), "Name").FirstOrDefault();
+				var role = this.DataAccess.Select<Role>(MembershipHelper.DATA_ENTITY_ROLE, Condition.Equal("RoleId", roleId), "!, RoleId, Name, Namespace").FirstOrDefault();
+
 				//如果指定的角色编号对应的是系统内置管理员角色（即 Administrators）则返回真，否则一律返回假。
-				return (roleDictionary != null && string.Equals((string)roleDictionary["Name"], Role.Administrators, StringComparison.OrdinalIgnoreCase));
+				return role != null &&
+				       string.Equals(role.Name, Role.Administrators, StringComparison.OrdinalIgnoreCase) &&
+				       string.Equals(role.Namespace, user.Namespace, StringComparison.OrdinalIgnoreCase);
 			}
 
 			//处理非系统内置管理员账号
-			return this.GetRecursiveRoles(userId, MemberType.User).Any(p => p.Item1 == roleId);
+			if(MembershipHelper.GetAncestors(this.DataAccess, userId, MemberType.User, out var flats, out var hierarchies) > 0)
+				return flats.Any(role => role.RoleId == roleId);
+
+			return false;
 		}
 
 		public bool InRoles(uint userId, params string[] roleNames)
@@ -296,15 +309,18 @@ namespace Zongsoft.Security.Membership
 			if(roleNames == null || roleNames.Length < 1)
 				return false;
 
-			//获取指定用户编号对应的用户名
-			var userDictionary = this.DataAccess.Select<IDictionary>(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("UserId", userId), "Name").FirstOrDefault();
+			//获取指定用户编号对应的用户
+			var user = this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("UserId", userId), "!, UserId, Name, Namespace").FirstOrDefault();
 
 			//如果指定的用户编号对应的是系统内置管理员（即 Administrator）则进行特殊处理，即系统内置管理员账号只能默认属于内置的管理员角色，它不能隶属于其它角色
-			if(userDictionary != null && string.Equals((string)userDictionary["Name"], User.Administrator, StringComparison.OrdinalIgnoreCase))
+			if(user != null && string.Equals(user.Name, User.Administrator, StringComparison.OrdinalIgnoreCase))
 				return roleNames.Contains(Role.Administrators, StringComparer.OrdinalIgnoreCase);
 
 			//处理非系统内置管理员账号
-			return this.GetRecursiveRoles(userId, MemberType.User).Any(p => roleNames.Contains(p.Item2, StringComparer.OrdinalIgnoreCase));
+			if(MembershipHelper.GetAncestors(this.DataAccess, userId, MemberType.User, out var flats, out var hierarchies) > 0)
+				return flats.Any(role => roleNames.Contains(role.Name));
+
+			return false;
 		}
 
 		public IEnumerable<Role> GetRoles(uint memberId, MemberType memberType)
@@ -428,31 +444,6 @@ namespace Zongsoft.Security.Membership
 
 			if(censorship != null && censorship.IsBlocked(name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
 				throw new CensorshipException(string.Format("Illegal '{0}' name of role.", name));
-		}
-
-		private IEnumerable<Tuple<uint, string>> GetRecursiveRoles(uint memberId, MemberType memberType)
-		{
-			var parents = this.DataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
-														 Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType),
-														 "Role.RoleId, Role.Name");
-
-			var result = new List<Tuple<uint, string>>();
-			result.AddRange(parents.Select(p => new Tuple<uint, string>(p.RoleId, p.Role.Name)));
-
-			int index = 0;
-
-			while(index < result.Count)
-			{
-				parents = this.DataAccess.Select<Member>(MembershipHelper.DATA_ENTITY_MEMBER,
-														 Condition.Equal("MemberId", result[index]) & Condition.Equal("MemberType", MemberType.Role),
-														 "Role.RoleId, Role.Name");
-
-				result.AddRange(parents.Where(p => !result.Exists(it => it.Item1 == p.RoleId)).Select(p => new Tuple<uint, string>(p.RoleId, p.Role.Name)));
-
-				index++;
-			}
-
-			return result;
 		}
 		#endregion
 	}

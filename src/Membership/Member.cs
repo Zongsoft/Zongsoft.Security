@@ -33,7 +33,7 @@ namespace Zongsoft.Security.Membership
 	/// 表示角色成员的实体类。
 	/// </summary>
 	[Serializable]
-	internal class Member
+	internal class Member : IEquatable<Member>
 	{
 		#region 成员字段
 		private uint _roleId;
@@ -134,6 +134,11 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 重写方法
+		public bool Equals(Member other)
+		{
+			return _roleId == other._roleId && _memberId == other._memberId && _memberType == other._memberType;
+		}
+
 		public override bool Equals(object obj)
 		{
 			if(obj == null || obj.GetType() != this.GetType())

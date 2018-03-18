@@ -36,8 +36,8 @@ namespace Zongsoft.Security.Membership
 	public class Authorization : IAuthorization
 	{
 		#region 成员字段
+		private IDataAccess _dataAccess;
 		private IMemberProvider _memberProvider;
-		private IPermissionProvider _permissionProvider;
 		#endregion
 
 		#region 事件定义
@@ -53,6 +53,19 @@ namespace Zongsoft.Security.Membership
 
 		#region 公共属性
 		[ServiceDependency]
+		public IDataAccess DataAccess
+		{
+			get
+			{
+				return _dataAccess;
+			}
+			set
+			{
+				_dataAccess = value ?? throw new ArgumentNullException();
+			}
+		}
+
+		[ServiceDependency]
 		public IMemberProvider MemberProvider
 		{
 			get
@@ -65,22 +78,6 @@ namespace Zongsoft.Security.Membership
 					throw new ArgumentNullException();
 
 				_memberProvider = value;
-			}
-		}
-
-		[ServiceDependency]
-		public IPermissionProvider PermissionProvider
-		{
-			get
-			{
-				return _permissionProvider;
-			}
-			set
-			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_permissionProvider = value;
 			}
 		}
 		#endregion
@@ -123,61 +120,70 @@ namespace Zongsoft.Security.Membership
 
 		public IEnumerable<AuthorizationState> Authorizes(uint memberId, MemberType memberType)
 		{
-			//return this.GetAuthorizedStatesCore(memberId, memberType);
+			return this.GetAuthorizedStates(memberId, memberType);
 
 			//将结果缓存在内存容器中，默认有效期为10分钟
 			return Zongsoft.Runtime.Caching.MemoryCache.Default.GetValue("Zongsoft.Security.Authorization:" + memberType.ToString() + ":" + memberId.ToString(),
-				key => new Zongsoft.Runtime.Caching.CacheEntry(this.GetAuthorizedStatesCore(memberId, memberType), TimeSpan.FromMinutes(10))) as IEnumerable<AuthorizationState>;
+				key => new Zongsoft.Runtime.Caching.CacheEntry(this.GetAuthorizedStates(memberId, memberType), TimeSpan.FromMinutes(10))) as IEnumerable<AuthorizationState>;
 		}
 		#endregion
 
 		#region 虚拟方法
-		protected virtual IEnumerable<AuthorizationState> GetAuthorizedStatesCore(uint memberId, MemberType memberType)
+		protected virtual ICollection<AuthorizationState> GetAuthorizedStates(uint memberId, MemberType memberType)
 		{
-			var stack = new Stack<IEnumerable<Role>>();
+			var conditions = Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType);
 
-			//递归获取当前成员所属角色信息，并将其所属上级角色依次压入指定的栈中
-			this.RecursiveRoles(null, stack, this.MemberProvider.GetRoles(memberId, memberType));
-
-			//创建授权状态集
-			var grantedStates = new HashSet<AuthorizationState>();
-			var deniedStates = new HashSet<AuthorizationState>();
-			var states = new HashSet<AuthorizationState>();
-
-			while(stack.Count > 0)
+			//获取指定成员的所有上级角色集和上级角色的层级列表
+			if(MembershipHelper.GetAncestors(this.DataAccess, memberId, memberType, out var flats, out var hierarchies) > 0)
 			{
-				//从栈中弹出某个层级的角色集合
-				var roles = stack.Pop();
-
-				foreach(var role in roles)
-				{
-					//获取指定角色的授权集合
-					this.SlicePermission(role.RoleId, MemberType.Role, grantedStates, deniedStates);
-				}
-
-				//将最终的授权结果集与显式授予集进行合并
-				states.UnionWith(grantedStates);
-				//从最终的授权结果集中删除显式拒绝集
-				states.ExceptWith(deniedStates);
-
-				//必须将当前层级的显式授予集清空
-				grantedStates.Clear();
-				//必须将当前层级的显式拒绝集清空
-				deniedStates.Clear();
+				//如果指定成员有上级角色，则进行权限定义的查询条件还需要加上所有上级角色
+				conditions = ConditionCollection.Or(
+					conditions,
+					Condition.In("MemberId", flats.Select(p => p.RoleId)) & Condition.Equal("MemberType", MemberType.Role)
+				);
 			}
 
-			//获取指定成员的授权集合
-			this.SlicePermission(memberId, memberType, grantedStates, deniedStates);
+			//获取指定条件的所有权限定义（注：禁止分页查询，并即时加载到数组中）
+			var permissions = this.DataAccess.Select<PermissionEntity>(MembershipHelper.DATA_ENTITY_PERMISSION, conditions, Paging.Disable).ToArray();
 
-			//将最终的授权结果集与显式授予集进行合并
-			states.UnionWith(grantedStates);
-			//从最终的授权结果集中删除显式拒绝集
-			states.ExceptWith(deniedStates);
+			//获取指定条件的所有权限过滤定义（注：禁止分页查询，并即时加载到数组中）
+			var permissionFilters = this.DataAccess.Select<PermissionFilterEntity>(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER, conditions, Paging.Disable).ToArray();
 
-			//将显式授予集清空
-			grantedStates.Clear();
-			//将显式拒绝集清空
-			deniedStates.Clear();
+			var states = new HashSet<AuthorizationState>();
+			IEnumerable<PermissionEntity> prepares;
+			IEnumerable<AuthorizationState> grants, denies;
+
+			//如果上级角色层级列表不为空则进行分层过滤
+			if(hierarchies != null && hierarchies.Count > 0)
+			{
+				//从最顶层（即距离指定成员最远的层）开始到最底层（集距离指定成员最近的层）
+				for(int i = hierarchies.Count - 1; i >= 0; i--)
+				{
+					//定义权限集过滤条件：当前层级的角色集的所有权限定义
+					prepares = permissions.Where(p => hierarchies[i].Any(role => role.RoleId == p.MemberId) && p.MemberType == MemberType.Role);
+
+					grants = prepares.Where(p => p.Granted).Select(p => new AuthorizationState(p.SchemaId, p.ActionId)).ToArray();
+					denies = prepares.Where(p => !p.Granted).Select(p => new AuthorizationState(p.SchemaId, p.ActionId)).ToArray();
+
+					states.UnionWith(grants);  //合并授予的权限定义
+					states.ExceptWith(denies); //排除拒绝的权限定义
+
+					//更新授权集中的相关目标的过滤文本
+					this.SetPermissionFilters(states, permissionFilters.Where(p => hierarchies[i].Any(role => role.RoleId == p.MemberId) && p.MemberType == MemberType.Role));
+				}
+			}
+
+			//查找权限定义中当前成员的设置项
+			prepares = permissions.Where(p => p.MemberId == memberId && p.MemberType == memberType);
+
+			grants = prepares.Where(p => p.Granted).Select(p => new AuthorizationState(p.SchemaId, p.ActionId)).ToArray();
+			denies = prepares.Where(p => !p.Granted).Select(p => new AuthorizationState(p.SchemaId, p.ActionId)).ToArray();
+
+			states.UnionWith(grants);  //合并授予的权限定义
+			states.ExceptWith(denies); //排除拒绝的权限定义
+
+			//更新授权集中的相关目标的过滤文本
+			this.SetPermissionFilters(states, permissionFilters.Where(p => p.MemberId == memberId && p.MemberType == memberType));
 
 			return states;
 		}
@@ -202,57 +208,90 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 私有方法
-		private void SlicePermission(uint memberId, MemberType memberType, HashSet<AuthorizationState> grantedStates, HashSet<AuthorizationState> deniedStates)
+		private void SetPermissionFilters(IEnumerable<AuthorizationState> states, IEnumerable<PermissionFilterEntity> filters)
 		{
-			var permissions = this.PermissionProvider.GetPermissions(memberId, memberType);
+			var groups = filters.GroupBy(p => new AuthorizationState(p.SchemaId, p.ActionId));
 
-			foreach(var permission in permissions)
+			foreach(var group in groups)
 			{
-				if(permission.Granted)
-					grantedStates.Add(new AuthorizationState(permission.SchemaId, permission.ActionId));
-				else
-					deniedStates.Add(new AuthorizationState(permission.SchemaId, permission.ActionId));
+				var state = states.FirstOrDefault(p => p.Equals(group.Key));
+
+				if(state != null)
+				{
+					if(string.IsNullOrWhiteSpace(state.Filter))
+						state.Filter = string.Join("; ", group.Select(p => p.Filter));
+					else
+						state.Filter += " | " + string.Join("; ", group.Select(p => p.Filter));
+				}
+			}
+		}
+		#endregion
+
+		#region 嵌套结构
+		private struct PermissionEntity
+		{
+			public uint MemberId
+			{
+				get;
+				set;
+			}
+
+			public MemberType MemberType
+			{
+				get;
+				set;
+			}
+
+			public string SchemaId
+			{
+				get;
+				set;
+			}
+
+			public string ActionId
+			{
+				get;
+				set;
+			}
+
+			public bool Granted
+			{
+				get;
+				set;
 			}
 		}
 
-		private void RecursiveRoles(HashSet<string> hashSet, Stack<IEnumerable<Role>> stack, IEnumerable<Role> roles)
+		private struct PermissionFilterEntity
 		{
-			if(roles == null)
-				return;
-
-			var availableRoles = new List<Role>();
-
-			if(hashSet == null)
-				hashSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-			//对传入的角色集进行是否有循环引用的检测和过滤
-			foreach(var role in roles)
+			public uint MemberId
 			{
-				string key = (role.Namespace + ":" + role.Name).ToLowerInvariant();
-
-				//如果当前角色没有循环引用
-				if(hashSet.Add(key))
-					availableRoles.Add(role);
+				get;
+				set;
 			}
 
-			//将过滤过的没有循环引用的角色集加入到当前栈中
-			stack.Push(availableRoles);
-
-			//创建父级角色列表
-			var parents = new List<Role>();
-
-			foreach(var role in availableRoles)
+			public MemberType MemberType
 			{
-				//获取指定角色所属的的父级角色集
-				roles = this.MemberProvider.GetRoles(role.RoleId, MemberType.Role);
-
-				if(roles != null)
-					parents.AddRange(roles);
+				get;
+				set;
 			}
 
-			//如果当前角色集的所有父级角色集不为空则递归调用
-			if(parents != null && parents.Count > 0)
-				this.RecursiveRoles(hashSet, stack, parents);
+			public string SchemaId
+			{
+				get;
+				set;
+			}
+
+			public string ActionId
+			{
+				get;
+				set;
+			}
+
+			public string Filter
+			{
+				get;
+				set;
+			}
 		}
 		#endregion
 	}

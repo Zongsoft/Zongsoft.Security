@@ -117,6 +117,96 @@ namespace Zongsoft.Security.Membership
 
 			return result;
 		}
+
+		/// <summary>
+		/// 获取指定用户或角色的上级角色集。
+		/// </summary>
+		/// <param name="dataAccess">数据访问服务。</param>
+		/// <param name="memberId">成员编号（用户或角色）。</param>
+		/// <param name="memberType">成员类型，表示<paramref name="memberId"/>对应的成员类型。</param>
+		/// <param name="flats">输出参数，表示所隶属的所有上级角色集，该集已经去除重复。</param>
+		/// <param name="hierarchies">输出参数，表示所隶属的所有上级角色的层级列表，该列表包含的所有角色已经去除重复。</param>
+		/// <returns>返回指定成员隶属的所有上级角色去重后的数量。</returns>
+		public static int GetAncestors(IDataAccess dataAccess, uint memberId, MemberType memberType, out ISet<Role> flats, out IList<IEnumerable<Role>> hierarchies)
+		{
+			if(dataAccess == null)
+				throw new ArgumentNullException(nameof(dataAccess));
+
+			flats = null;
+			hierarchies = null;
+
+			//指定成员的所属命名空间
+			string @namespace = null;
+
+			if(memberType == MemberType.User)
+			{
+				//获取指定编号的用户对象
+				var user = dataAccess.Select<User>(DATA_ENTITY_USER, Condition.Equal("UserId", memberId), "!, UserId, Name, Namespace").FirstOrDefault();
+
+				//如果指定编号的用户不存在，则退出
+				if(user == null)
+					return 0;
+
+				//如果指定编号的用户是内置的“Administrator”账号，则直接返回（因为内置管理员只隶属于内置的“Administrators”角色，而不能属于其他角色）
+				if(string.Equals(user.Name, User.Administrator, StringComparison.OrdinalIgnoreCase))
+				{
+					//获取当前用户同命名空间下的“Administrators”内置角色
+					flats = new HashSet<Role>(dataAccess.Select<Role>(DATA_ENTITY_ROLE, Condition.Equal("Name", Role.Administrators) & Condition.Equal("Namespace", user.Namespace)));
+
+					if(flats.Count > 0)
+					{
+						hierarchies = new List<IEnumerable<Role>>();
+						hierarchies.Add(flats);
+					}
+
+					//返回（零或者一）
+					return flats.Count;
+				}
+
+				@namespace = user.Namespace;
+			}
+			else
+			{
+				//获取指定编号的角色对象
+				var role = dataAccess.Select<Role>(DATA_ENTITY_ROLE, Condition.Equal("RoleId", memberId), "!, RoleId, Name, Namespace").FirstOrDefault();
+
+				//如果指定编号的角色不存在或是一个内置角色（内置角色没有归属），则退出
+				if(role == null || Role.IsBuiltin(role))
+					return 0;
+
+				@namespace = role.Namespace;
+			}
+
+			//获取指定用户所属命名空间下的所有角色（注：禁止分页查询，并即时加载到数组中）
+			var roles = dataAccess.Select<Role>(DATA_ENTITY_ROLE, Condition.Equal("Namespace", @namespace), Paging.Disable).ToArray();
+
+			//获取指定用户所属命名空间下的所有角色成员定义（注：禁止分页查询，并即时加载到数组中）
+			var members = dataAccess.Select<Member>(DATA_ENTITY_MEMBER, Condition.In("RoleId", roles.Select(p => p.RoleId)), Paging.Disable).ToArray();
+
+			flats = new HashSet<Role>();
+			hierarchies = new List<IEnumerable<Role>>();
+
+			//从角色成员集合中查找出指定成员的父级角色
+			var parents = members.Where(m => m.MemberId == memberId && m.MemberType == memberType)
+			                     .Select(m => roles.FirstOrDefault(role => role.RoleId == m.RoleId))
+			                     .ToArray();
+
+			//如果父级角色集不为空
+			while(parents.Any())
+			{
+				//将父角色集合并到输出参数中
+				flats.UnionWith(parents);
+				//将特定层级的所有父角色集加入到层级列表中
+				hierarchies.Add(parents);
+
+				//从角色成员集合中查找出当前层级中所有角色的父级角色集合（并进行全局去重）
+				parents = members.Where(m => parents.Any(p => p.RoleId == m.MemberId) && m.MemberType == MemberType.Role)
+				                 .Select(m => roles.FirstOrDefault(role => role.RoleId == m.RoleId))
+				                 .Except(flats).ToArray();
+			}
+
+			return flats.Count;
+		}
 		#endregion
 
 		#region 内部方法
@@ -232,6 +322,21 @@ namespace Zongsoft.Security.Membership
 				return flag.Value;
 
 			return System.ComponentModel.TypeDescriptor.GetProperties(typeof(T)).Find(memberName, true) != null;
+		}
+
+		internal static bool EnsureCurrentUserId(out uint userId)
+		{
+			userId = 0;
+
+			var principal = Zongsoft.ComponentModel.ApplicationContextBase.Current?.Principal as CredentialPrincipal;
+
+			if(principal != null && principal.Identity != null && principal.Identity.IsAuthenticated && principal.Identity.Credential != null)
+			{
+				userId = principal.Identity.Credential.UserId;
+				return true;
+			}
+
+			return false;
 		}
 		#endregion
 

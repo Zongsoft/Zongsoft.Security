@@ -452,30 +452,21 @@ namespace Zongsoft.Security.Membership
 				return 0;
 
 			if(string.IsNullOrWhiteSpace(scope))
-				scope = "!Name, !Email, !PhoneNumber, !CreatorId, !CreatedTime";
+				scope = "!Name, !Email, !PhoneNumber, !Status, !StatusTimestamp, !CreatorId, !CreatedTime";
 			else
-				scope += ", !Name, !Email, !PhoneNumber, !CreatorId, !CreatedTime";
+				scope += ", !Name, !Email, !PhoneNumber, !Status, !StatusTimestamp, !CreatorId, !CreatedTime";
 
 			foreach(var user in users)
 			{
 				if(user == null)
 					continue;
 
-				//只有当要更新的范围包含“Name”用户名才需要验证该属性值
-				if(MembershipHelper.InScope<User>(scope, "Name"))
-				{
-					if(string.IsNullOrWhiteSpace(user.Name))
-						throw new ArgumentException("The user name is empty.");
+				//确认获取当前上下文的用户编号
+				if(MembershipHelper.EnsureCurrentUserId(out var userId))
+					user.ModifierId = userId;
 
-					//验证指定的名称是否合法
-					this.OnValidateName(user.Name);
-
-					//确保用户名是审核通过的
-					this.Censor(user.Name);
-				}
-
-				//确认指定用户的用户名、手机号、邮箱地址是否已经存在
-				this.EnsureConflict(user, scope, true);
+				//设置用户信息的最后变更时间
+				user.ModifiedTime = DateTime.Now;
 			}
 
 			return this.DataAccess.UpdateMany(MembershipHelper.DATA_ENTITY_USER, users, scope);
