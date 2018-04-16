@@ -422,6 +422,9 @@ namespace Zongsoft.Security.Membership
 						Condition.Equal("MemberType", member.MemberType));
 				}
 
+				//提交事务
+				transaction.Commit();
+
 				return count;
 			}
 		}
