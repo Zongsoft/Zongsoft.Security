@@ -31,7 +31,6 @@ using System.Text;
 
 using Zongsoft.Data;
 using Zongsoft.Common;
-using Zongsoft.Communication;
 using Zongsoft.Services;
 
 namespace Zongsoft.Security.Membership
@@ -60,19 +59,15 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共属性
-		[ServiceDependency]
 		public IDataAccess DataAccess
 		{
 			get
 			{
-				return _dataAccess;
+				return _dataAccess ?? ServiceProviderFactory.Instance.Default.ResolveRequired<IDataAccessProvider>().Default;
 			}
 			set
 			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_dataAccess = value;
+				_dataAccess = value ?? throw new ArgumentNullException();
 			}
 		}
 
@@ -526,7 +521,7 @@ namespace Zongsoft.Security.Membership
 				throw new NotSupportedException("Invalid user identity for the forget password operation.");
 
 			//获取指定标识的用户信息
-			var user = _dataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, condition).FirstOrDefault();
+			var user = this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, condition).FirstOrDefault();
 
 			if(user == null)
 				return 0;

@@ -83,19 +83,15 @@ namespace Zongsoft.Security
 			}
 		}
 
-		[ServiceDependency]
 		public IDataAccess DataAccess
 		{
 			get
 			{
-				return _dataAccess;
+				return _dataAccess ?? ServiceProviderFactory.Instance.Default.ResolveRequired<IDataAccessProvider>().Default;
 			}
 			set
 			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_dataAccess = value;
+				_dataAccess = value ?? throw new ArgumentNullException();
 			}
 		}
 		#endregion

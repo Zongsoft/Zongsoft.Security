@@ -52,12 +52,11 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共属性
-		[ServiceDependency]
 		public IDataAccess DataAccess
 		{
 			get
 			{
-				return _dataAccess;
+				return _dataAccess ?? ServiceProviderFactory.Instance.Default.ResolveRequired<IDataAccessProvider>().Default;
 			}
 			set
 			{

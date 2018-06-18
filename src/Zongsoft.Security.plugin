@@ -13,14 +13,14 @@
 		</assemblies>
 	</manifest>
 
-	<!-- 挂载服务提供程序 -->
+	<!-- 挂载“Security”服务提供程序 -->
 	<extension path="/Workspace/Services/Providers">
-		<serviceProvider name="Security" />
+		<object name="Security" type="Zongsoft.Services.PluginServiceProvider, Zongsoft.Plugins" />
 	</extension>
 
-	<!-- 将安全服务提供程序链接到默认服务容器 -->
+	<!-- 将“Security”服务提供程序链接到默认服务容器 -->
 	<extension path="/Workspace/Services">
-		<link ref="../Providers/Security" />
+		<object name="Security" value="{path:../Providers/Security}" />
 	</extension>
 
 	<!-- 挂载“安全”相关的各种服务 -->
