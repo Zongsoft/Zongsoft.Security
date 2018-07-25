@@ -75,16 +75,16 @@ ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='词汇审查表';
 
 # COMMENT '角色名在命名空间范围内的唯一索引'
 ALTER TABLE `Security_Role` 
-ADD UNIQUE INDEX `UX_Role_Name` (`Namespace` ASC, `Name` ASC);
+ADD UNIQUE INDEX `UX_Security_Role_Name` (`Namespace` ASC, `Name` ASC);
 
 # COMMENT '用户名在命名空间范围内的唯一索引'
 ALTER TABLE `Security_User` 
-ADD UNIQUE INDEX `UX_User_Name` (`Namespace` ASC, `Name` ASC);
+ADD UNIQUE INDEX `UX_Security_User_Name` (`Namespace` ASC, `Name` ASC);
 
 # COMMENT '邮箱地址在命名空间范围内的唯一索引'
 ALTER TABLE `Security_User` 
-ADD UNIQUE INDEX `UX_User_Email` (`Namespace` ASC, `Email` ASC);
+ADD UNIQUE INDEX `UX_Security_User_Email` (`Namespace` ASC, `Email` ASC);
 
 # COMMENT '手机号码在命名空间范围内的唯一索引'
 ALTER TABLE `Security_User` 
-ADD UNIQUE INDEX `UX_User_PhoneNumber` (`Namespace` ASC, `PhoneNumber` ASC);
+ADD UNIQUE INDEX `UX_Security_User_PhoneNumber` (`Namespace` ASC, `PhoneNumber` ASC);
