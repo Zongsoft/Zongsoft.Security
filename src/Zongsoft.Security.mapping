@@ -72,33 +72,6 @@
 			</complexProperty>
 		</entity>
 
-		<entity name="UserProfile" inherits="User">
-			<key>
-				<member name="UserId" />
-			</key>
-
-			<property name="UserId" type="uint" nullable="false" />
-			<property name="Gender" type="bool" nullable="false" />
-			<property name="Nickname" type="string" length="50" nullable="true" />
-			<property name="Birthdate" type="datetime" nullable="true" />
-			<property name="IdentityId" type="string" length="50" nullable="true" />
-			<property name="Grade" type="byte" nullable="false" />
-			<property name="QQ" type="string" length="50" nullable="true" />
-			<property name="WeChatNo" type="string" length="50" nullable="true" />
-			<property name="SinaId" type="string" length="50" nullable="true" />
-			<property name="ContactAddressCode" type="int" nullable="true" />
-			<property name="ContactAddressDetail" type="string" length="100" nullable="true" />
-			<property name="HomeAddressCode" type="int" nullable="true" />
-			<property name="HomeAddressDetail" type="string" length="100" nullable="true" />
-			<property name="DrivingLicenseType" type="byte" nullable="true" />
-			<property name="DrivingLicenseNo" type="string" length="50" nullable="true" />
-			<property name="DrivingLicenseCode" type="string" length="50" nullable="true" />
-			<property name="DrivingLicenseIssue" type="datetime" nullable="true" />
-			<property name="DrivingLicenseExpire" type="datetime" nullable="true" />
-			<property name="Points" type="int" nullable="false" />
-			<property name="TotalPoints" type="int" nullable="false" />
-		</entity>
-
 		<entity name="Member" table="security_member">
 			<key>
 				<member name="RoleId" />
