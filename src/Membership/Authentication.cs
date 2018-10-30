@@ -36,6 +36,7 @@ namespace Zongsoft.Security.Membership
 	{
 		#region 成员字段
 		private IDataAccess _dataAccess;
+		private Attempter _attempter;
 		#endregion
 
 		#region 事件声明
@@ -49,6 +50,19 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共属性
+		[ServiceDependency]
+		public Attempter Attempter
+		{
+			get
+			{
+				return _attempter;
+			}
+			set
+			{
+				_attempter = value;
+			}
+		}
+
 		public IDataAccess DataAccess
 		{
 			get
@@ -66,7 +80,7 @@ namespace Zongsoft.Security.Membership
 		public AuthenticationResult Authenticate(string identity, string password, string @namespace, string scene, IDictionary<string, object> parameters = null)
 		{
 			if(string.IsNullOrWhiteSpace(identity))
-				throw new ArgumentNullException("identity");
+				throw new ArgumentNullException(nameof(identity));
 
 			byte[] storedPassword;
 			byte[] storedPasswordSalt;
@@ -85,6 +99,13 @@ namespace Zongsoft.Security.Membership
 				//指定的用户名如果不存在则抛出验证异常
 				throw new AuthenticationException(AuthenticationReason.InvalidIdentity);
 			}
+
+			//获取验证失败的解决器
+			var attempter = this.Attempter;
+
+			//确认验证失败是否超出限制数，如果超出则抛出验证拒绝异常
+			if(attempter != null && !attempter.Verify(userId.Value, scene))
+				throw new AuthenticationException(AuthenticationReason.Forbidden);
 
 			//如果帐户尚未审核批准，则抛出异常
 			if(status == UserStatus.Unapproved)
@@ -119,12 +140,20 @@ namespace Zongsoft.Security.Membership
 			//如果验证失败，则抛出异常
 			if(!PasswordUtility.VerifyPassword(password, storedPassword, storedPasswordSalt, "SHA1"))
 			{
+				//通知验证尝试失败
+				if(attempter != null)
+					attempter.Fail(userId.Value, scene);
+
 				//激发“Authenticated”事件
 				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
 
 				//密码校验失败则抛出验证异常
 				throw new AuthenticationException(AuthenticationReason.InvalidPassword);
 			}
+
+			//通知验证尝试成功，即清空验证失败记录
+			if(attempter != null)
+				attempter.Done(userId.Value, scene);
 
 			//获取指定用户编号对应的用户对象
 			var user = MembershipHelper.GetUser(this.DataAccess, userId.Value);

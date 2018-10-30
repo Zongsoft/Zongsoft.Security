@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<options>
+	<option path="/Security/Membership">
+		<general general.type="Zongsoft.Security.Membership.Options.Configuration.GeneralConfiguration, Zongsoft.Security"
+		         passwordLength="0" passwordStrength="None" attemptThreshold="3" attemptWindow="60">
+		</general>
+	</option>
+</options>

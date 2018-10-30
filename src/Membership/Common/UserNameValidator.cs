@@ -34,34 +34,27 @@ namespace Zongsoft.Security.Membership.Common
 {
 	public class UserNameValidator : IValidator<string>, IMatchable<string>
 	{
-		public bool Validate(string parameter, Func<string, string, bool?> failure = null)
+		#region 验证方法
+		public bool Validate(string parameter, Action<string> failure = null)
 		{
-			bool? result = null;
-
 			if(string.IsNullOrEmpty(parameter))
 			{
-				result = failure?.Invoke(null, "The name is null or empty.");
-
-				if(result.HasValue)
-					return result.Value;
+				failure?.Invoke("The name is null or empty.");
+				return false;
 			}
 
 			//名字(用户名或角色名)的长度必须不少于4个字符
 			if(parameter.Length < 4)
 			{
-				result = failure?.Invoke(null, $"The '{parameter}' name length must be greater than 3.");
-
-				if(result.HasValue)
-					return result.Value;
+				failure?.Invoke($"The '{parameter}' name length must be greater than 3.");
+				return false;
 			}
 
 			//名字(用户名或角色名)的首字符必须是字母、下划线、美元符
 			if(!(Char.IsLetter(parameter[0]) || parameter[0] == '_' || parameter[0] == '$'))
 			{
-				result = failure?.Invoke(null, $"The '{parameter}' name contains illegal characters.");
-
-				if(result.HasValue)
-					return result.Value;
+				failure?.Invoke($"The '{parameter}' name contains illegal characters.");
+				return false;
 			}
 
 			//检查名字(用户名或角色名)的其余字符的合法性
@@ -70,17 +63,17 @@ namespace Zongsoft.Security.Membership.Common
 				//名字的中间字符必须是字母、数字或下划线
 				if(!Char.IsLetterOrDigit(parameter[i]) && parameter[i] != '_')
 				{
-					result = failure?.Invoke(null, $"The '{parameter}' name contains illegal characters.");
-
-					if(result.HasValue)
-						return result.Value;
+					failure?.Invoke($"The '{parameter}' name contains illegal characters.");
+					return false;
 				}
 			}
 
 			//通过所有检测，返回成功
 			return true;
 		}
+		#endregion
 
+		#region 匹配方法
 		public bool IsMatch(string parameter)
 		{
 			return string.Equals(parameter, "Name", StringComparison.OrdinalIgnoreCase) |
@@ -92,5 +85,6 @@ namespace Zongsoft.Security.Membership.Common
 		{
 			return this.IsMatch(parameter as string);
 		}
+		#endregion
 	}
 }

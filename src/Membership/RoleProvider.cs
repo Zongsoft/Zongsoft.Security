@@ -432,7 +432,7 @@ namespace Zongsoft.Security.Membership
 			var validator = _services?.Resolve<IValidator<string>>("role.name");
 
 			if(validator != null)
-				validator.Validate(name, (key, message) => throw new SecurityException("rolename.illegality", message));
+				validator.Validate(name, message => throw new SecurityException("rolename.illegality", message));
 		}
 		#endregion
 

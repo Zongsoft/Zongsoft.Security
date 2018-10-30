@@ -45,6 +45,7 @@ namespace Zongsoft.Security.Membership
 
 		#region 成员字段
 		private IDataAccess _dataAccess;
+		private Attempter _attempter;
 		private ISequence _sequence;
 		private ICensorship _censorship;
 		private ISecretProvider _secretProvider;
@@ -68,6 +69,19 @@ namespace Zongsoft.Security.Membership
 			set
 			{
 				_dataAccess = value ?? throw new ArgumentNullException();
+			}
+		}
+
+		[ServiceDependency]
+		public Attempter Attempter
+		{
+			get
+			{
+				return _attempter;
+			}
+			set
+			{
+				_attempter = value;
 			}
 		}
 
@@ -489,11 +503,29 @@ namespace Zongsoft.Security.Membership
 			//确认新密码是否符合密码规则
 			this.OnValidatePassword(newPassword);
 
+			//获取验证失败的解决器
+			var attempter = this.Attempter;
+
+			//确认验证失败是否超出限制数，如果超出则抛出验证拒绝异常
+			if(attempter != null && !attempter.Verify(userId))
+				throw new AuthenticationException(AuthenticationReason.Forbidden);
+
 			if(!MembershipHelper.GetPassword(this.DataAccess, userId, out storedPassword, out storedPasswordSalt))
 				return false;
 
 			if(!PasswordUtility.VerifyPassword(oldPassword, storedPassword, storedPasswordSalt))
+			{
+				//通知验证尝试失败
+				if(attempter != null)
+					attempter.Fail(userId);
+
+				//抛出验证失败异常
 				throw new AuthenticationException(AuthenticationReason.InvalidPassword);
+			}
+
+			//通知验证尝试成功，即清空验证失败记录
+			if(attempter != null)
+				attempter.Done(userId);
 
 			//重新生成密码随机数
 			storedPasswordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
@@ -853,7 +885,7 @@ namespace Zongsoft.Security.Membership
 			var validator = _services?.Resolve<IValidator<string>>("user.name");
 
 			if(validator != null)
-				validator.Validate(name, (key, message) => throw new SecurityException("username.illegality", message));
+				validator.Validate(name, message => throw new SecurityException("username.illegality", message));
 		}
 
 		protected virtual void OnValidatePassword(string password)
@@ -861,7 +893,7 @@ namespace Zongsoft.Security.Membership
 			var validator = _services?.Resolve<IValidator<string>>("password");
 
 			if(validator != null)
-				validator.Validate(password, (key, message) => throw new SecurityException("password.illegality", message));
+				validator.Validate(password, message => throw new SecurityException("password.illegality", message));
 		}
 		#endregion
 

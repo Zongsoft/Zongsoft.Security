@@ -25,11 +25,14 @@
 
 	<!-- 挂载“安全”相关的各种服务 -->
 	<extension path="/Workspace/Services/Security">
+		<object name="Configuration" value="{opt:/Security/Membership/General}" />
+
 		<object name="IsAuthenticated" type="Zongsoft.Security.Membership.IsAuthenticatedPredication, Zongsoft.Security" />
 		<object name="IsUnauthenticated" type="Zongsoft.Security.Membership.IsUnauthenticatedPredication, Zongsoft.Security" />
 		<object name="IsAuthorized" type="Zongsoft.Security.Membership.IsAuthorizedPredication, Zongsoft.Security" />
 		<object name="IsUnauthorized" type="Zongsoft.Security.Membership.IsUnauthorizedPredication, Zongsoft.Security" />
 
+		<object name="Attempter" type="Zongsoft.Security.Membership.Attempter, Zongsoft.Security" />
 		<object name="Authentication" type="Zongsoft.Security.Membership.Authentication, Zongsoft.Security" />
 		<object name="Authorization" type="Zongsoft.Security.Membership.Authorization, Zongsoft.Security" />
 		<object name="Censorship" type="Zongsoft.Security.Censorship, Zongsoft.Security" />

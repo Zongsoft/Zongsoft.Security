@@ -43,11 +43,15 @@
     <Compile Include="CredentialProvider.cs" />
     <Compile Include="Censorship.cs" />
     <Compile Include="Membership\Authentication.cs" />
+    <Compile Include="Membership\Attempter.cs" />
     <Compile Include="Membership\AuthenticationPredications.cs" />
     <Compile Include="Membership\Authorization.cs" />
     <Compile Include="Membership\AuthorizationPredications.cs" />
+    <Compile Include="Membership\Options\Configuration\GeneralConfiguration.cs" />
+    <Compile Include="Membership\Options\IConfiguration.cs" />
     <Compile Include="Membership\Member.cs" />
     <Compile Include="Membership\MembershipHelper.cs" />
+    <Compile Include="Membership\PasswordStrength.cs" />
     <Compile Include="Membership\PermissionProvider.cs" />
     <Compile Include="Membership\RoleProvider.cs" />
     <Compile Include="Membership\UserProvider.cs" />
@@ -64,6 +68,9 @@
     <None Include="..\README.md">
       <Link>README.md</Link>
     </None>
+    <None Include="Zongsoft.Security.option">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Zongsoft.Security.Redis.plugin">
       <SubType>Designer</SubType>
     </None>
@@ -75,6 +82,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
