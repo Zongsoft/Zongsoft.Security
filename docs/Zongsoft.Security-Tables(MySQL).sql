@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS `Security_User` (
   `Namespace` VARCHAR(100) NULL COMMENT '用户所属的命名空间，该字段表示应用或组织机构的标识',
   `Name` VARCHAR(50) NOT NULL COMMENT '用户名称，该名称在所属命名空间内具有唯一性',
   `Password` BINARY(64) NULL COMMENT '用户的登录口令',
-  `PasswordSalt` BINARY(8) NULL COMMENT '口令加密向量(随机数)',
+  `PasswordSalt` bigint NULL COMMENT '口令加密向量(随机数)',
   `FullName` VARCHAR(50) NULL COMMENT '用户全称',
   `Avatar` VARCHAR(200) NULL COMMENT '用户头像标识',
   `PrincipalId` VARCHAR(100) NULL COMMENT '用户对应到业务系统中的负责人标识',
