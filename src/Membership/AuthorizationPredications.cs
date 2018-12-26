@@ -39,20 +39,17 @@ namespace Zongsoft.Security.Membership
 		#region 成员字段
 		private string _name;
 		private IAuthorization _authorization;
-		private Zongsoft.ComponentModel.ApplicationContextBase _applicationContext;
+		private Zongsoft.Services.IApplicationContext _applicationContext;
 		#endregion
 
 		#region 构造函数
-		protected AuthorizationPredicationBase(string name, Zongsoft.ComponentModel.ApplicationContextBase applicationContext)
+		protected AuthorizationPredicationBase(string name, Zongsoft.Services.IApplicationContext applicationContext)
 		{
 			if(string.IsNullOrWhiteSpace(name))
 				throw new ArgumentNullException("name");
 
-			if(applicationContext == null)
-				throw new ArgumentNullException("applicationContext");
-
 			_name = name.Trim();
-			_applicationContext = applicationContext;
+			_applicationContext = applicationContext ?? throw new ArgumentNullException(nameof(applicationContext));
 		}
 		#endregion
 
@@ -71,7 +68,7 @@ namespace Zongsoft.Security.Membership
 			{
 				if(_authorization == null)
 				{
-					var serviceProvider = _applicationContext.ServiceFactory.GetProvider("Security") ?? _applicationContext.ServiceFactory.Default;
+					var serviceProvider = Services.ServiceProviderFactory.Instance.GetProvider("Security") ?? _applicationContext.Services;
 
 					if(serviceProvider != null)
 						_authorization = serviceProvider.Resolve<IAuthorization>();
@@ -124,8 +121,7 @@ namespace Zongsoft.Security.Membership
 	public class IsAuthorizedPredication : AuthorizationPredicationBase, Zongsoft.Services.IPredication<string>
 	{
 		#region 构造函数
-		public IsAuthorizedPredication(string name, Zongsoft.ComponentModel.ApplicationContextBase applicationContext)
-			: base(name, applicationContext)
+		public IsAuthorizedPredication(string name, Zongsoft.Services.IApplicationContext applicationContext) : base(name, applicationContext)
 		{
 		}
 		#endregion
@@ -149,8 +145,7 @@ namespace Zongsoft.Security.Membership
 	public class IsUnauthorizedPredication : AuthorizationPredicationBase, Zongsoft.Services.IPredication<string>
 	{
 		#region 构造函数
-		public IsUnauthorizedPredication(string name, Zongsoft.ComponentModel.ApplicationContextBase applicationContext)
-			: base(name, applicationContext)
+		public IsUnauthorizedPredication(string name, Zongsoft.Services.IApplicationContext applicationContext) : base(name, applicationContext)
 		{
 		}
 		#endregion

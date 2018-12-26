@@ -328,7 +328,7 @@ namespace Zongsoft.Security.Membership
 		{
 			userId = 0;
 
-			var principal = Zongsoft.ComponentModel.ApplicationContextBase.Current?.Principal as CredentialPrincipal;
+			var principal = Zongsoft.Services.ApplicationContext.Current?.Principal as CredentialPrincipal;
 
 			if(principal != null && principal.Identity != null && principal.Identity.IsAuthenticated && principal.Identity.Credential != null)
 			{

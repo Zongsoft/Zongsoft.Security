@@ -32,16 +32,13 @@ namespace Zongsoft.Security.Membership
 	public class IsAuthenticatedPredication : Zongsoft.Services.PredicationBase<object>
 	{
 		#region 成员字段
-		private Zongsoft.ComponentModel.ApplicationContextBase _applicationContext;
+		private Zongsoft.Services.IApplicationContext _applicationContext;
 		#endregion
 
 		#region 构造函数
-		public IsAuthenticatedPredication(string name, Zongsoft.ComponentModel.ApplicationContextBase applicationContext) : base(name)
+		public IsAuthenticatedPredication(string name, Zongsoft.Services.IApplicationContext applicationContext) : base(name)
 		{
-			if(applicationContext == null)
-				throw new ArgumentNullException("applicationContext");
-
-			_applicationContext = applicationContext;
+			_applicationContext = applicationContext ?? throw new ArgumentNullException(nameof(applicationContext));
 		}
 		#endregion
 
@@ -57,16 +54,13 @@ namespace Zongsoft.Security.Membership
 	public class IsUnauthenticatedPredication : Zongsoft.Services.PredicationBase<object>
 	{
 		#region 成员字段
-		private Zongsoft.ComponentModel.ApplicationContextBase _applicationContext;
+		private Zongsoft.Services.IApplicationContext _applicationContext;
 		#endregion
 
 		#region 构造函数
-		public IsUnauthenticatedPredication(string name, Zongsoft.ComponentModel.ApplicationContextBase applicationContext) : base(name)
+		public IsUnauthenticatedPredication(string name, Zongsoft.Services.IApplicationContext applicationContext) : base(name)
 		{
-			if(applicationContext == null)
-				throw new ArgumentNullException("applicationContext");
-
-			_applicationContext = applicationContext;
+			_applicationContext = applicationContext ?? throw new ArgumentNullException(nameof(applicationContext));
 		}
 		#endregion
 
