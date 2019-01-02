@@ -63,11 +63,12 @@ namespace Zongsoft.Security.Membership
 			}
 		}
 
+		[ServiceDependency]
 		public IDataAccess DataAccess
 		{
 			get
 			{
-				return _dataAccess ?? ServiceProviderFactory.Instance.Default.ResolveRequired<IDataAccessProvider>().Default;
+				return _dataAccess;
 			}
 			set
 			{
