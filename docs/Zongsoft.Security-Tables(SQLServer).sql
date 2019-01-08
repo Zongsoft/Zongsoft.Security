@@ -1,4 +1,4 @@
-CREATE TABLE [dbo].[Security_Role] (
+﻿CREATE TABLE [dbo].[Security_Role] (
   [RoleId] INT NOT NULL,
   [Namespace] VARCHAR(100) NULL,
   [Name] VARCHAR(50) NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE [dbo].[Security_User] (
   [Namespace] VARCHAR(100) NULL,
   [Name] VARCHAR(50) NOT NULL,
   [Password] BINARY(64) NULL,
-  [PasswordSalt] BINARY(8) NULL,
+  [PasswordSalt] BIGINT NULL,
   [FullName] VARCHAR(50) NULL,
   [Avatar] VARCHAR(200) NULL,
   [PrincipalId] VARCHAR(100) NULL,

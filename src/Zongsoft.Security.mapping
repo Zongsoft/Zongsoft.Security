@@ -44,7 +44,7 @@
 			<property name="FullName" type="string" length="50" nullable="true" />
 			<property name="Namespace" type="string" length="50" nullable="true" />
 			<property name="Password" type="byte[]" length="64" nullable="true" />
-			<property name="PasswordSalt" type="byte[]" length="8" nullable="true" />
+			<property name="PasswordSalt" type="ulong" nullable="true" />
 			<property name="Avatar" type="string" length="200" nullable="true" />
 			<property name="Email" type="string" length="100" nullable="true" />
 			<property name="PhoneNumber" type="string" length="50" nullable="true" />
