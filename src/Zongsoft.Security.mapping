@@ -25,6 +25,10 @@
 				<link name="ModifierId" role="UserId" />
 			</complexProperty>
 
+			<complexProperty name="Members" role="Member" multiplicity="*">
+				<link name="RoleId" role="RoleId" />
+			</complexProperty>
+
 			<complexProperty name="Users" role="Member:MemberUser" multiplicity="*">
 				<link name="RoleId" role="RoleId" />
 			</complexProperty>
@@ -83,11 +87,11 @@
 			<property name="MemberId" type="uint" nullable="false" />
 			<property name="MemberType" type="byte" nullable="false" />
 
-			<complexProperty name="Role" role="Role">
+			<complexProperty name="Role" role="Role" multiplicity="1">
 				<link name="RoleId" role="RoleId" />
 			</complexProperty>
 
-			<complexProperty name="MemberRole" role="Role">
+			<complexProperty name="MemberRole" role="Role" multiplicity="1">
 				<link name="MemberId" role="RoleId" />
 
 				<constraints>
@@ -95,7 +99,7 @@
 				</constraints>
 			</complexProperty>
 
-			<complexProperty name="MemberUser" role="User">
+			<complexProperty name="MemberUser" role="User" multiplicity="1">
 				<link name="MemberId" role="UserId" />
 
 				<constraints>
