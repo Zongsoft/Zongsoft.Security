@@ -95,7 +95,7 @@ namespace Zongsoft.Security.Membership
 			if(dataAccess == null)
 				throw new ArgumentNullException("dataAccess");
 
-			return dataAccess.Select<User>(DATA_ENTITY_USER, Condition.Equal("UserId", userId), "!Password, !PasswordSalt").FirstOrDefault();
+			return dataAccess.Select<User>(DATA_ENTITY_USER, Condition.Equal("UserId", userId), "*, !Password, !PasswordSalt").FirstOrDefault();
 		}
 
 		public static bool GetUserId(IDataAccess dataAccess, string identity, string @namespace, out uint userId)
@@ -107,15 +107,8 @@ namespace Zongsoft.Security.Membership
 				throw new ArgumentNullException("identity");
 
 			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
-			var record = dataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId").FirstOrDefault();
-			var result = record != null && record.Count > 0 && record.ContainsKey("UserId");
-
-			userId = 0;
-
-			if(result)
-				userId = Zongsoft.Common.Convert.ConvertValue<uint>(record["UserId"]);
-
-			return result;
+			userId = dataAccess.Select<uint>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId").FirstOrDefault();
+			return userId != 0;
 		}
 
 		/// <summary>
@@ -238,24 +231,6 @@ namespace Zongsoft.Security.Membership
 				identityType = UserIdentityType.Name;
 				condition = Condition.Equal("Name", identity);
 			}
-
-			//string text;
-
-			//if(Zongsoft.Text.TextRegular.Web.Email.IsMatch(identity, out text))
-			//{
-			//	identityType = UserIdentityType.Email;
-			//	condition = Condition.Equal("Email", text);
-			//}
-			//else if(Zongsoft.Text.TextRegular.Chinese.Cellphone.IsMatch(identity, out text))
-			//{
-			//	identityType = UserIdentityType.Phone;
-			//	condition = Condition.Equal("PhoneNumber", text);
-			//}
-			//else
-			//{
-			//	identityType = UserIdentityType.Name;
-			//	condition = Condition.Equal("Name", identity);
-			//}
 
 			return condition & GetNamespaceCondition(@namespace);
 		}
