@@ -374,7 +374,15 @@ namespace Zongsoft.Security.Membership
 					this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER, Condition.Equal("RoleId", roleId));
 
 				//插入指定的角色成员集到数据库中
-				this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_MEMBER, members.Select(p => new Member(roleId, p.MemberId, p.MemberType)));
+				this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_MEMBER, members.Select(p => 
+				{
+					if(p is IUser user)
+						return new Member(roleId, user.UserId, MemberType.User);
+					else if(p is IRole role)
+						return new Member(roleId, role.RoleId, MemberType.Role);
+
+					return null;
+				}));
 
 				//提交事务
 				transaction.Commit();
@@ -413,10 +421,10 @@ namespace Zongsoft.Security.Membership
 					if(member == null)
 						continue;
 
-					count += this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER,
-						Condition.Equal("RoleId", roleId) &
-						Condition.Equal("MemberId", member.MemberId) &
-						Condition.Equal("MemberType", member.MemberType));
+					//count += this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER,
+					//	Condition.Equal("RoleId", roleId) &
+					//	Condition.Equal("MemberId", member.MemberId) &
+					//	Condition.Equal("MemberType", member.MemberType));
 				}
 
 				//提交事务

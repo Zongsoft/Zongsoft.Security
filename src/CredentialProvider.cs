@@ -96,7 +96,7 @@ namespace Zongsoft.Security
 		#endregion
 
 		#region 公共方法
-		public Credential Register(Membership.User user, string scene, IDictionary<string, object> extendedProperties = null)
+		public Credential Register(Membership.IUser user, string scene, IDictionary<string, object> extendedProperties = null)
 		{
 			//创建一个新的凭证对象
 			var credential = this.CreateCredential(user, scene, extendedProperties);
@@ -163,7 +163,7 @@ namespace Zongsoft.Security
 				return null;
 
 			//创建一个新的凭证对象
-			credential = this.CreateCredential(credential.User, credential.Scene, (credential.HasExtendedProperties ? credential.ExtendedProperties : null));
+			credential = this.CreateCredential(credential.User, credential.Scene, (credential.HasParameters ? credential.Parameters : null));
 
 			//将新的凭证对象以JSON文本的方式保存到物理存储层中
 			this.Cache.SetValue(this.GetCacheKeyOfCredential(credential.CredentialId), this.SerializeCertificationToJson(credential), credential.Duration);
@@ -310,7 +310,7 @@ namespace Zongsoft.Security
 			return timing.ToString() + Zongsoft.Common.RandomGenerator.GenerateString(8);
 		}
 
-		protected virtual Credential CreateCredential(Membership.User user, string scene, IDictionary<string, object> extendedProperties)
+		protected virtual Credential CreateCredential(Membership.IUser user, string scene, IDictionary<string, object> extendedProperties)
 		{
 			return new Credential(this.GenerateCredentialId(), user, scene, _renewalPeriod, DateTime.Now, extendedProperties);
 		}
@@ -388,7 +388,7 @@ namespace Zongsoft.Security
 			this.Registered?.Invoke(this, new CredentialRegisterEventArgs(credential));
 		}
 
-		protected virtual void OnRegistering(Membership.User user, string scene, IDictionary<string, object> extendedProperties = null)
+		protected virtual void OnRegistering(Membership.IUser user, string scene, IDictionary<string, object> extendedProperties = null)
 		{
 			this.Registering?.Invoke(this, new CredentialRegisterEventArgs(user, scene, extendedProperties));
 		}

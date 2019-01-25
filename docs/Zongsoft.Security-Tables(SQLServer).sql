@@ -20,8 +20,6 @@ CREATE TABLE [dbo].[Security_User] (
   [Password] BINARY(64) NULL,
   [PasswordSalt] BIGINT NULL,
   [FullName] VARCHAR(50) NULL,
-  [Avatar] VARCHAR(200) NULL,
-  [PrincipalId] VARCHAR(100) NULL,
   [Email] VARCHAR(50) NULL,
   [PhoneNumber] VARCHAR(50) NULL,
   [Status] TINYINT NOT NULL DEFAULT 1,

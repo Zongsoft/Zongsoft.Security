@@ -33,7 +33,7 @@ namespace Zongsoft.Security.Membership
 	/// 表示角色成员的实体类。
 	/// </summary>
 	[Serializable]
-	internal class Member : IEquatable<Member>
+	public class Member : IEquatable<Member>
 	{
 		#region 成员字段
 		private uint _roleId;
