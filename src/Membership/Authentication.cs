@@ -25,6 +25,7 @@
  */
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 using Zongsoft.Data;
@@ -83,16 +84,11 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException(nameof(identity));
 
-			byte[] storedPassword;
-			byte[] storedPasswordSalt;
-			UserStatus status;
-			DateTime? statusTimestamp;
-
 			//获取当前用户的密码及密码向量
-			var userId = this.GetPassword(identity, @namespace, out storedPassword, out storedPasswordSalt, out status, out statusTimestamp);
+			var userId = this.GetPassword(identity, @namespace, out var storedPassword, out var storedPasswordSalt, out var status, out var statusTimestamp);
 
 			//如果帐户不存在，则抛出异常
-			if(userId == null)
+			if(userId == 0)
 			{
 				//激发“Authenticated”事件
 				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
@@ -105,7 +101,7 @@ namespace Zongsoft.Security.Membership
 			var attempter = this.Attempter;
 
 			//确认验证失败是否超出限制数，如果超出则抛出验证拒绝异常
-			if(attempter != null && !attempter.Verify(userId.Value, scene))
+			if(attempter != null && !attempter.Verify(userId, scene))
 				throw new AuthenticationException(AuthenticationReason.Forbidden);
 
 			//如果帐户尚未审核批准，则抛出异常
@@ -143,7 +139,7 @@ namespace Zongsoft.Security.Membership
 			{
 				//通知验证尝试失败
 				if(attempter != null)
-					attempter.Fail(userId.Value, scene);
+					attempter.Fail(userId, scene);
 
 				//激发“Authenticated”事件
 				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
@@ -154,10 +150,10 @@ namespace Zongsoft.Security.Membership
 
 			//通知验证尝试成功，即清空验证失败记录
 			if(attempter != null)
-				attempter.Done(userId.Value, scene);
+				attempter.Done(userId, scene);
 
 			//获取指定用户编号对应的用户对象
-			var user = MembershipHelper.GetUser(this.DataAccess, userId.Value);
+			var user = this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
 
 			//创建“Authenticated”事件参数
 			var eventArgs = new AuthenticatedEventArgs(identity, @namespace, user, scene, parameters);
@@ -171,12 +167,27 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 虚拟方法
-		protected virtual uint? GetPassword(string identity, string @namespace, out byte[] password, out byte[] passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
+		protected virtual uint GetPassword(string identity, string @namespace, out byte[] password, out long passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
 		{
-			if(string.IsNullOrWhiteSpace(identity))
-				throw new ArgumentNullException("identity");
+			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
+			var entity = this.DataAccess.Select<UserSecret>(condition).FirstOrDefault();
 
-			return MembershipHelper.GetPassword(this.DataAccess, identity, @namespace, out password, out passwordSalt, out status, out statusTimestamp);
+			if(entity.UserId == 0)
+			{
+				password = null;
+				passwordSalt = 0;
+				status = UserStatus.Active;
+				statusTimestamp = null;
+			}
+			else
+			{
+				password = entity.Password;
+				passwordSalt = entity.PasswordSalt;
+				status = entity.Status;
+				statusTimestamp = entity.StatusTimestamp;
+			}
+
+			return entity.UserId;
 		}
 		#endregion
 
@@ -189,5 +200,15 @@ namespace Zongsoft.Security.Membership
 				handler(this, args);
 		}
 		#endregion
+
+		[Zongsoft.Data.Entity("Security.User")]
+		private struct UserSecret
+		{
+			public uint UserId;
+			public byte[] Password;
+			public long PasswordSalt;
+			public UserStatus Status;
+			public DateTime? StatusTimestamp;
+		}
 	}
 }

@@ -6,10 +6,6 @@ CREATE TABLE IF NOT EXISTS `Security_Role` (
   `Namespace` VARCHAR(100) NULL COMMENT '角色所属的命名空间，该字段表示应用或组织机构的标识',
   `Name` VARCHAR(50) NOT NULL COMMENT '角色名称，该名称在所属命名空间内具有唯一性',
   `FullName` VARCHAR(50) NULL COMMENT '角色全称',
-  `CreatorId` int unsigned NULL COMMENT '创建者编号',
-  `CreatedTime` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `ModifierId` int unsigned NULL COMMENT '最后修改者编号',
-  `ModifiedTime` DATETIME NULL COMMENT '最后修改时间',
   `Description` VARCHAR(500) NULL COMMENT '描述信息',
   PRIMARY KEY (`RoleId`))
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='角色表';
@@ -18,9 +14,9 @@ CREATE TABLE IF NOT EXISTS `Security_User` (
   `UserId` int unsigned NOT NULL COMMENT '主键，用户编号',
   `Namespace` VARCHAR(100) NULL COMMENT '用户所属的命名空间，该字段表示应用或组织机构的标识',
   `Name` VARCHAR(50) NOT NULL COMMENT '用户名称，该名称在所属命名空间内具有唯一性',
+  `FullName` VARCHAR(50) NULL COMMENT '用户全称',
   `Password` BINARY(64) NULL COMMENT '用户的登录口令',
   `PasswordSalt` bigint unsigned NULL COMMENT '口令加密向量(随机数)',
-  `FullName` VARCHAR(50) NULL COMMENT '用户全称',
   `Email` VARCHAR(50) NULL COMMENT '用户的电子邮箱，该邮箱地址在所属命名空间内具有唯一性',
   `PhoneNumber` VARCHAR(50) NULL COMMENT '用户的手机号码，该手机号码在所属命名空间内具有唯一性',
   `Status` TINYINT unsigned NOT NULL DEFAULT 1 COMMENT '用户状态（0:正常; 1:待批准; 2:已停用; 3:被挂起(密码验证失败超过特定次数)）',
@@ -31,10 +27,8 @@ CREATE TABLE IF NOT EXISTS `Security_User` (
   `PasswordAnswer2` VARBINARY(64) NULL COMMENT '用户的密码问答的答案(2)',
   `PasswordQuestion3` VARCHAR(50) NULL COMMENT '用户的密码问答的题面(3)',
   `PasswordAnswer3` VARBINARY(64) NULL COMMENT '用户的密码问答的答案(3)',
-  `CreatorId` int unsigned NULL COMMENT '创建人编号',
-  `CreatedTime` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `ModifierId` int unsigned NULL COMMENT '最后修改人编号',
-  `ModifiedTime` DATETIME NULL COMMENT '最后修改时间',
+  `Creation` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `Modification` DATETIME NULL COMMENT '最后修改时间',
   `Description` VARCHAR(500) NULL COMMENT '描述信息',
   PRIMARY KEY (`UserId`))
 ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表';

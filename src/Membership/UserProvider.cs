@@ -130,28 +130,24 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 用户管理
-		public User GetUser(uint userId)
+		public IUser GetUser(uint userId)
 		{
-			return MembershipHelper.GetUser(this.DataAccess, userId);
+			return this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), GetUserId(userId))).FirstOrDefault();
 		}
 
-		public User GetUser(string identity, string @namespace)
+		public IUser GetUser(string identity, string @namespace)
 		{
-			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
-			return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, condition).FirstOrDefault();
+			return this.DataAccess.Select<IUser>(MembershipHelper.GetUserIdentityCondition(identity, @namespace)).FirstOrDefault();
 		}
 
-		public IEnumerable<User> GetUsers(string @namespace, Paging paging = null)
+		public IEnumerable<IUser> GetUsers(string @namespace, Paging paging = null)
 		{
-			if(@namespace == "*")
-				return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, null, paging);
-			else
-				return this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, MembershipHelper.GetNamespaceCondition(@namespace), paging);
+			return this.DataAccess.Select<IUser>(MembershipHelper.GetNamespaceCondition(@namespace), paging);
 		}
 
 		public bool Exists(uint userId)
 		{
-			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, Condition.Equal("UserId", userId));
+			return this.DataAccess.Exists<IUser>(Condition.Equal(nameof(IUser.UserId), userId));
 		}
 
 		public bool Exists(string identity, string @namespace)
@@ -159,23 +155,14 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity))
 				return false;
 
-			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
-			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, condition);
-		}
-
-		public bool SetAvatar(uint userId, string avatar)
-		{
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-				new
-				{
-					Avatar = string.IsNullOrWhiteSpace(avatar) ? null : avatar.Trim(),
-					ModifiedTime = DateTime.Now,
-				},
-				new Condition("UserId", userId)) > 0;
+			return this.DataAccess.Exists<IUser>(MembershipHelper.GetUserIdentityCondition(identity, @namespace));
 		}
 
 		public bool SetEmail(uint userId, string email)
 		{
+			//确认指定的用户编号是否有效
+			userId = GetUserId(userId);
+
 			//判断是否邮箱地址是否需要校验
 			if(this.IsVerifyEmailRequired())
 			{
@@ -192,16 +179,19 @@ namespace Zongsoft.Security.Membership
 				return true;
 			}
 
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update<IUser>(
 				new
 				{
 					Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim(),
-					ModifiedTime = DateTime.Now,
-				}, Condition.Equal("UserId", userId)) > 0;
+					Modification = DateTime.Now,
+				}, Condition.Equal(nameof(IUser.UserId), userId)) > 0;
 		}
 
 		public bool SetPhoneNumber(uint userId, string phoneNumber)
 		{
+			//确认指定的用户编号是否有效
+			userId = GetUserId(userId);
+
 			//判断是否电话号码是否需要校验
 			if(this.IsVerifyPhoneRequired())
 			{
@@ -218,40 +208,46 @@ namespace Zongsoft.Security.Membership
 				return true;
 			}
 
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update<IUser>(
 				new
 				{
 					PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim(),
-					ModifiedTime = DateTime.Now,
-				}, Condition.Equal("UserId", userId)) > 0;
+					Modification = DateTime.Now,
+				}, Condition.Equal(nameof(IUser.UserId), userId)) > 0;
 		}
 
 		public bool SetNamespace(uint userId, string @namespace)
 		{
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			//确认指定的用户编号是否有效
+			userId = GetUserId(userId);
+
+			return this.DataAccess.Update<IUser>(
 				new
 				{
 					Namespace = string.IsNullOrWhiteSpace(@namespace) ? null : @namespace.Trim(),
-					ModifiedTime = DateTime.Now,
+					Modification = DateTime.Now,
 				},
-				new Condition("UserId", userId)) > 0;
+				new Condition(nameof(IUser.UserId), userId)) > 0;
 		}
 
 		public int SetNamespaces(string oldNamespace, string newNamespace)
 		{
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update<IUser>(
 				new
 				{
 					Namespace = string.IsNullOrWhiteSpace(newNamespace) ? null : newNamespace.Trim(),
-					ModifiedTime = DateTime.Now,
+					Modification = DateTime.Now,
 				},
-				new Condition("Namespace", oldNamespace));
+				new Condition(nameof(IUser.Namespace), oldNamespace));
 		}
 
 		public bool SetName(uint userId, string name)
 		{
 			if(string.IsNullOrWhiteSpace(name))
-				throw new ArgumentNullException("name");
+				throw new ArgumentNullException(nameof(name));
+
+			//确认指定的用户编号是否有效
+			userId = GetUserId(userId);
 
 			//验证指定的名称是否合法
 			this.OnValidateName(name);
@@ -259,75 +255,73 @@ namespace Zongsoft.Security.Membership
 			//确保用户名是审核通过的
 			this.Censor(name);
 
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update<IUser>(
 				new
 				{
 					Name = name.Trim(),
 					ModifiedTime = DateTime.Now,
 				},
-				new Condition("UserId", userId)) > 0;
+				new Condition(nameof(IUser.UserId), userId)) > 0;
 		}
 
 		public bool SetFullName(uint userId, string fullName)
 		{
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			//确认指定的用户编号是否有效
+			userId = GetUserId(userId);
+
+			return this.DataAccess.Update<IUser>(
 				new
 				{
 					FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName.Trim(),
-					ModifiedTime = DateTime.Now,
+					Modification = DateTime.Now,
 				},
-				new Condition("UserId", userId)) > 0;
-		}
-
-		public bool SetPrincipalId(uint userId, string principalId)
-		{
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
-				new
-				{
-					PrincipalId = string.IsNullOrWhiteSpace(principalId) ? null : principalId.Trim(),
-					ModifiedTime = DateTime.Now,
-				},
-				new Condition("UserId", userId)) > 0;
+				new Condition(nameof(IUser.UserId), userId)) > 0;
 		}
 
 		public bool SetStatus(uint userId, UserStatus status)
 		{
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			//确认指定的用户编号是否有效
+			userId = GetUserId(userId);
+
+			return this.DataAccess.Update<IUser>(
 				new
 				{
 					Status = status,
 					StatusTimestamp = DateTime.Now,
 				},
-				new Condition("UserId", userId)) > 0;
+				new Condition(nameof(IUser.UserId), userId)) > 0;
 		}
 
 		public bool SetDescription(uint userId, string description)
 		{
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			//确认指定的用户编号是否有效
+			userId = GetUserId(userId);
+
+			return this.DataAccess.Update<IUser>(
 				new
 				{
 					Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
 					ModifiedTime = DateTime.Now,
 				},
-				new Condition("UserId", userId)) > 0;
+				new Condition(nameof(IUser.UserId), userId)) > 0;
 		}
 
-		public int DeleteUsers(params uint[] userIds)
+		public int Delete(params uint[] ids)
 		{
-			if(userIds == null || userIds.Length < 1)
+			if(ids == null || ids.Length < 1)
 				return 0;
 
 			int result = 0;
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
-				result = this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_USER, Condition.In("UserId", userIds));
+				result = this.DataAccess.Delete<IUser>(Condition.In(nameof(IUser.UserId), ids));
 
 				if(result > 0)
 				{
-					this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_MEMBER, Condition.Equal("MemberType", MemberType.User) & Condition.In("MemberId", userIds));
-					this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_PERMISSION, Condition.Equal("MemberType", MemberType.User) & Condition.In("MemberId", userIds));
-					this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER, Condition.Equal("MemberType", MemberType.User) & Condition.In("MemberId", userIds));
+					this.DataAccess.Delete<Member>(Condition.Equal(nameof(Member.MemberType), MemberType.User) & Condition.In(nameof(Member.MemberId), ids));
+					this.DataAccess.Delete<Permission>(Condition.Equal(nameof(Permission.MemberType), MemberType.User) & Condition.In(nameof(Permission.MemberId), ids));
+					this.DataAccess.Delete<PermissionFilter>(Condition.Equal(nameof(PermissionFilter.MemberType), MemberType.User) & Condition.In(nameof(PermissionFilter.MemberId), ids));
 				}
 
 				transaction.Commit();
@@ -336,7 +330,7 @@ namespace Zongsoft.Security.Membership
 			return result;
 		}
 
-		public bool CreateUser(User user, string password)
+		public bool Create(IUser user, string password)
 		{
 			if(user == null)
 				throw new ArgumentNullException("user");
@@ -352,9 +346,6 @@ namespace Zongsoft.Security.Membership
 
 			//确保用户名是审核通过的
 			this.Censor(user.Name);
-
-			//确认指定用户的用户名、手机号、邮箱地址是否已经存在
-			this.EnsureConflict(user, null, false);
 
 			if(user.UserId < 1)
 				user.UserId = (uint)this.Sequence.Increment(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
@@ -377,24 +368,25 @@ namespace Zongsoft.Security.Membership
 			}
 
 			//更新创建时间
-			user.CreatedTime = DateTime.Now;
+			user.Creation = DateTime.Now;
+			user.Modification = null;
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
-				if(this.DataAccess.Insert(MembershipHelper.DATA_ENTITY_USER, user) < 1)
+				if(this.DataAccess.Insert(user) < 1)
 					return false;
 
 				//有效的密码不能为空或全空格字符串
 				if(!string.IsNullOrWhiteSpace(password))
 				{
 					//生成密码随机数
-					var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
+					var passwordSalt = Zongsoft.Common.RandomGenerator.GenerateInt64();
 
-					this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
+					this.DataAccess.Update<IUser>(new
 					{
 						Password = PasswordUtility.HashPassword(password, passwordSalt),
 						PasswordSalt = passwordSalt,
-					}, new Condition("UserId", user.UserId));
+					}, new Condition(nameof(IUser.UserId), user.UserId));
 				}
 
 				//发送邮箱地址确认校验通知
@@ -412,7 +404,7 @@ namespace Zongsoft.Security.Membership
 			return true;
 		}
 
-		public int CreateUsers(IEnumerable<User> users)
+		public int Create(IEnumerable<IUser> users)
 		{
 			if(users == null)
 				return 0;
@@ -431,11 +423,9 @@ namespace Zongsoft.Security.Membership
 				//确保用户名是审核通过的
 				this.Censor(user.Name);
 
-				//确认指定用户的用户名、手机号、邮箱地址是否已经存在
-				this.EnsureConflict(user, null, false);
-
 				//更新创建时间
-				user.CreatedTime = DateTime.Now;
+				user.Creation = DateTime.Now;
+				user.Modification = null;
 			}
 
 			foreach(var user in users)
@@ -445,61 +435,26 @@ namespace Zongsoft.Security.Membership
 					user.UserId = (uint)this.Sequence.Increment(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 			}
 
-			return this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_USER, users);
-		}
-
-		public int UpdateUsers(params User[] users)
-		{
-			if(users == null || users.Length < 1)
-				return 0;
-
-			return this.UpdateUsers((IEnumerable<User>)users, null);
-		}
-
-		public int UpdateUsers(IEnumerable<User> users, string scope = null)
-		{
-			if(users == null)
-				return 0;
-
-			if(string.IsNullOrWhiteSpace(scope))
-				scope = "!Name, !Email, !PhoneNumber, !Status, !StatusTimestamp, !CreatorId, !CreatedTime";
-			else
-				scope += ", !Name, !Email, !PhoneNumber, !Status, !StatusTimestamp, !CreatorId, !CreatedTime";
-
-			foreach(var user in users)
-			{
-				if(user == null)
-					continue;
-
-				//确认获取当前上下文的用户编号
-				if(MembershipHelper.EnsureCurrentUserId(out var userId))
-					user.ModifierId = userId;
-
-				//设置用户信息的最后变更时间
-				user.ModifiedTime = DateTime.Now;
-			}
-
-			return this.DataAccess.UpdateMany(MembershipHelper.DATA_ENTITY_USER, users, scope);
+			return this.DataAccess.InsertMany(users);
 		}
 		#endregion
 
 		#region 密码管理
 		public bool HasPassword(uint userId)
 		{
-			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER,
-										  Condition.Equal("UserId", userId) & Condition.NotEqual("Password", null));
+			return this.DataAccess.Exists<IUser>(Condition.Equal(nameof(IUser.UserId), GetUserId(userId)) & Condition.NotEqual("Password", null));
 		}
 
 		public bool HasPassword(string identity, string @namespace)
 		{
 			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
-			return this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, ConditionCollection.And(condition, Condition.NotEqual("Password", null)));
+			return this.DataAccess.Exists<IUser>(ConditionCollection.And(condition, Condition.NotEqual("Password", null)));
 		}
 
 		public bool ChangePassword(uint userId, string oldPassword, string newPassword)
 		{
-			byte[] storedPassword;
-			byte[] storedPasswordSalt;
+			//确认指定的用户编号是否有效
+			userId = GetUserId(userId);
 
 			//确认新密码是否符合密码规则
 			this.OnValidatePassword(newPassword);
@@ -511,10 +466,13 @@ namespace Zongsoft.Security.Membership
 			if(attempter != null && !attempter.Verify(userId))
 				throw new AuthenticationException(AuthenticationReason.Forbidden);
 
-			if(!MembershipHelper.GetPassword(this.DataAccess, userId, out storedPassword, out storedPasswordSalt))
+			//获取用户密码及密码盐
+			var secret = this.DataAccess.Select<UserSecret>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
+
+			if(secret.UserId == 0)
 				return false;
 
-			if(!PasswordUtility.VerifyPassword(oldPassword, storedPassword, storedPasswordSalt))
+			if(!PasswordUtility.VerifyPassword(oldPassword, secret.Password, secret.PasswordSalt))
 			{
 				//通知验证尝试失败
 				if(attempter != null)
@@ -529,18 +487,21 @@ namespace Zongsoft.Security.Membership
 				attempter.Done(userId);
 
 			//重新生成密码随机数
-			storedPasswordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
+			var passwordSalt = Zongsoft.Common.RandomGenerator.GenerateInt64();
 
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update<IUser>(
 				new
 				{
-					Password = PasswordUtility.HashPassword(newPassword, storedPasswordSalt),
-					PasswordSalt = storedPasswordSalt,
-				}, Condition.Equal("UserId", userId)) > 0;
+					Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
+					PasswordSalt = passwordSalt,
+				}, Condition.Equal(nameof(IUser.UserId), userId)) > 0;
 		}
 
 		public uint ForgetPassword(string identity, string @namespace)
 		{
+			if(string.IsNullOrEmpty(identity))
+				throw new ArgumentNullException(nameof(identity));
+
 			var secretor = this.SecretProvider;
 
 			if(secretor == null)
@@ -550,11 +511,11 @@ namespace Zongsoft.Security.Membership
 			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace, out var identityType);
 
 			//如果查询条件解析失败或用户标识为用户名，则抛出不支持的异常
-			if(condition == null || identityType == MembershipHelper.UserIdentityType.Name)
+			if(condition == null || identityType == UserIdentityType.Name)
 				throw new NotSupportedException("Invalid user identity for the forget password operation.");
 
 			//获取指定标识的用户信息
-			var user = this.DataAccess.Select<User>(MembershipHelper.DATA_ENTITY_USER, condition).FirstOrDefault();
+			var user = this.DataAccess.Select<IUser>(condition).FirstOrDefault();
 
 			if(user == null)
 				return 0;
@@ -564,7 +525,7 @@ namespace Zongsoft.Security.Membership
 
 			switch(identityType)
 			{
-				case MembershipHelper.UserIdentityType.Email:
+				case UserIdentityType.Email:
 					//如果用户的邮箱地址为空，即无法通过邮箱寻回
 					if(string.IsNullOrWhiteSpace(user.Email))
 						throw new InvalidOperationException("The user's email is unset.");
@@ -583,7 +544,7 @@ namespace Zongsoft.Security.Membership
 					CommandExecutor.Default.Execute($"email.send -template:{KEY_FORGET_SECRET} {user.Email}", parameter);
 
 					break;
-				case MembershipHelper.UserIdentityType.Phone:
+				case UserIdentityType.PhoneNumber:
 					//如果用户的电话号码为空，即无法通过短信寻回
 					if(string.IsNullOrWhiteSpace(user.PhoneNumber))
 						throw new InvalidOperationException("The user's phone-number is unset.");
@@ -620,6 +581,9 @@ namespace Zongsoft.Security.Membership
 			if(secret == null)
 				throw new InvalidOperationException("Missing secret provider.");
 
+			//确认指定的用户编号是否有效
+			userId = GetUserId(userId);
+
 			//如果重置密码的校验码验证成功
 			if(secretProvider.Verify($"{KEY_FORGET_SECRET}:{userId}", secret))
 			{
@@ -649,7 +613,7 @@ namespace Zongsoft.Security.Membership
 				}
 
 				//提交修改密码的更新操作
-				return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, data, Condition.Equal("UserId", userId)) > 0;
+				return this.DataAccess.Update<IUser>(data, Condition.Equal(nameof(IUser.UserId), userId)) > 0;
 			}
 
 			//重置密码校验失败，抛出异常
@@ -665,28 +629,23 @@ namespace Zongsoft.Security.Membership
 				throw new ArgumentNullException(nameof(passwordAnswers));
 
 			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
-			var record = this.DataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, PasswordAnswer1, PasswordAnswer2, PasswordAnswer3").FirstOrDefault();
+			var record = this.DataAccess.Select<UserSecretAnswer>(condition).FirstOrDefault();
 
-			if(record == null || record.Count < 1)
+			if(record.UserId == 0)
 				return false;
 
-			var userId = Zongsoft.Common.Convert.ConvertValue<uint>(record["UserId"]);
-			var answer1 = record["PasswordAnswer1"] as byte[];
-			var answer2 = record["PasswordAnswer2"] as byte[];
-			var answer3 = record["PasswordAnswer3"] as byte[];
-
 			//如果指定的用户没有设置密码问答，则抛出安全异常
-			if((answer1 == null || answer1.Length == 0) &&
-			   (answer2 == null || answer2.Length == 0) &&
-			   (answer3 == null || answer3.Length == 0))
+			if((record.PasswordAnswer1 == null || record.PasswordAnswer1.Length == 0) &&
+			   (record.PasswordAnswer2 == null || record.PasswordAnswer2.Length == 0) &&
+			   (record.PasswordAnswer3 == null || record.PasswordAnswer3.Length == 0))
 			{
 				throw new SecurityException("Can not reset password, because the specified user's password questions and answers is unset.");
 			}
 
 			//如果密码问答的答案验证失败，则抛出安全异常
-			if(!PasswordUtility.VerifyPassword(passwordAnswers[0], answer1, this.GetPasswordAnswerSalt(userId, 1)) ||
-			   !PasswordUtility.VerifyPassword(passwordAnswers[1], answer2, this.GetPasswordAnswerSalt(userId, 2)) ||
-			   !PasswordUtility.VerifyPassword(passwordAnswers[2], answer3, this.GetPasswordAnswerSalt(userId, 3)))
+			if(!PasswordUtility.VerifyPassword(passwordAnswers[0], record.PasswordAnswer1, this.GetPasswordAnswerSalt(record.UserId, 1)) ||
+			   !PasswordUtility.VerifyPassword(passwordAnswers[1], record.PasswordAnswer2, this.GetPasswordAnswerSalt(record.UserId, 2)) ||
+			   !PasswordUtility.VerifyPassword(passwordAnswers[2], record.PasswordAnswer3, this.GetPasswordAnswerSalt(record.UserId, 3)))
 			{
 				throw new SecurityException("Verification:PasswordAnswers", "The password answers verify failed.");
 			}
@@ -695,47 +654,45 @@ namespace Zongsoft.Security.Membership
 			this.OnValidatePassword(newPassword);
 
 			//重新生成密码随机数
-			var passwordSalt = Zongsoft.Common.RandomGenerator.Generate(8);
+			var passwordSalt = Zongsoft.Common.RandomGenerator.GenerateInt64();
 
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER,
+			return this.DataAccess.Update<IUser>(
 				new
 				{
 					Password = PasswordUtility.HashPassword(newPassword, passwordSalt),
 					PasswordSalt = passwordSalt,
-				}, Condition.Equal("UserId", userId)) > 0;
+				}, Condition.Equal(nameof(IUser.UserId), record.UserId)) > 0;
 		}
 
 		public string[] GetPasswordQuestions(uint userId)
 		{
-			var record = this.DataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, new Condition("UserId", userId), "!, UserId, PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
+			//确认指定的用户编号是否有效
+			userId = GetUserId(userId);
 
-			if(record == null)
+			var record = this.DataAccess.Select<UserSecretQuestion>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
+
+			if(record.UserId == 0)
 				return null;
 
-			var result = new string[] {
-				record["PasswordQuestion1"] as string,
-				record["PasswordQuestion2"] as string,
-				record["PasswordQuestion3"] as string,
+			return new string[] {
+				record.PasswordQuestion1,
+				record.PasswordQuestion2,
+				record.PasswordQuestion3,
 			};
-
-			return result;
 		}
 
 		public string[] GetPasswordQuestions(string identity, string @namespace)
 		{
-			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
-			var record = this.DataAccess.Select<IDictionary<string, object>>(MembershipHelper.DATA_ENTITY_USER, condition, "!, UserId, PasswordQuestion1, PasswordQuestion2, PasswordQuestion3").FirstOrDefault();
+			var record = this.DataAccess.Select<UserSecretQuestion>(MembershipHelper.GetUserIdentityCondition(identity, @namespace)).FirstOrDefault();
 
-			if(record == null)
+			if(record.UserId == 0)
 				return null;
 
-			var result = new string[] {
-				record["PasswordQuestion1"] as string,
-				record["PasswordQuestion2"] as string,
-				record["PasswordQuestion3"] as string,
+			return new string[] {
+				record.PasswordQuestion1,
+				record.PasswordQuestion2,
+				record.PasswordQuestion3,
 			};
-
-			return result;
 		}
 
 		public bool SetPasswordQuestionsAndAnswers(uint userId, string password, string[] passwordQuestions, string[] passwordAnswers)
@@ -749,16 +706,19 @@ namespace Zongsoft.Security.Membership
 			if(passwordQuestions.Length != passwordAnswers.Length)
 				throw new ArgumentException("The password questions and answers count is not equals.");
 
-			byte[] storedPassword;
-			byte[] storedPasswordSalt;
+			//确认指定的用户编号是否有效
+			userId = GetUserId(userId);
 
-			if(!MembershipHelper.GetPassword(this.DataAccess, userId, out storedPassword, out storedPasswordSalt))
+			//获取用户密码及密码盐
+			var secret = this.DataAccess.Select<UserSecret>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
+
+			if(secret.UserId == 0)
 				return false;
 
-			if(!PasswordUtility.VerifyPassword(password, storedPassword, storedPasswordSalt))
+			if(!PasswordUtility.VerifyPassword(password, secret.Password, secret.PasswordSalt))
 				throw new SecurityException("Verification:Password", "The password verify failed.");
 
-			return this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
+			return this.DataAccess.Update<IUser>(new
 			{
 				PasswordQuestion1 = passwordQuestions.Length > 0 ? passwordQuestions[0] : null,
 				PasswordAnswer1 = passwordAnswers.Length > 0 ? this.HashPasswordAnswer(passwordAnswers[0], userId, 1) : null,
@@ -766,7 +726,7 @@ namespace Zongsoft.Security.Membership
 				PasswordAnswer2 = passwordAnswers.Length > 1 ? this.HashPasswordAnswer(passwordAnswers[1], userId, 2) : null,
 				PasswordQuestion3 = passwordQuestions.Length > 2 ? passwordQuestions[2] : null,
 				PasswordAnswer3 = passwordAnswers.Length > 2 ? this.HashPasswordAnswer(passwordAnswers[2], userId, 3) : null,
-			}, new Condition("UserId", userId)) > 0;
+			}, new Condition(nameof(IUser.UserId), userId)) > 0;
 		}
 		#endregion
 
@@ -790,19 +750,19 @@ namespace Zongsoft.Security.Membership
 				switch(type)
 				{
 					case KEY_EMAIL_SECRET:
-						this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
+						this.DataAccess.Update<IUser>(new
 						{
 							Email = string.IsNullOrWhiteSpace(extra) ? null : extra.Trim(),
-							ModifiedTime = DateTime.Now,
-						}, Condition.Equal("UserId", userId));
+							Modification = DateTime.Now,
+						}, Condition.Equal(nameof(IUser.UserId), userId));
 
 						break;
 					case KEY_PHONE_SECRET:
-						this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
+						this.DataAccess.Update<IUser>(new
 						{
 							PhoneNumber = string.IsNullOrWhiteSpace(extra) ? null : extra.Trim(),
-							ModifiedTime = DateTime.Now,
-						}, Condition.Equal("UserId", userId));
+							Modification = DateTime.Now,
+						}, Condition.Equal(nameof(IUser.UserId), userId));
 
 						break;
 				}
@@ -823,7 +783,7 @@ namespace Zongsoft.Security.Membership
 			return _secretProvider != null;
 		}
 
-		protected virtual void OnChangeEmail(User user, string email)
+		protected virtual void OnChangeEmail(IUser user, string email)
 		{
 			if(user == null)
 				return;
@@ -832,11 +792,11 @@ namespace Zongsoft.Security.Membership
 
 			if(secretProvider == null)
 			{
-				this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
+				this.DataAccess.Update<IUser>(new
 				{
 					Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim(),
-					ModifiedTime = DateTime.Now,
-				}, Condition.Equal("UserId", user.UserId));
+					Modification = DateTime.Now,
+				}, Condition.Equal(nameof(IUser.UserId), user.UserId));
 			}
 			else
 			{
@@ -852,7 +812,7 @@ namespace Zongsoft.Security.Membership
 			}
 		}
 
-		protected virtual void OnChangePhone(User user, string phone)
+		protected virtual void OnChangePhone(IUser user, string phone)
 		{
 			if(user == null)
 				return;
@@ -861,11 +821,11 @@ namespace Zongsoft.Security.Membership
 
 			if(secretProvider == null)
 			{
-				this.DataAccess.Update(MembershipHelper.DATA_ENTITY_USER, new
+				this.DataAccess.Update<IUser>(new
 				{
 					PhoneNumber = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim(),
-					ModifiedTime = DateTime.Now,
-				}, Condition.Equal("UserId", user.UserId));
+					Modification = DateTime.Now,
+				}, Condition.Equal(nameof(IUser.UserId), user.UserId));
 			}
 			else
 			{
@@ -899,6 +859,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 私有方法
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 		private void Censor(string name)
 		{
 			var censorship = this.Censorship;
@@ -907,23 +868,30 @@ namespace Zongsoft.Security.Membership
 				throw new CensorshipException(string.Format("Illegal '{0}' name of user.", name));
 		}
 
-		private void EnsureConflict(User user, string scope, bool isUpdate)
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+		private uint GetUserId(uint userId)
 		{
-			var ns = MembershipHelper.GetNamespaceCondition(user.Namespace);
-			var conditions = new ConditionCollection(ConditionCombination.Or);
+			if(ApplicationContext.Current == null || ApplicationContext.Current.Principal.Identity.IsAuthenticated == false)
+				throw new AuthorizationException("No authorization or access to current user credentials.");
 
-			if(!string.IsNullOrWhiteSpace(user.Name) && MembershipHelper.InScope<User>(scope, "Name"))
-				conditions.Add(ns & Condition.Equal("Name", user.Name));
-			if(!string.IsNullOrWhiteSpace(user.Email) && MembershipHelper.InScope<User>(scope, "Email"))
-				conditions.Add(ns & Condition.Equal("Email", user.Email));
-			if(!string.IsNullOrWhiteSpace(user.PhoneNumber) && MembershipHelper.InScope<User>(scope, "PhoneNumber"))
-				conditions.Add(ns & Condition.Equal("PhoneNumber", user.PhoneNumber));
+			var principal = ApplicationContext.Current.Principal as CredentialPrincipal;
 
-			if(isUpdate && conditions.Count > 0)
-				conditions = Condition.NotEqual("UserId", user.UserId) & conditions;
+			if(principal == null)
+				throw new InvalidOperationException($"The '{ApplicationContext.Current.Principal.GetType().FullName}' is an invalid or unsupported type of security principal.");
 
-			if(conditions.Count > 0 && this.DataAccess.Exists(MembershipHelper.DATA_ENTITY_USER, conditions))
-				throw new DataConflictException(Zongsoft.Resources.ResourceUtility.GetString("Text.UserConflict"));
+			if(userId == 0)
+				return principal.Identity.Credential.User.UserId;
+
+			/*
+			 * 只有当前用户是如下情况之一，才能操作指定的其他用户：
+			 *   1) 指定的用户就是当前用户自己；
+			 *   2) 当前用户编号为系统管理员（即当前用户编号为1）；
+			 *   3) 当前用户是系统管理员角色(Administrators)成员。
+			 */
+			if(principal.Identity.Credential.User.UserId == 1 || principal.Identity.Credential.User.UserId == userId || principal.InRole(MembershipHelper.Administrators))
+				return userId;
+
+			throw new AuthorizationException($"The current user cannot operate on other user information.");
 		}
 
 		private byte[] GetPasswordAnswerSalt(uint userId, int index)
@@ -940,5 +908,31 @@ namespace Zongsoft.Security.Membership
 			return PasswordUtility.HashPassword(answer, salt);
 		}
 		#endregion
+
+		[Zongsoft.Data.Entity("Security.User")]
+		private struct UserSecret
+		{
+			public uint UserId;
+			public byte[] Password;
+			public long PasswordSalt;
+		}
+
+		[Zongsoft.Data.Entity("Security.User")]
+		private struct UserSecretQuestion
+		{
+			public uint UserId;
+			public string PasswordQuestion1;
+			public string PasswordQuestion2;
+			public string PasswordQuestion3;
+		}
+
+		[Zongsoft.Data.Entity("Security.User")]
+		private struct UserSecretAnswer
+		{
+			public uint UserId;
+			public byte[] PasswordAnswer1;
+			public byte[] PasswordAnswer2;
+			public byte[] PasswordAnswer3;
+		}
 	}
 }

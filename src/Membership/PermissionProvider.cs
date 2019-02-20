@@ -25,7 +25,6 @@
  */
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Zongsoft.Data;
@@ -63,12 +62,12 @@ namespace Zongsoft.Security.Membership
 		#region 公共方法
 		public IEnumerable<Permission> GetPermissions(uint memberId, MemberType memberType, string schemaId = null)
 		{
-			var conditions = Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType);
+			var conditions = Condition.Equal(nameof(Permission.MemberId), memberId) & Condition.Equal(nameof(Permission.MemberType), memberType);
 
 			if(!string.IsNullOrWhiteSpace(schemaId))
-				conditions.Add(Condition.Equal("SchemaId", schemaId));
+				conditions.Add(Condition.Equal(nameof(Permission.SchemaId), schemaId));
 
-			return this.DataAccess.Select<Permission>(MembershipHelper.DATA_ENTITY_PERMISSION, conditions);
+			return this.DataAccess.Select<Permission>(conditions);
 		}
 
 		public void SetPermissions(uint memberId, MemberType memberType, IEnumerable<Permission> permissions)
@@ -78,19 +77,19 @@ namespace Zongsoft.Security.Membership
 
 		public void SetPermissions(uint memberId, MemberType memberType, string schemaId, IEnumerable<Permission> permissions)
 		{
-			var conditions = Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType);
+			var conditions = Condition.Equal(nameof(Permission.MemberId), memberId) & Condition.Equal(nameof(Permission.MemberType), memberType);
 
 			if(!string.IsNullOrWhiteSpace(schemaId))
-				conditions.Add(Condition.Equal("SchemaId", schemaId));
+				conditions.Add(Condition.Equal(nameof(Permission.SchemaId), schemaId));
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
 				//清空指定成员的所有权限设置
-				this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_PERMISSION, conditions);
+				this.DataAccess.Delete<Permission>(conditions);
 
 				//插入指定的权限设置集到数据库中
 				if(permissions != null)
-					this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_PERMISSION, permissions.Select(p => new PermissionEntity(memberId, memberType, schemaId, p)));
+					this.DataAccess.InsertMany<Permission>(permissions);
 
 				//提交事务
 				transaction.Commit();
@@ -99,12 +98,12 @@ namespace Zongsoft.Security.Membership
 
 		public IEnumerable<PermissionFilter> GetPermissionFilters(uint memberId, MemberType memberType, string schemaId = null)
 		{
-			var conditions = Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType);
+			var conditions = Condition.Equal(nameof(PermissionFilter.MemberId), memberId) & Condition.Equal(nameof(PermissionFilter.MemberType), memberType);
 
 			if(!string.IsNullOrWhiteSpace(schemaId))
-				conditions.Add(Condition.Equal("SchemaId", schemaId));
+				conditions.Add(Condition.Equal(nameof(PermissionFilter.SchemaId), schemaId));
 
-			return this.DataAccess.Select<PermissionFilter>(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER, conditions);
+			return this.DataAccess.Select<PermissionFilter>(conditions);
 		}
 
 		public void SetPermissionFilters(uint memberId, MemberType memberType, IEnumerable<PermissionFilter> permissionFilters)
@@ -114,107 +113,23 @@ namespace Zongsoft.Security.Membership
 
 		public void SetPermissionFilters(uint memberId, MemberType memberType, string schemaId, IEnumerable<PermissionFilter> permissionFilters)
 		{
-			var conditions = Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType);
+			var conditions = Condition.Equal(nameof(PermissionFilter.MemberId), memberId) & Condition.Equal(nameof(PermissionFilter.MemberType), memberType);
 
 			if(!string.IsNullOrWhiteSpace(schemaId))
-				conditions.Add(Condition.Equal("SchemaId", schemaId));
+				conditions.Add(Condition.Equal(nameof(PermissionFilter.SchemaId), schemaId));
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
 				//清空指定成员的所有权限设置
-				this.DataAccess.Delete(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER, conditions);
+				this.DataAccess.Delete<PermissionFilter>(conditions);
 
 				//插入指定的权限设置集到数据库中
 				if(permissionFilters != null)
-					this.DataAccess.InsertMany(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER, permissionFilters.Select(p => new PermissionFilterEntity(memberId, memberType, schemaId, p)));
+					this.DataAccess.InsertMany<PermissionFilter>(permissionFilters);
 
 				//提交事务
 				transaction.Commit();
 			}
-		}
-		#endregion
-
-		#region 嵌套子类
-		private struct PermissionEntity
-		{
-			#region 构造函数
-			public PermissionEntity(uint memberId, MemberType memberType, string schemaId, Permission permission)
-			{
-				this.MemberId = memberId;
-				this.MemberType = memberType;
-				this.SchemaId = string.IsNullOrWhiteSpace(schemaId) ? permission.SchemaId : schemaId;
-				this.ActionId = permission.ActionId;
-				this.Granted = permission.Granted;
-			}
-			#endregion
-
-			#region 公共属性
-			public uint MemberId
-			{
-				get; set;
-			}
-
-			public MemberType MemberType
-			{
-				get; set;
-			}
-
-			public string SchemaId
-			{
-				get; set;
-			}
-
-			public string ActionId
-			{
-				get; set;
-			}
-
-			public bool Granted
-			{
-				get; set;
-			}
-			#endregion
-		}
-
-		private struct PermissionFilterEntity
-		{
-			#region 构造函数
-			public PermissionFilterEntity(uint memberId, MemberType memberType, string schemaId, PermissionFilter permissionFilter)
-			{
-				this.MemberId = memberId;
-				this.MemberType = memberType;
-				this.SchemaId = string.IsNullOrWhiteSpace(schemaId) ? permissionFilter.SchemaId : schemaId;
-				this.ActionId = permissionFilter.ActionId;
-				this.Filter = permissionFilter.Filter;
-			}
-			#endregion
-
-			#region 公共属性
-			public uint MemberId
-			{
-				get; set;
-			}
-
-			public MemberType MemberType
-			{
-				get; set;
-			}
-
-			public string SchemaId
-			{
-				get; set;
-			}
-
-			public string ActionId
-			{
-				get; set;
-			}
-
-			public string Filter
-			{
-				get; set;
-			}
-			#endregion
 		}
 		#endregion
 	}

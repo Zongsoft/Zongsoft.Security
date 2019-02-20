@@ -99,7 +99,7 @@ namespace Zongsoft.Security.Membership
 				return false;
 
 			//如果指定的用户属于系统内置的管理员角色则立即返回授权通过
-			if(this.MemberProvider.InRoles(userId, Role.Administrators))
+			if(this.MemberProvider.InRoles(userId, MembershipHelper.Administrators))
 				return true;
 
 			//获取指定的安全凭证对应的有效的授权状态集
@@ -144,13 +144,13 @@ namespace Zongsoft.Security.Membership
 			}
 
 			//获取指定条件的所有权限定义（注：禁止分页查询，并即时加载到数组中）
-			var permissions = this.DataAccess.Select<PermissionEntity>(MembershipHelper.DATA_ENTITY_PERMISSION, conditions, Paging.Disable).ToArray();
+			var permissions = this.DataAccess.Select<Permission>(conditions, Paging.Disable).ToArray();
 
 			//获取指定条件的所有权限过滤定义（注：禁止分页查询，并即时加载到数组中）
-			var permissionFilters = this.DataAccess.Select<PermissionFilterEntity>(MembershipHelper.DATA_ENTITY_PERMISSION_FILTER, conditions, Paging.Disable).ToArray();
+			var permissionFilters = this.DataAccess.Select<PermissionFilter>(conditions, Paging.Disable).ToArray();
 
 			var states = new HashSet<AuthorizationState>();
-			IEnumerable<PermissionEntity> prepares;
+			IEnumerable<Permission> prepares;
 			IEnumerable<AuthorizationState> grants, denies;
 
 			//如果上级角色层级列表不为空则进行分层过滤
@@ -208,7 +208,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 私有方法
-		private void SetPermissionFilters(IEnumerable<AuthorizationState> states, IEnumerable<PermissionFilterEntity> filters)
+		private void SetPermissionFilters(IEnumerable<AuthorizationState> states, IEnumerable<PermissionFilter> filters)
 		{
 			var groups = filters.GroupBy(p => new AuthorizationState(p.SchemaId, p.ActionId));
 
@@ -223,74 +223,6 @@ namespace Zongsoft.Security.Membership
 					else
 						state.Filter += " | " + string.Join("; ", group.Select(p => p.Filter));
 				}
-			}
-		}
-		#endregion
-
-		#region 嵌套结构
-		private struct PermissionEntity
-		{
-			public uint MemberId
-			{
-				get;
-				set;
-			}
-
-			public MemberType MemberType
-			{
-				get;
-				set;
-			}
-
-			public string SchemaId
-			{
-				get;
-				set;
-			}
-
-			public string ActionId
-			{
-				get;
-				set;
-			}
-
-			public bool Granted
-			{
-				get;
-				set;
-			}
-		}
-
-		private struct PermissionFilterEntity
-		{
-			public uint MemberId
-			{
-				get;
-				set;
-			}
-
-			public MemberType MemberType
-			{
-				get;
-				set;
-			}
-
-			public string SchemaId
-			{
-				get;
-				set;
-			}
-
-			public string ActionId
-			{
-				get;
-				set;
-			}
-
-			public string Filter
-			{
-				get;
-				set;
 			}
 		}
 		#endregion

@@ -49,7 +49,6 @@
     <Compile Include="Membership\AuthorizationPredications.cs" />
     <Compile Include="Membership\Options\Configuration\GeneralConfiguration.cs" />
     <Compile Include="Membership\Options\IConfiguration.cs" />
-    <Compile Include="Membership\Member.cs" />
     <Compile Include="Membership\MembershipHelper.cs" />
     <Compile Include="Membership\PasswordStrength.cs" />
     <Compile Include="Membership\PermissionProvider.cs" />

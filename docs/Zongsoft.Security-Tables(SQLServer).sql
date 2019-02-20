@@ -3,10 +3,6 @@
   [Namespace] VARCHAR(100) NULL,
   [Name] VARCHAR(50) NOT NULL,
   [FullName] VARCHAR(50) NULL,
-  [CreatorId] INT NULL,
-  [CreatedTime] DATETIME NOT NULL DEFAULT getdate(),
-  [ModifierId] INT NULL,
-  [ModifiedTime] DATETIME NULL,
   [Description] VARCHAR(500) NULL,
   CONSTRAINT [PK_Security_Role] PRIMARY KEY CLUSTERED ([RoleId]),
   CONSTRAINT [UX_Security_Role_Name] UNIQUE NONCLUSTERED ([Namespace], [Name])
@@ -17,9 +13,9 @@ CREATE TABLE [dbo].[Security_User] (
   [UserId] INT NOT NULL,
   [Namespace] VARCHAR(100) NULL,
   [Name] VARCHAR(50) NOT NULL,
+  [FullName] NVARCHAR(50) NULL,
   [Password] BINARY(64) NULL,
   [PasswordSalt] BIGINT NULL,
-  [FullName] VARCHAR(50) NULL,
   [Email] VARCHAR(50) NULL,
   [PhoneNumber] VARCHAR(50) NULL,
   [Status] TINYINT NOT NULL DEFAULT 1,
@@ -30,15 +26,13 @@ CREATE TABLE [dbo].[Security_User] (
   [PasswordAnswer2] VARBINARY(64) NULL,
   [PasswordQuestion3] VARCHAR(50) NULL,
   [PasswordAnswer3] VARBINARY(64) NULL,
-  [CreatorId] INT NULL,
-  [CreatedTime] DATETIME NOT NULL DEFAULT getdate(),
-  [ModifierId] INT NULL,
-  [ModifiedTime] DATETIME NULL,
+  [Creation] DATETIME NOT NULL DEFAULT getdate(),
+  [Modification] DATETIME NULL,
   [Description] VARCHAR(500) NULL,
   CONSTRAINT [PK_Security_User] PRIMARY KEY CLUSTERED ([UserId]),
   CONSTRAINT [UX_Security_User_Name] UNIQUE NONCLUSTERED ([Namespace], [Name]),
-  INDEX [IX_Security_User_Email] NONCLUSTERED ([Namespace], [Email]),
-  INDEX [IX_Security_User_PhoneNumber] NONCLUSTERED ([Namespace], [PhoneNumber])
+  CONSTRAINT [UX_Security_User_Email] UNIQUE NONCLUSTERED ([Namespace], [Email]),
+  CONSTRAINT [UX_Security_User_PhoneNumber] UNIQUE NONCLUSTERED ([Namespace], [PhoneNumber])
 )
 GO
 

@@ -11,19 +11,7 @@
 			<property name="Name" type="string" length="50" nullable="false" />
 			<property name="FullName" type="string" length="50" nullable="true" />
 			<property name="Namespace" type="string" length="50" nullable="false" />
-			<property name="CreatorId" type="uint" nullable="true" />
-			<property name="CreatedTime" type="datetime" nullable="true" />
-			<property name="ModifierId" type="uint" nullable="true" />
-			<property name="ModifiedTime" type="datetime" nullable="true" />
 			<property name="Description" type="string" length="500" nullable="true" />
-
-			<complexProperty name="Creator" role="User">
-				<link name="CreatorId" role="UserId" />
-			</complexProperty>
-
-			<complexProperty name="Modifier" role="User">
-				<link name="ModifierId" role="UserId" />
-			</complexProperty>
 
 			<complexProperty name="Members" role="Member" multiplicity="*">
 				<link name="RoleId" role="RoleId" />
@@ -49,10 +37,8 @@
 			<property name="Namespace" type="string" length="50" nullable="true" />
 			<property name="Password" type="byte[]" length="64" nullable="true" />
 			<property name="PasswordSalt" type="ulong" nullable="true" />
-			<property name="Avatar" type="string" length="200" nullable="true" />
 			<property name="Email" type="string" length="100" nullable="true" />
 			<property name="PhoneNumber" type="string" length="50" nullable="true" />
-			<property name="PrincipalId" type="string" length="100" nullable="true" />
 			<property name="Status" type="byte" nullable="false" />
 			<property name="StatusTimestamp" type="datetime" nullable="true" />
 			<property name="PasswordQuestion1" type="string" length="50" nullable="true" />
@@ -61,19 +47,9 @@
 			<property name="PasswordAnswer2" type="byte[]" length="64" nullable="true" />
 			<property name="PasswordQuestion3" type="string" length="50" nullable="true" />
 			<property name="PasswordAnswer3" type="byte[]" length="64" nullable="true" />
-			<property name="CreatorId" type="uint" nullable="true" />
-			<property name="CreatedTime" type="datetime" nullable="true" />
-			<property name="ModifierId" type="uint" nullable="true" />
-			<property name="ModifiedTime" type="datetime" nullable="true" />
+			<property name="Creation" type="datetime" nullable="false" default="now()" />
+			<property name="Modification" type="datetime" nullable="true" />
 			<property name="Description" type="string" length="500" nullable="true" />
-
-			<complexProperty name="Creator" role="User">
-				<link name="CreatorId" role="UserId" />
-			</complexProperty>
-
-			<complexProperty name="Modifier" role="User">
-				<link name="ModifierId" role="UserId" />
-			</complexProperty>
 		</entity>
 
 		<entity name="Member" table="security_member">
