@@ -283,11 +283,14 @@ namespace Zongsoft.Security.Membership
 			//确认指定的用户编号是否有效
 			userId = GetUserId(userId);
 
+			var timestamp = DateTime.Now;
+
 			return this.DataAccess.Update<IUser>(
 				new
 				{
 					Status = status,
-					StatusTimestamp = DateTime.Now,
+					StatusTimestamp = timestamp,
+					Modification = timestamp,
 				},
 				new Condition(nameof(IUser.UserId), userId)) > 0;
 		}
@@ -380,7 +383,7 @@ namespace Zongsoft.Security.Membership
 				if(!string.IsNullOrWhiteSpace(password))
 				{
 					//生成密码随机数
-					var passwordSalt = Zongsoft.Common.RandomGenerator.GenerateInt64();
+					var passwordSalt = this.GetPasswordSalt();
 
 					this.DataAccess.Update<IUser>(new
 					{
@@ -467,7 +470,7 @@ namespace Zongsoft.Security.Membership
 				throw new AuthenticationException(AuthenticationReason.Forbidden);
 
 			//获取用户密码及密码盐
-			var secret = this.DataAccess.Select<UserSecret>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
+			var secret = this.DataAccess.Select<UserPasswordToken>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
 
 			if(secret.UserId == 0)
 				return false;
@@ -487,7 +490,7 @@ namespace Zongsoft.Security.Membership
 				attempter.Done(userId);
 
 			//重新生成密码随机数
-			var passwordSalt = Zongsoft.Common.RandomGenerator.GenerateInt64();
+			var passwordSalt = this.GetPasswordSalt();
 
 			return this.DataAccess.Update<IUser>(
 				new
@@ -590,26 +593,16 @@ namespace Zongsoft.Security.Membership
 				//确认新密码是否符合密码规则
 				this.OnValidatePassword(newPassword);
 
-				IDictionary<string, object> data;
+				//定义要设置的用户密码结构
+				var data = new UserPasswordToken(userId, null, 0);
 
-				if(string.IsNullOrWhiteSpace(newPassword))
-				{
-					data = new Dictionary<string, object>()
-					{
-						{ "Password", null },
-						{ "PasswordSalt", null },
-					};
-				}
-				else
+				if(!string.IsNullOrWhiteSpace(newPassword))
 				{
 					//重新生成密码随机数
-					var passwordSalt = RandomGenerator.Generate(8);
+					var passwordSalt = this.GetPasswordSalt();
 
-					data = new Dictionary<string, object>()
-					{
-						{ "Password", PasswordUtility.HashPassword(newPassword, passwordSalt)},
-						{ "PasswordSalt", passwordSalt},
-					};
+					//创建用户密码结构
+					data = new UserPasswordToken(userId, PasswordUtility.HashPassword(newPassword, passwordSalt), passwordSalt);
 				}
 
 				//提交修改密码的更新操作
@@ -654,7 +647,7 @@ namespace Zongsoft.Security.Membership
 			this.OnValidatePassword(newPassword);
 
 			//重新生成密码随机数
-			var passwordSalt = Zongsoft.Common.RandomGenerator.GenerateInt64();
+			var passwordSalt = this.GetPasswordSalt();
 
 			return this.DataAccess.Update<IUser>(
 				new
@@ -710,12 +703,12 @@ namespace Zongsoft.Security.Membership
 			userId = GetUserId(userId);
 
 			//获取用户密码及密码盐
-			var secret = this.DataAccess.Select<UserSecret>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
+			var token = this.DataAccess.Select<UserPasswordToken>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
 
-			if(secret.UserId == 0)
+			if(token.UserId == 0)
 				return false;
 
-			if(!PasswordUtility.VerifyPassword(password, secret.Password, secret.PasswordSalt))
+			if(!PasswordUtility.VerifyPassword(password, token.Password, token.PasswordSalt))
 				throw new SecurityException("Verification:Password", "The password verify failed.");
 
 			return this.DataAccess.Update<IUser>(new
@@ -894,9 +887,15 @@ namespace Zongsoft.Security.Membership
 			throw new AuthorizationException($"The current user cannot operate on other user information.");
 		}
 
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+		private long GetPasswordSalt()
+		{
+			return Math.Abs(Zongsoft.Common.RandomGenerator.GenerateInt64());
+		}
+
 		private byte[] GetPasswordAnswerSalt(uint userId, int index)
 		{
-			return Encoding.ASCII.GetBytes(string.Format("Zongsoft.Security.User:{0}:PasswordAnswer[{1}]", userId.ToString(), index.ToString()));
+			return Encoding.ASCII.GetBytes(string.Format("Zongsoft.Security.User:{0}:Password.Answer[{1}]", userId.ToString(), index.ToString()));
 		}
 
 		private byte[] HashPasswordAnswer(string answer, uint userId, int index)
@@ -910,11 +909,18 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		[Zongsoft.Data.Entity("Security.User")]
-		private struct UserSecret
+		private struct UserPasswordToken
 		{
 			public uint UserId;
 			public byte[] Password;
 			public long PasswordSalt;
+
+			public UserPasswordToken(uint userId, byte[] password, long passwordSalt = 0)
+			{
+				this.UserId = userId;
+				this.Password = password;
+				this.PasswordSalt = passwordSalt;
+			}
 		}
 
 		[Zongsoft.Data.Entity("Security.User")]
