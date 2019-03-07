@@ -102,36 +102,22 @@ namespace Zongsoft.Security.Membership
 
 			//确认验证失败是否超出限制数，如果超出则抛出验证拒绝异常
 			if(attempter != null && !attempter.Verify(userId, scene))
-				throw new AuthenticationException(AuthenticationReason.Forbidden);
-
-			//如果帐户尚未审核批准，则抛出异常
-			if(status == UserStatus.Unapproved)
-			{
-				//激发“Authenticated”事件
-				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
-
-				//因为账户状态异常而抛出验证异常
-				throw new AuthenticationException(AuthenticationReason.AccountUnapproved);
-			}
-
-			//如果帐户被暂停，则抛出异常
-			if(status == UserStatus.Suspended)
-			{
-				//激发“Authenticated”事件
-				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
-
-				//因为账户状态异常而抛出验证异常
 				throw new AuthenticationException(AuthenticationReason.AccountSuspended);
-			}
 
-			//如果帐户已经禁用(停用)，则抛出异常
-			if(status == UserStatus.Disabled)
+			switch(status)
 			{
-				//激发“Authenticated”事件
-				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
+				case UserStatus.Unapproved:
+					//激发“Authenticated”事件
+					this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
 
-				//因为账户状态异常而抛出验证异常
-				throw new AuthenticationException(AuthenticationReason.AccountDisabled);
+					//因为账户状态异常而抛出验证异常
+					throw new AuthenticationException(AuthenticationReason.AccountUnapproved);
+				case UserStatus.Disabled:
+					//激发“Authenticated”事件
+					this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
+
+					//因为账户状态异常而抛出验证异常
+					throw new AuthenticationException(AuthenticationReason.AccountDisabled);
 			}
 
 			//如果验证失败，则抛出异常

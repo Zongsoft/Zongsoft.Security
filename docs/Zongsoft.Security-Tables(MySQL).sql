@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS `Security_User` (
   `PasswordSalt` bigint unsigned NULL COMMENT '口令加密向量(随机数)',
   `Email` VARCHAR(50) NULL COMMENT '用户的电子邮箱，该邮箱地址在所属命名空间内具有唯一性',
   `PhoneNumber` VARCHAR(50) NULL COMMENT '用户的手机号码，该手机号码在所属命名空间内具有唯一性',
-  `Status` TINYINT unsigned NOT NULL DEFAULT 1 COMMENT '用户状态（0:正常; 1:待批准; 2:已停用; 3:被挂起(密码验证失败超过特定次数)）',
+  `Status` TINYINT unsigned NOT NULL DEFAULT 1 COMMENT '用户状态（0:正常; 1:待批准; 2:已停用）',
   `StatusTimestamp` DATETIME NULL COMMENT '状态更新时间',
   `PasswordQuestion1` VARCHAR(50) NULL COMMENT '用户的密码问答的题面(1)',
   `PasswordAnswer1` VARBINARY(64) NULL COMMENT '用户的密码问答的答案(1)',
