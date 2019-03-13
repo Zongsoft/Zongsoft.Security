@@ -101,7 +101,7 @@ namespace Zongsoft.Security.Membership
 			var attempter = this.Attempter;
 
 			//确认验证失败是否超出限制数，如果超出则抛出账号被禁用的异常
-			if(attempter != null && !attempter.Verify(userId, scene))
+			if(attempter != null && !attempter.Verify(userId))
 				throw new AuthenticationException(AuthenticationReason.AccountSuspended);
 
 			switch(status)
@@ -125,7 +125,7 @@ namespace Zongsoft.Security.Membership
 			{
 				//通知验证尝试失败
 				if(attempter != null)
-					attempter.Fail(userId, scene);
+					attempter.Fail(userId);
 
 				//激发“Authenticated”事件
 				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
@@ -136,7 +136,7 @@ namespace Zongsoft.Security.Membership
 
 			//通知验证尝试成功，即清空验证失败记录
 			if(attempter != null)
-				attempter.Done(userId, scene);
+				attempter.Done(userId);
 
 			//获取指定用户编号对应的用户对象
 			var user = this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
