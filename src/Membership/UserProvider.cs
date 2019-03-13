@@ -465,9 +465,9 @@ namespace Zongsoft.Security.Membership
 			//获取验证失败的解决器
 			var attempter = this.Attempter;
 
-			//确认验证失败是否超出限制数，如果超出则抛出验证拒绝异常
+			//确认验证失败是否超出限制数，如果超出则抛出账号被禁用的异常
 			if(attempter != null && !attempter.Verify(userId))
-				throw new AuthenticationException(AuthenticationReason.Forbidden);
+				throw new AuthenticationException(AuthenticationReason.AccountSuspended);
 
 			//获取用户密码及密码盐
 			var secret = this.DataAccess.Select<UserPasswordToken>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
