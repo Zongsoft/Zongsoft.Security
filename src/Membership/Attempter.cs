@@ -151,9 +151,9 @@ namespace Zongsoft.Security.Membership
 		private static string GetCacheKey(uint userId, string scene = null)
 		{
 			if(string.IsNullOrEmpty(scene))
-				return $"Zongsoft.Security:{userId.ToString()}@Attempts";
+				return $"Zongsoft.Security.Attempts:{userId.ToString()}";
 			else
-				return $"Zongsoft.Security:{scene}:{userId.ToString()}@Attempts";
+				return $"Zongsoft.Security.Attempts:{userId.ToString()}@{scene}";
 		}
 		#endregion
 	}
