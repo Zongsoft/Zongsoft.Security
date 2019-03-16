@@ -259,7 +259,7 @@ namespace Zongsoft.Security.Membership
 				new
 				{
 					Name = name.Trim(),
-					ModifiedTime = DateTime.Now,
+					Modification = DateTime.Now,
 				},
 				new Condition(nameof(IUser.UserId), userId)) > 0;
 		}
@@ -304,7 +304,7 @@ namespace Zongsoft.Security.Membership
 				new
 				{
 					Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
-					ModifiedTime = DateTime.Now,
+					Modification = DateTime.Now,
 				},
 				new Condition(nameof(IUser.UserId), userId)) > 0;
 		}
