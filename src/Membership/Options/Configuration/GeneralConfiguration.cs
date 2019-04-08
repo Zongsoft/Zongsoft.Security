@@ -39,6 +39,8 @@ namespace Zongsoft.Security.Membership.Options.Configuration
 		private const string XML_PASSWORDSTRENGTH_ATTRIBUTE = "passwordStrength";
 		private const string XML_ATTEMPTTHRESHOLD_ATTRIBUTE = "attemptThreshold";
 		private const string XML_ATTEMPTWINDOW_ATTRIBUTE = "attemptWindow";
+		private const string XML_EMAILVERIFYENABLED_ATTRIBUTE = "emailVerifyEnabled";
+		private const string XML_PHONEVERIFYENABLED_ATTRIBUTE = "phoneVerifyEnabled";
 		#endregion
 
 		#region 公共属性
@@ -91,6 +93,32 @@ namespace Zongsoft.Security.Membership.Options.Configuration
 			set
 			{
 				this[XML_ATTEMPTWINDOW_ATTRIBUTE] = value;
+			}
+		}
+
+		[OptionConfigurationProperty(XML_EMAILVERIFYENABLED_ATTRIBUTE, DefaultValue = false)]
+		public bool EmailVerifyEnabled
+		{
+			get
+			{
+				return (bool)this[XML_EMAILVERIFYENABLED_ATTRIBUTE];
+			}
+			set
+			{
+				this[XML_EMAILVERIFYENABLED_ATTRIBUTE] = value;
+			}
+		}
+
+		[OptionConfigurationProperty(XML_PHONEVERIFYENABLED_ATTRIBUTE, DefaultValue = false)]
+		public bool PhoneVerifyEnabled
+		{
+			get
+			{
+				return (bool)this[XML_PHONEVERIFYENABLED_ATTRIBUTE];
+			}
+			set
+			{
+				this[XML_PHONEVERIFYENABLED_ATTRIBUTE] = value;
 			}
 		}
 		#endregion

@@ -65,5 +65,21 @@ namespace Zongsoft.Security.Membership.Options
 		{
 			get; set;
 		}
+
+		/// <summary>
+		/// 获取或设置是否启用邮箱地址的有效性校验。
+		/// </summary>
+		bool EmailVerifyEnabled
+		{
+			get; set;
+		}
+
+		/// <summary>
+		/// 获取或设置是否启用手机号码的有效性校验。
+		/// </summary>
+		bool PhoneVerifyEnabled
+		{
+			get; set;
+		}
 	}
 }
