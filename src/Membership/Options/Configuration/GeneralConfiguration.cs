@@ -39,8 +39,8 @@ namespace Zongsoft.Security.Membership.Options.Configuration
 		private const string XML_PASSWORDSTRENGTH_ATTRIBUTE = "passwordStrength";
 		private const string XML_ATTEMPTTHRESHOLD_ATTRIBUTE = "attemptThreshold";
 		private const string XML_ATTEMPTWINDOW_ATTRIBUTE = "attemptWindow";
-		private const string XML_EMAILVERIFYENABLED_ATTRIBUTE = "emailVerifyEnabled";
-		private const string XML_PHONEVERIFYENABLED_ATTRIBUTE = "phoneVerifyEnabled";
+		private const string XML_VERIFYEMAILENABLED_ATTRIBUTE = "verifyEmailEnabled";
+		private const string XML_VERIFYPHONEENABLED_ATTRIBUTE = "verifyPhoneEnabled";
 		#endregion
 
 		#region 公共属性
@@ -96,29 +96,29 @@ namespace Zongsoft.Security.Membership.Options.Configuration
 			}
 		}
 
-		[OptionConfigurationProperty(XML_EMAILVERIFYENABLED_ATTRIBUTE, DefaultValue = false)]
-		public bool EmailVerifyEnabled
+		[OptionConfigurationProperty(XML_VERIFYEMAILENABLED_ATTRIBUTE, DefaultValue = false)]
+		public bool VerifyEmailEnabled
 		{
 			get
 			{
-				return (bool)this[XML_EMAILVERIFYENABLED_ATTRIBUTE];
+				return (bool)this[XML_VERIFYEMAILENABLED_ATTRIBUTE];
 			}
 			set
 			{
-				this[XML_EMAILVERIFYENABLED_ATTRIBUTE] = value;
+				this[XML_VERIFYEMAILENABLED_ATTRIBUTE] = value;
 			}
 		}
 
-		[OptionConfigurationProperty(XML_PHONEVERIFYENABLED_ATTRIBUTE, DefaultValue = false)]
-		public bool PhoneVerifyEnabled
+		[OptionConfigurationProperty(XML_VERIFYPHONEENABLED_ATTRIBUTE, DefaultValue = false)]
+		public bool VerifyPhoneEnabled
 		{
 			get
 			{
-				return (bool)this[XML_PHONEVERIFYENABLED_ATTRIBUTE];
+				return (bool)this[XML_VERIFYPHONEENABLED_ATTRIBUTE];
 			}
 			set
 			{
-				this[XML_PHONEVERIFYENABLED_ATTRIBUTE] = value;
+				this[XML_VERIFYPHONEENABLED_ATTRIBUTE] = value;
 			}
 		}
 		#endregion
