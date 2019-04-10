@@ -46,7 +46,6 @@ namespace Zongsoft.Security.Membership
 		#region 成员字段
 		private IDataAccess _dataAccess;
 		private Attempter _attempter;
-		private ISequence _sequence;
 		private ICensorship _censorship;
 		private ISecretProvider _secretProvider;
 		private Services.IServiceProvider _services;
@@ -87,19 +86,9 @@ namespace Zongsoft.Security.Membership
 		}
 
 		[ServiceDependency]
-		public ISequence Sequence
+		public Options.IConfiguration Configuration
 		{
-			get
-			{
-				return _sequence;
-			}
-			set
-			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_sequence = value;
-			}
+			get; set;
 		}
 
 		[ServiceDependency]
@@ -350,9 +339,6 @@ namespace Zongsoft.Security.Membership
 			//确保用户名是审核通过的
 			this.Censor(user.Name);
 
-			if(user.UserId < 1)
-				user.UserId = (uint)this.Sequence.Increment(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
-
 			//定义新用户要设置的邮箱地址和手机号码
 			string email = null, phone = null;
 
@@ -429,13 +415,6 @@ namespace Zongsoft.Security.Membership
 				//更新创建时间
 				user.Creation = DateTime.Now;
 				user.Modification = null;
-			}
-
-			foreach(var user in users)
-			{
-				//处理未指定有效编号的用户对象
-				if(user != null && user.UserId < 1)
-					user.UserId = (uint)this.Sequence.Increment(MembershipHelper.SEQUENCE_USERID, 1, MembershipHelper.MINIMUM_ID);
 			}
 
 			return this.DataAccess.InsertMany(users);
@@ -768,12 +747,12 @@ namespace Zongsoft.Security.Membership
 		#region 虚拟方法
 		protected virtual bool IsVerifyEmailRequired()
 		{
-			return _secretProvider != null;
+			return this.Configuration.VerifyEmailEnabled && _secretProvider != null;
 		}
 
 		protected virtual bool IsVerifyPhoneRequired()
 		{
-			return _secretProvider != null;
+			return this.Configuration.VerifyPhoneEnabled && _secretProvider != null;
 		}
 
 		protected virtual void OnChangeEmail(IUser user, string email)

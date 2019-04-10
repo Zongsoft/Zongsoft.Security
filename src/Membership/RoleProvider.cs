@@ -39,7 +39,6 @@ namespace Zongsoft.Security.Membership
 	{
 		#region 成员字段
 		private IDataAccess _dataAccess;
-		private ISequence _sequence;
 		private ICensorship _censorship;
 		private Services.IServiceProvider _services;
 		#endregion
@@ -62,22 +61,6 @@ namespace Zongsoft.Security.Membership
 			set
 			{
 				_dataAccess = value ?? throw new ArgumentNullException();
-			}
-		}
-
-		[ServiceDependency]
-		public ISequence Sequence
-		{
-			get
-			{
-				return _sequence;
-			}
-			set
-			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_sequence = value;
 			}
 		}
 
@@ -205,13 +188,6 @@ namespace Zongsoft.Security.Membership
 				//确认角色名是否存在
 				if(this.Exists(role.Name, role.Namespace))
 					throw new DataConflictException(Zongsoft.Resources.ResourceUtility.GetString("Text.RoleConflict"));
-			}
-
-			foreach(var role in roles)
-			{
-				//处理未指定有效编号的角色对象
-				if(role != null && role.RoleId < 1)
-					role.RoleId = (uint)this.Sequence.Increment(MembershipHelper.SEQUENCE_ROLEID, 1, MembershipHelper.MINIMUM_ID);
 			}
 
 			return this.DataAccess.InsertMany<IRole>(roles);

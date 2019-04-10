@@ -39,11 +39,6 @@ namespace Zongsoft.Security.Membership
 		internal const string Administrators = "Administrators";
 		internal const string Guest = "Guest";
 		internal const string Guests = "Guests";
-
-		internal const int MINIMUM_ID = 100000;
-
-		internal const string SEQUENCE_USERID = "Zongsoft.Security.Membership.User.ID";
-		internal const string SEQUENCE_ROLEID = "Zongsoft.Security.Membership.Role.ID";
 		#endregion
 
 		#region 公共方法
