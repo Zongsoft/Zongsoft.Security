@@ -25,6 +25,7 @@
  */
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 using Zongsoft.Data;
@@ -89,7 +90,8 @@ namespace Zongsoft.Security.Membership
 
 				//插入指定的权限设置集到数据库中
 				if(permissions != null)
-					this.DataAccess.InsertMany<Permission>(permissions);
+					this.DataAccess.InsertMany(
+						permissions.Select(p => new Permission(memberId, memberType, (string.IsNullOrEmpty(schemaId) ? p.SchemaId : schemaId), p.ActionId, p.Granted)));
 
 				//提交事务
 				transaction.Commit();
@@ -125,7 +127,8 @@ namespace Zongsoft.Security.Membership
 
 				//插入指定的权限设置集到数据库中
 				if(permissionFilters != null)
-					this.DataAccess.InsertMany<PermissionFilter>(permissionFilters);
+					this.DataAccess.InsertMany(
+						permissionFilters.Select(p => new PermissionFilter(memberId, memberType, (string.IsNullOrEmpty(schemaId) ? p.SchemaId : schemaId), p.ActionId, p.Filter)));
 
 				//提交事务
 				transaction.Commit();
