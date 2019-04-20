@@ -101,19 +101,17 @@ namespace Zongsoft.Security.Membership
 				@namespace = role.Namespace;
 			}
 
-			//获取指定用户所属命名空间下的所有角色（注：禁止分页查询，并即时加载到数组中）
-			var roles = dataAccess.Select<IRole>(Condition.Equal(nameof(IRole.Namespace), @namespace), Paging.Disable).ToArray();
-
-			//获取指定用户所属命名空间下的所有角色成员定义（注：禁止分页查询，并即时加载到数组中）
-			var members = dataAccess.Select<Member>(Condition.In(nameof(Member.RoleId), roles.Select(p => p.RoleId)), Paging.Disable).ToArray();
+			//获取指定用户所属命名空间下的所有成员及其关联的角色对象（注：即时加载到内存中）
+			var members = dataAccess.Select<Member>(Condition.Equal("Role.Namespace", @namespace), "*, Role{*}")
+			                        .Where(m => m.Role != null)
+			                        .ToArray();
 
 			flats = new HashSet<IRole>();
 			hierarchies = new List<IEnumerable<IRole>>();
 
 			//从角色成员集合中查找出指定成员的父级角色
 			var parents = members.Where(m => m.MemberId == memberId && m.MemberType == memberType)
-			                     .Select(m => roles.FirstOrDefault(role => role.RoleId == m.RoleId))
-			                     .ToArray();
+			                     .Select(m => m.Role).ToArray();
 
 			//如果父级角色集不为空
 			while(parents.Any())
@@ -125,7 +123,7 @@ namespace Zongsoft.Security.Membership
 
 				//从角色成员集合中查找出当前层级中所有角色的父级角色集合（并进行全局去重）
 				parents = members.Where(m => parents.Any(p => p.RoleId == m.MemberId) && m.MemberType == MemberType.Role)
-				                 .Select(m => roles.FirstOrDefault(role => role.RoleId == m.RoleId))
+				                 .Select(m => m.Role)
 				                 .Except(flats).ToArray();
 			}
 
