@@ -262,7 +262,7 @@ namespace Zongsoft.Security.Membership
 				return 0;
 
 			//如果指定角色编号不存在则退出
-			if(!this.DataAccess.Exists<IRole>(Condition.Equal("RoleId", roleId)))
+			if(!this.DataAccess.Exists<IRole>(Condition.Equal(nameof(IRole.RoleId), roleId)))
 				return -1;
 
 			int count = 0;
@@ -271,16 +271,21 @@ namespace Zongsoft.Security.Membership
 			{
 				//清空指定角色的所有成员
 				if(shouldResetting)
-					this.DataAccess.Delete<Member>(Condition.Equal("RoleId", roleId));
+					this.DataAccess.Delete<Member>(Condition.Equal(nameof(Member.RoleId), roleId));
 
 				//插入指定的角色成员集到数据库中
-				this.DataAccess.InsertMany<Member>(members);
+				this.DataAccess.InsertMany<Member>(members.Select(m => new Member(roleId, m.MemberId, m.MemberType)));
 
 				//提交事务
 				transaction.Commit();
 			}
 
 			return count;
+		}
+
+		public int Delete(uint roleId)
+		{
+			return this.DataAccess.Delete<Member>(Condition.Equal(nameof(Member.RoleId), roleId));
 		}
 
 		public bool Delete(uint roleId, uint memberId, MemberType memberType)
