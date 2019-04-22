@@ -116,6 +116,32 @@ namespace Zongsoft.Security.Membership
 				_censorship = value;
 			}
 		}
+
+		public CredentialPrincipal Principal
+		{
+			get
+			{
+				if(ApplicationContext.Current == null || ApplicationContext.Current.Principal.Identity.IsAuthenticated == false)
+					throw new AuthorizationException("No authorization or access to current user credentials.");
+
+				return ApplicationContext.Current.Principal as CredentialPrincipal ??
+				       throw new InvalidOperationException($"The '{ApplicationContext.Current.Principal.GetType().FullName}' is an invalid or unsupported type of security principal.");
+			}
+		}
+
+		public Credential Credential
+		{
+			get
+			{
+				if(ApplicationContext.Current == null || ApplicationContext.Current.Principal.Identity.IsAuthenticated == false)
+					throw new AuthorizationException("No authorization or access to current user credentials.");
+
+				var principal = ApplicationContext.Current.Principal as CredentialPrincipal ??
+					throw new InvalidOperationException($"The '{ApplicationContext.Current.Principal.GetType().FullName}' is an invalid or unsupported type of security principal.");
+
+				return principal.Identity.Credential;
+			}
+		}
 		#endregion
 
 		#region 用户管理
@@ -843,24 +869,15 @@ namespace Zongsoft.Security.Membership
 		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 		private uint GetUserId(uint userId)
 		{
-			if(ApplicationContext.Current == null || ApplicationContext.Current.Principal.Identity.IsAuthenticated == false)
-				throw new AuthorizationException("No authorization or access to current user credentials.");
-
-			var principal = ApplicationContext.Current.Principal as CredentialPrincipal;
-
-			if(principal == null)
-				throw new InvalidOperationException($"The '{ApplicationContext.Current.Principal.GetType().FullName}' is an invalid or unsupported type of security principal.");
-
 			if(userId == 0)
-				return principal.Identity.Credential.User.UserId;
+				return this.Credential.User.UserId;
 
 			/*
 			 * 只有当前用户是如下情况之一，才能操作指定的其他用户：
 			 *   1) 指定的用户就是当前用户自己；
-			 *   2) 当前用户编号为系统管理员（即当前用户编号为1）；
-			 *   3) 当前用户是系统管理员角色(Administrators)成员。
+			 *   2) 当前用户是系统管理员角色(Administrators)成员。
 			 */
-			if(principal.Identity.Credential.User.UserId == 1 || principal.Identity.Credential.User.UserId == userId || principal.InRole(MembershipHelper.Administrators))
+			if(this.Credential.User.UserId == userId || this.Principal.InRole(MembershipHelper.Administrators))
 				return userId;
 
 			throw new AuthorizationException($"The current user cannot operate on other user information.");

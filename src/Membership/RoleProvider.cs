@@ -76,6 +76,20 @@ namespace Zongsoft.Security.Membership
 				_censorship = value;
 			}
 		}
+
+		public Credential Credential
+		{
+			get
+			{
+				if(ApplicationContext.Current == null || ApplicationContext.Current.Principal.Identity.IsAuthenticated == false)
+					throw new AuthorizationException("No authorization or access to current user credentials.");
+
+				var principal = ApplicationContext.Current.Principal as CredentialPrincipal ??
+					throw new InvalidOperationException($"The '{ApplicationContext.Current.Principal.GetType().FullName}' is an invalid or unsupported type of security principal.");
+
+				return principal.Identity.Credential;
+			}
+		}
 		#endregion
 
 		#region 角色管理
@@ -179,8 +193,12 @@ namespace Zongsoft.Security.Membership
 				if(string.IsNullOrWhiteSpace(role.Name))
 					throw new ArgumentException("The role name is empty.");
 
+				//如果当前用户的命名空间不为空，则新增角色的命名空间必须与当前用户一致
+				if(!string.IsNullOrEmpty(this.Credential.Namespace))
+					role.Namespace = this.Credential.Namespace;
+
 				//验证指定的名称是否合法
-				this.OnVerifyName(role.Name);
+				this.OnValidateName(role.Name);
 
 				//确保角色名是审核通过的
 				this.Censor(role.Name);
@@ -298,7 +316,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 虚拟方法
-		protected virtual void OnVerifyName(string name)
+		protected virtual void OnValidateName(string name)
 		{
 			var validator = _services?.Resolve<IValidator<string>>("role.name");
 
