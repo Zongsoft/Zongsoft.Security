@@ -67,7 +67,7 @@
 				<link name="RoleId" role="RoleId" />
 			</complexProperty>
 
-			<complexProperty name="MemberRole" role="Role" multiplicity="1">
+			<complexProperty name="MemberRole" role="Role" multiplicity="?">
 				<link name="MemberId" role="RoleId" />
 
 				<constraints>
@@ -75,7 +75,7 @@
 				</constraints>
 			</complexProperty>
 
-			<complexProperty name="MemberUser" role="User" multiplicity="1">
+			<complexProperty name="MemberUser" role="User" multiplicity="?">
 				<link name="MemberId" role="UserId" />
 
 				<constraints>
