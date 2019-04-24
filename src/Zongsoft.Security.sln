@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.489
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zongsoft.Security", "Zongsoft.Security.csproj", "{F7EB49E1-856C-4304-9A35-89F5BDB24CE9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zongsoft.Security.Tests", "tests\Zongsoft.Security.Tests.csproj", "{70D5823C-2CF9-4734-81CD-E91FDD14D7BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zongsoft.Security.Web", "api\Zongsoft.Security.Web.csproj", "{4FF89148-2181-4E55-BB2F-7EE4B60A4585}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,8 +23,15 @@ Global
 		{70D5823C-2CF9-4734-81CD-E91FDD14D7BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70D5823C-2CF9-4734-81CD-E91FDD14D7BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{70D5823C-2CF9-4734-81CD-E91FDD14D7BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FF89148-2181-4E55-BB2F-7EE4B60A4585}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FF89148-2181-4E55-BB2F-7EE4B60A4585}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FF89148-2181-4E55-BB2F-7EE4B60A4585}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FF89148-2181-4E55-BB2F-7EE4B60A4585}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EF0E54AD-C459-4010-8C35-910BB1141BD7}
 	EndGlobalSection
 EndGlobal
