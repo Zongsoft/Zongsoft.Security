@@ -5,7 +5,7 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zongsoft.Security", "Zongsoft.Security.csproj", "{F7EB49E1-856C-4304-9A35-89F5BDB24CE9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zongsoft.Security.Tests", "..\tests\Zongsoft.Security.Tests.csproj", "{70D5823C-2CF9-4734-81CD-E91FDD14D7BB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zongsoft.Security.Tests", "tests\Zongsoft.Security.Tests.csproj", "{70D5823C-2CF9-4734-81CD-E91FDD14D7BB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
