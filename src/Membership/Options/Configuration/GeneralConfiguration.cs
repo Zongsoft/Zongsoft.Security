@@ -25,6 +25,9 @@
  */
 
 using System;
+using System.Linq;
+using System.Globalization;
+using System.ComponentModel;
 using System.Collections.Generic;
 
 using Zongsoft.Options;
@@ -41,6 +44,7 @@ namespace Zongsoft.Security.Membership.Options.Configuration
 		private const string XML_ATTEMPTWINDOW_ATTRIBUTE = "attemptWindow";
 		private const string XML_VERIFYEMAILENABLED_ATTRIBUTE = "verifyEmailEnabled";
 		private const string XML_VERIFYPHONEENABLED_ATTRIBUTE = "verifyPhoneEnabled";
+		private const string XML_ROLES_ATTRIBUTE = "roles";
 		#endregion
 
 		#region 公共属性
@@ -119,6 +123,55 @@ namespace Zongsoft.Security.Membership.Options.Configuration
 			set
 			{
 				this[XML_VERIFYPHONEENABLED_ATTRIBUTE] = value;
+			}
+		}
+
+		[TypeConverter(typeof(SetConverter))]
+		[OptionConfigurationProperty(XML_ROLES_ATTRIBUTE)]
+		public ISet<string> Roles
+		{
+			get
+			{
+				return (ISet<string>)this[XML_ROLES_ATTRIBUTE];
+			}
+		}
+		#endregion
+
+		#region 嵌套子类
+		private class SetConverter : TypeConverter
+		{
+			public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
+			{
+				return sourceType == typeof(string);
+			}
+
+			public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
+			{
+				return destinationType == typeof(string);
+			}
+
+			public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
+			{
+				if(value != null && value is string text)
+				{
+					if(string.IsNullOrWhiteSpace(text))
+						return null;
+
+					return new HashSet<string>(text.Split(',', ';', '|').Select(p => p.Trim()).Where(p => p.Length > 0), StringComparer.OrdinalIgnoreCase);
+				}
+
+				return base.ConvertFrom(context, culture, value);
+			}
+
+			public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+			{
+				if(destinationType == typeof(string))
+				{
+					if(value != null && value is ISet<string> set && set.Count > 0)
+						return string.Join(",", set);
+				}
+
+				return base.ConvertTo(context, culture, value, destinationType);
 			}
 		}
 		#endregion

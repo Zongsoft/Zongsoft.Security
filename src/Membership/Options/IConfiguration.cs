@@ -81,5 +81,13 @@ namespace Zongsoft.Security.Membership.Options
 		{
 			get; set;
 		}
+
+		/// <summary>
+		/// 获取一个可以进行授权管理的角色集。
+		/// </summary>
+		ISet<string> Roles
+		{
+			get;
+		}
 	}
 }

@@ -3,7 +3,10 @@
 <options>
 	<option path="/Security/Membership">
 		<general general.type="Zongsoft.Security.Membership.Options.Configuration.GeneralConfiguration, Zongsoft.Security"
-		         passwordLength="0" passwordStrength="None" attemptThreshold="3" attemptWindow="60" verifyEmailEnabled="false" verifyPhoneEnabled="false">
+		         passwordLength="0" passwordStrength="None"
+		         attemptThreshold="3" attemptWindow="60"
+		         verifyEmailEnabled="false" verifyPhoneEnabled="false"
+		         roles="security,securities">
 		</general>
 	</option>
 </options>
