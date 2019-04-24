@@ -1,0 +1,3 @@
+Zongsoft.Security.Web.plugin
+Zongsoft.Security.Web.option
+bin/$(Edition)/Zongsoft.Security.Web.*
