@@ -93,16 +93,16 @@ namespace Zongsoft.Security
 		#endregion
 
 		#region 公共方法
-		public Credential Register(Membership.IUserIdentity user, string scene, IDictionary<string, object> extendedProperties = null)
+		public Credential Register(Membership.IUserIdentity user, string scene, IDictionary<string, object> parameters = null)
 		{
 			//创建一个新的凭证对象
-			var credential = this.CreateCredential(user, scene, extendedProperties);
+			var credential = this.CreateCredential(user, scene, parameters);
 
 			if(credential == null)
 				throw new InvalidOperationException();
 
 			//激发注册开始事件
-			this.OnRegistering(user, scene, extendedProperties);
+			this.OnRegistering(user, scene, parameters);
 
 			//注册新建的凭证
 			this.Register(credential);

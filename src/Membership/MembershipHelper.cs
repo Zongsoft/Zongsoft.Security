@@ -132,44 +132,30 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 内部方法
-		internal static ICondition GetUserIdentityCondition(string identity, string @namespace)
+		internal static Condition GetUserIdentity(string identity)
 		{
-			UserIdentityType identityType;
-			return GetUserIdentityCondition(identity, @namespace, out identityType);
+			return GetUserIdentity(identity, out _);
 		}
 
-		internal static ICondition GetUserIdentityCondition(string identity, string @namespace, out UserIdentityType identityType)
+		internal static Condition GetUserIdentity(string identity, out UserIdentityType identityType)
 		{
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException(nameof(identity));
 
-			Condition condition;
-
 			if(identity.Contains("@"))
 			{
 				identityType = UserIdentityType.Email;
-				condition = Condition.Equal(nameof(IUser.Email), identity);
+				return Condition.Equal(nameof(IUser.Email), identity);
 			}
-			else if(IsNumericString(identity))
+
+			if(IsNumericString(identity))
 			{
 				identityType = UserIdentityType.PhoneNumber;
-				condition = Condition.Equal(nameof(IUser.PhoneNumber), identity);
-			}
-			else
-			{
-				identityType = UserIdentityType.Name;
-				condition = Condition.Equal(nameof(IUser.Name), identity);
+				return Condition.Equal(nameof(IUser.PhoneNumber), identity);
 			}
 
-			return condition & GetNamespaceCondition(@namespace);
-		}
-
-		internal static Condition GetNamespaceCondition(string @namespace)
-		{
-			if(string.IsNullOrEmpty(@namespace))
-				return Condition.Equal("Namespace", null);
-
-			return @namespace == "*" ? null : Condition.Equal("Namespace", @namespace);
+			identityType = UserIdentityType.Name;
+			return Condition.Equal(nameof(IUser.Name), identity);
 		}
 		#endregion
 

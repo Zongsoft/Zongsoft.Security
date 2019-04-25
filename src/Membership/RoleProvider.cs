@@ -93,35 +93,35 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 角色管理
-		public bool Exists(uint roleId)
-		{
-			return this.DataAccess.Exists<IRole>(Condition.Equal(nameof(IRole.RoleId), roleId));
-		}
-
-		public bool Exists(string name, string @namespace)
-		{
-			if(string.IsNullOrWhiteSpace(name))
-				return false;
-
-			return this.DataAccess.Exists<IRole>(Condition.Equal(nameof(IRole.Name), name) & MembershipHelper.GetNamespaceCondition(@namespace));
-		}
-
 		public IRole GetRole(uint roleId)
 		{
 			return this.DataAccess.Select<IRole>(Condition.Equal(nameof(IRole.RoleId), roleId)).FirstOrDefault();
 		}
 
-		public IRole GetRole(string name, string @namespace)
+		public IRole GetRole(string name, string @namespace = null)
 		{
 			if(string.IsNullOrWhiteSpace(name))
-				throw new ArgumentNullException("name");
+				throw new ArgumentNullException(nameof(name));
 
-			return this.DataAccess.Select<IRole>(Condition.Equal(nameof(IRole.Name), name) & MembershipHelper.GetNamespaceCondition(@namespace)).FirstOrDefault();
+			return this.DataAccess.Select<IRole>(Condition.Equal(nameof(IRole.Name), name) & this.GetNamespace(@namespace)).FirstOrDefault();
 		}
 
 		public IEnumerable<IRole> GetRoles(string @namespace, Paging paging = null)
 		{
-			return this.DataAccess.Select<IRole>(MembershipHelper.GetNamespaceCondition(@namespace), paging);
+			return this.DataAccess.Select<IRole>(this.GetNamespace(@namespace), paging);
+		}
+
+		public bool Exists(uint roleId)
+		{
+			return this.DataAccess.Exists<IRole>(Condition.Equal(nameof(IRole.RoleId), roleId));
+		}
+
+		public bool Exists(string name, string @namespace = null)
+		{
+			if(string.IsNullOrWhiteSpace(name))
+				return false;
+
+			return this.DataAccess.Exists<IRole>(Condition.Equal(nameof(IRole.Name), name) & this.GetNamespace(@namespace));
 		}
 
 		public bool SetNamespace(uint roleId, string @namespace)
@@ -138,6 +138,33 @@ namespace Zongsoft.Security.Membership
 				{
 					Namespace = string.IsNullOrWhiteSpace(newNamespace) ? null : newNamespace.Trim(),
 				}, new Condition(nameof(IRole.Namespace), oldNamespace));
+		}
+
+		public bool SetName(uint roleId, string name)
+		{
+			if(string.IsNullOrWhiteSpace(name))
+				throw new ArgumentNullException(nameof(name));
+
+			//验证指定的名称是否合法
+			this.OnValidateName(name);
+
+			//确保角色名是审核通过的
+			this.Censor(name);
+
+			return this.DataAccess.Update<IRole>(new
+			{
+				Name = name.Trim()
+			},
+			new Condition(nameof(IRole.RoleId), roleId)) > 0;
+		}
+
+		public bool SetFullName(uint roleId, string fullName)
+		{
+			return this.DataAccess.Update<IRole>(new
+			{
+				FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName.Trim(),
+			},
+			new Condition(nameof(IRole.RoleId), roleId)) > 0;
 		}
 
 		public bool SetDescription(uint roleId, string description)
@@ -326,12 +353,24 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 私有方法
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 		private void Censor(string name)
 		{
 			var censorship = this.Censorship;
 
 			if(censorship != null && censorship.IsBlocked(name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
 				throw new CensorshipException(string.Format("Illegal '{0}' name of role.", name));
+		}
+
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+		private Condition GetNamespace(string @namespace)
+		{
+			if(string.IsNullOrEmpty(@namespace))
+				return Condition.Equal(nameof(IRole.Namespace), this.Credential.Namespace);
+			else if(@namespace != "*")
+				return Condition.Equal(nameof(IRole.Namespace), @namespace);
+
+			return null;
 		}
 		#endregion
 	}

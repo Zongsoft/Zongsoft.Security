@@ -103,16 +103,12 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		#region 公共方法
 		public virtual object Get(string id = null, [FromUri]Paging paging = null)
 		{
-			//如果标识为空或空字符串则进行多角色查询
-			if(string.IsNullOrWhiteSpace(id))
-				return this.RoleProvider.GetRoles(null, paging);
-
-			//如果标识为星号，则返回所有角色
-			if(id == "*")
-				return this.RoleProvider.GetRoles("*", paging);
+			//如果标识为空或星号，则进行多角色查询
+			if(string.IsNullOrEmpty(id) || id == "*")
+				return this.RoleProvider.GetRoles(id, paging);
 
 			//确认角色编号及标识
-			var roleId = Utility.EnsureId(id, out var identity, out var @namespace, out var suffix);
+			var roleId = Utility.ResolvePattern(id, out var identity, out var @namespace, out var suffix);
 
 			//如果ID参数是数字则以编号方式返回唯一的角色信息
 			if(roleId > 0)
@@ -148,6 +144,69 @@ namespace Zongsoft.Security.Web.Http.Controllers
 				return model;
 
 			throw new HttpResponseException(System.Net.HttpStatusCode.Conflict);
+		}
+
+		[HttpPatch]
+		[ActionName("Namespace")]
+		public void SetNamespace(uint id, string args)
+		{
+			if(string.IsNullOrWhiteSpace(args))
+				throw HttpResponseExceptionUtility.BadRequest("Missing namespace value of the role.");
+
+			if(!this.RoleProvider.SetNamespace(id, args))
+				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+		}
+
+		[HttpPatch]
+		[ActionName("Name")]
+		public void SetName(uint id, string args)
+		{
+			if(string.IsNullOrWhiteSpace(args))
+				throw HttpResponseExceptionUtility.BadRequest("Missing name value of the role.");
+
+			if(!this.RoleProvider.SetName(id, args))
+				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+		}
+
+		[HttpPatch]
+		[ActionName("FullName")]
+		public void SetFullName(uint id, string args)
+		{
+			if(string.IsNullOrWhiteSpace(args))
+				throw HttpResponseExceptionUtility.BadRequest("Missing full-name value of the role.");
+
+			if(!this.RoleProvider.SetFullName(id, args))
+				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+		}
+
+		[HttpPatch]
+		[ActionName("Description")]
+		public void SetDescription(uint id, string args)
+		{
+			if(string.IsNullOrWhiteSpace(args))
+				throw HttpResponseExceptionUtility.BadRequest("Missing description value of the role.");
+
+			if(!this.RoleProvider.SetDescription(id, args))
+				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+		}
+
+		[HttpGet]
+		[Authorization(AuthorizationMode.Anonymous)]
+		public virtual void Exists(string id)
+		{
+			if(string.IsNullOrWhiteSpace(id))
+				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
+
+			var existed = false;
+			var roleId = Utility.ResolvePattern(id, out var identity, out var @namespace, out var suffix);
+
+			if(roleId > 0)
+				existed = this.RoleProvider.Exists(roleId);
+			else
+				existed = this.RoleProvider.Exists(identity, @namespace);
+
+			if(!existed)
+				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
 		}
 		#endregion
 

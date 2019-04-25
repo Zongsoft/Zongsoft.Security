@@ -174,16 +174,12 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		/// </remarks>
 		public virtual object Get(string id = null, [FromUri]Paging paging = null)
 		{
-			//如果标识为空或空字符串则进行多用户查询
-			if(string.IsNullOrWhiteSpace(id))
-				return this.UserProvider.GetUsers(null, paging);
+			//如果标识为空或星号，则进行多用户查询
+			if(string.IsNullOrEmpty(id) || id == "*")
+				return this.UserProvider.GetUsers(id, paging);
 
-			//如果标识为星号，则返回所有用户
-			if(id == "*")
-				return this.UserProvider.GetUsers("*", paging);
-
-			//确认用户编号及标识
-			var userId = Utility.EnsureId(id, out var identity, out var @namespace, out var suffix);
+			//解析用户标识参数
+			var userId = Utility.ResolvePattern(id, out var identity, out var @namespace, out var suffix);
 
 			//如果ID参数是数字则以编号方式返回唯一的用户信息
 			if(userId > 0)
@@ -216,27 +212,15 @@ namespace Zongsoft.Security.Web.Http.Controllers
 				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
 
 			string password = null;
-			IEnumerable<string> values;
 
 			//从请求消息的头部获取指定的用户密码
-			if(this.Request.Headers.TryGetValues("x-password", out values))
+			if(this.Request.Headers.TryGetValues("x-password", out var values) && values != null)
 				password = values.FirstOrDefault();
 
 			if(this.UserProvider.Create(model, password))
 				return model;
 
 			throw new HttpResponseException(System.Net.HttpStatusCode.Conflict);
-		}
-
-		[HttpPatch]
-		[ActionName("Name")]
-		public void SetName(uint id, string args)
-		{
-			if(string.IsNullOrWhiteSpace(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing name value of the user.");
-
-			if(!this.UserProvider.SetName(id, args))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
 		}
 
 		[HttpPatch]
@@ -247,6 +231,17 @@ namespace Zongsoft.Security.Web.Http.Controllers
 				throw HttpResponseExceptionUtility.BadRequest("Missing namespace value of the user.");
 
 			if(!this.UserProvider.SetNamespace(id, args))
+				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+		}
+
+		[HttpPatch]
+		[ActionName("Name")]
+		public void SetName(uint id, string args)
+		{
+			if(string.IsNullOrWhiteSpace(args))
+				throw HttpResponseExceptionUtility.BadRequest("Missing name value of the user.");
+
+			if(!this.UserProvider.SetName(id, args))
 				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
 		}
 
@@ -313,7 +308,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
 
 			var existed = false;
-			var userId = Utility.EnsureId(id, out var identity, out var @namespace, out var suffix);
+			var userId = Utility.ResolvePattern(id, out var identity, out var @namespace, out var suffix);
 
 			if(userId > 0)
 				existed = this.UserProvider.Exists(userId);
@@ -326,10 +321,10 @@ namespace Zongsoft.Security.Web.Http.Controllers
 
 		[HttpGet]
 		[Authorization(AuthorizationMode.Anonymous)]
-		public void Verify(uint id, string type, string secret)
+		public void Verify(uint id, [FromRoute("args")]string type, [FromUri]string secret)
 		{
 			if(!this.UserProvider.Verify(id, type, secret))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
 		}
 		#endregion
 
@@ -341,7 +336,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 				throw HttpResponseExceptionUtility.BadRequest("Missing required argument.");
 
 			var existed = false;
-			var userId = Utility.EnsureId(id, out var identity, out var @namespace, out var suffix);
+			var userId = Utility.ResolvePattern(id, out var identity, out var @namespace, out var suffix);
 
 			if(userId > 0)
 				existed = this.UserProvider.HasPassword(userId);
@@ -394,7 +389,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			}
 			else if(content.PasswordAnswers != null && content.PasswordAnswers.Length > 0)
 			{
-				var userId = Utility.EnsureId(id, out var identity, out var @namespace, out var suffix);
+				var userId = Utility.ResolvePattern(id, out var identity, out var @namespace, out var suffix);
 
 				//注意：该方法会将传入的纯数字的标识当做手机号处理
 				if(userId > 0)
@@ -417,7 +412,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			if(string.IsNullOrWhiteSpace(id))
 				throw HttpResponseExceptionUtility.BadRequest("Missing required argument.");
 
-			var userId = Utility.EnsureId(id, out var identity, out var @namespace, out var suffix);
+			var userId = Utility.ResolvePattern(id, out var identity, out var @namespace, out var suffix);
 			string[] result = null;
 
 			if(userId > 0)
@@ -459,9 +454,19 @@ namespace Zongsoft.Security.Web.Http.Controllers
 
 		[HttpGet]
 		[ActionName("In")]
-		public void InRole([FromRoute("id")]uint userId, [FromRoute("args")]uint roleId)
+		public void InRole([FromRoute("id")]uint userId, [FromRoute("args")]string roles)
 		{
-			if(!this.MemberProvider.InRole(userId, roleId))
+			if(string.IsNullOrEmpty(roles))
+				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
+
+			var result = false;
+
+			if(uint.TryParse(roles, out var roleId))
+				result = this.MemberProvider.InRole(userId, roleId);
+			else
+				result = this.MemberProvider.InRoles(userId, roles.Split(',', ';', '|'));
+
+			if(!result)
 				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
 		}
 		#endregion

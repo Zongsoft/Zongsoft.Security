@@ -150,14 +150,14 @@ namespace Zongsoft.Security.Membership
 			return this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), GetUserId(userId))).FirstOrDefault();
 		}
 
-		public IUser GetUser(string identity, string @namespace)
+		public IUser GetUser(string identity, string @namespace = null)
 		{
-			return this.DataAccess.Select<IUser>(MembershipHelper.GetUserIdentityCondition(identity, @namespace)).FirstOrDefault();
+			return this.DataAccess.Select<IUser>(MembershipHelper.GetUserIdentity(identity) & this.GetNamespace(@namespace)).FirstOrDefault();
 		}
 
 		public IEnumerable<IUser> GetUsers(string @namespace, Paging paging = null)
 		{
-			return this.DataAccess.Select<IUser>(MembershipHelper.GetNamespaceCondition(@namespace), paging);
+			return this.DataAccess.Select<IUser>(this.GetNamespace(@namespace), paging);
 		}
 
 		public bool Exists(uint userId)
@@ -165,12 +165,12 @@ namespace Zongsoft.Security.Membership
 			return this.DataAccess.Exists<IUser>(Condition.Equal(nameof(IUser.UserId), userId));
 		}
 
-		public bool Exists(string identity, string @namespace)
+		public bool Exists(string identity, string @namespace = null)
 		{
 			if(string.IsNullOrWhiteSpace(identity))
 				return false;
 
-			return this.DataAccess.Exists<IUser>(MembershipHelper.GetUserIdentityCondition(identity, @namespace));
+			return this.DataAccess.Exists<IUser>(MembershipHelper.GetUserIdentity(identity) & this.GetNamespace(@namespace));
 		}
 
 		public bool SetEmail(uint userId, string email)
@@ -453,10 +453,12 @@ namespace Zongsoft.Security.Membership
 			return this.DataAccess.Exists<IUser>(Condition.Equal(nameof(IUser.UserId), GetUserId(userId)) & Condition.NotEqual("Password", null));
 		}
 
-		public bool HasPassword(string identity, string @namespace)
+		public bool HasPassword(string identity, string @namespace = null)
 		{
-			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
-			return this.DataAccess.Exists<IUser>(ConditionCollection.And(condition, Condition.NotEqual("Password", null)));
+			return this.DataAccess.Exists<IUser>(
+							MembershipHelper.GetUserIdentity(identity) &
+							this.GetNamespace(@namespace) &
+							Condition.NotEqual("Password", null));
 		}
 
 		public bool ChangePassword(uint userId, string oldPassword, string newPassword)
@@ -505,7 +507,7 @@ namespace Zongsoft.Security.Membership
 				}, Condition.Equal(nameof(IUser.UserId), userId)) > 0;
 		}
 
-		public uint ForgetPassword(string identity, string @namespace)
+		public uint ForgetPassword(string identity, string @namespace = null)
 		{
 			if(string.IsNullOrEmpty(identity))
 				throw new ArgumentNullException(nameof(identity));
@@ -516,14 +518,14 @@ namespace Zongsoft.Security.Membership
 				throw new InvalidOperationException("Missing secret provider.");
 
 			//解析用户标识的查询条件
-			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace, out var identityType);
+			var condition = MembershipHelper.GetUserIdentity(identity, out var identityType);
 
 			//如果查询条件解析失败或用户标识为用户名，则抛出不支持的异常
 			if(condition == null || identityType == UserIdentityType.Name)
 				throw new NotSupportedException("Invalid user identity for the forget password operation.");
 
 			//获取指定标识的用户信息
-			var user = this.DataAccess.Select<IUser>(condition).FirstOrDefault();
+			var user = this.DataAccess.Select<IUser>(condition & this.GetNamespace(@namespace)).FirstOrDefault();
 
 			if(user == null)
 				return 0;
@@ -626,8 +628,7 @@ namespace Zongsoft.Security.Membership
 			if(passwordAnswers == null || passwordAnswers.Length < 3)
 				throw new ArgumentNullException(nameof(passwordAnswers));
 
-			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
-			var record = this.DataAccess.Select<UserSecretAnswer>(condition).FirstOrDefault();
+			var record = this.DataAccess.Select<UserSecretAnswer>(MembershipHelper.GetUserIdentity(identity) & this.GetNamespace(@namespace)).FirstOrDefault();
 
 			if(record.UserId == 0)
 				return false;
@@ -679,9 +680,9 @@ namespace Zongsoft.Security.Membership
 			};
 		}
 
-		public string[] GetPasswordQuestions(string identity, string @namespace)
+		public string[] GetPasswordQuestions(string identity, string @namespace = null)
 		{
-			var record = this.DataAccess.Select<UserSecretQuestion>(MembershipHelper.GetUserIdentityCondition(identity, @namespace)).FirstOrDefault();
+			var record = this.DataAccess.Select<UserSecretQuestion>(MembershipHelper.GetUserIdentity(identity) & this.GetNamespace(@namespace)).FirstOrDefault();
 
 			if(record.UserId == 0)
 				return null;
@@ -864,6 +865,17 @@ namespace Zongsoft.Security.Membership
 
 			if(censorship != null && censorship.IsBlocked(name, Zongsoft.Security.Censorship.KEY_NAMES, Zongsoft.Security.Censorship.KEY_SENSITIVES))
 				throw new CensorshipException(string.Format("Illegal '{0}' name of user.", name));
+		}
+
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+		private Condition GetNamespace(string @namespace)
+		{
+			if(string.IsNullOrEmpty(@namespace))
+				return Condition.Equal(nameof(IUser.Namespace), this.Credential.Namespace);
+			else if(@namespace != "*")
+				return Condition.Equal(nameof(IUser.Namespace), @namespace);
+
+			return null;
 		}
 
 		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]

@@ -155,8 +155,10 @@ namespace Zongsoft.Security.Membership
 		#region 虚拟方法
 		protected virtual uint GetPassword(string identity, string @namespace, out byte[] password, out long passwordSalt, out UserStatus status, out DateTime? statusTimestamp)
 		{
-			var condition = MembershipHelper.GetUserIdentityCondition(identity, @namespace);
-			var entity = this.DataAccess.Select<UserSecret>(condition).FirstOrDefault();
+			if(string.IsNullOrWhiteSpace(@namespace))
+				@namespace = null;
+
+			var entity = this.DataAccess.Select<UserSecret>(MembershipHelper.GetUserIdentity(identity) & Condition.Equal(nameof(IUser.Namespace), @namespace)).FirstOrDefault();
 
 			if(entity.UserId == 0)
 			{
