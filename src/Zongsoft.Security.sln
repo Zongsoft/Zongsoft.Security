@@ -9,6 +9,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zongsoft.Security.Tests", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zongsoft.Security.Web", "api\Zongsoft.Security.Web.csproj", "{4FF89148-2181-4E55-BB2F-7EE4B60A4585}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{B93B5D10-2629-482F-8A71-F383663B15C1}"
+	ProjectSection(SolutionItems) = preProject
+		..\docs\api.md = ..\docs\api.md
+		..\docs\Zongsoft.Security-Data.sql = ..\docs\Zongsoft.Security-Data.sql
+		..\docs\Zongsoft.Security-Tables(MySQL).sql = ..\docs\Zongsoft.Security-Tables(MySQL).sql
+		..\docs\Zongsoft.Security-Tables(SQLServer).sql = ..\docs\Zongsoft.Security-Tables(SQLServer).sql
+		..\docs\Zongsoft.Security.html = ..\docs\Zongsoft.Security.html
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

@@ -11,6 +11,10 @@
 		<assemblies>
 			<assembly name="Zongsoft.Security.Web" />
 		</assemblies>
+
+		<dependencies>
+			<dependency name="Zongsoft.Security" />
+		</dependencies>
 	</manifest>
 
 	<!-- 挂载Web.Api路由 -->
