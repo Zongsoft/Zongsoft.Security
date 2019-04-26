@@ -37,7 +37,7 @@
 - scene
   > 应用场景，为了避免相同账号登录导致的互斥而指定的场景标识。譬如：
   > - `web` 网页端；
-  > - `mobile` 移动端;
+  > - `mobile` 移动端；
   > - `wechat` 微信端。
 
 ### 请求参数
@@ -268,7 +268,7 @@ x-data-schema: *, MemberUser{*}, MemberRole{*}
 ```
 
 ### 参数说明
-- roleId 表示要设置的角色编号；
+- roleId 表示要设置的角色编号。
 
 ### 请求消息内容
 ```json
@@ -304,7 +304,7 @@ x-data-schema: *, MemberUser{*}, MemberRole{*}
 ```
 
 ### 参数说明
-- roleId 表示要清空的角色编号；
+- roleId 表示要清空的角色编号。
 
 -----
 
