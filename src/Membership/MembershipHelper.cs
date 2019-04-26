@@ -37,8 +37,6 @@ namespace Zongsoft.Security.Membership
 		#region 常量定义
 		internal const string Administrator = "Administrator";
 		internal const string Administrators = "Administrators";
-		internal const string Guest = "Guest";
-		internal const string Guests = "Guests";
 		#endregion
 
 		#region 公共方法
@@ -178,9 +176,7 @@ namespace Zongsoft.Security.Membership
 		private static bool IsBuiltin(string name)
 		{
 			return string.Equals(name, Administrator, StringComparison.OrdinalIgnoreCase) ||
-			       string.Equals(name, Administrators, StringComparison.OrdinalIgnoreCase) ||
-			       string.Equals(name, Guest, StringComparison.OrdinalIgnoreCase) ||
-			       string.Equals(name, Guests, StringComparison.OrdinalIgnoreCase);
+			       string.Equals(name, Administrators, StringComparison.OrdinalIgnoreCase);
 		}
 		#endregion
 	}
