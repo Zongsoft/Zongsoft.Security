@@ -20,12 +20,12 @@
 	<!-- 挂载Web.Api路由 -->
 	<extension path="/Workbench/Web/Routes">
 		<route name="Security-Password-Has" kind="api"
-		       url="Security/{controller}/{id}/Password/Has"
+		       url="Security/{controller}/{id}/Password/{action}"
 		       defaults="action=HasPassword"
 		       position="Api" />
 
 		<route name="Security-Password-Change" kind="api"
-		       url="Security/{controller}/{id}/Password/Change"
+		       url="Security/{controller}/{id}/Password/{action}"
 		       defaults="action=ChangePassword"
 		       position="Api" />
 
