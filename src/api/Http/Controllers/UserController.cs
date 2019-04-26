@@ -464,7 +464,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			if(uint.TryParse(roles, out var roleId))
 				result = this.MemberProvider.InRole(userId, roleId);
 			else
-				result = this.MemberProvider.InRoles(userId, roles.Split(',', ';', '|'));
+				result = this.MemberProvider.InRoles(userId, roles.Split(',', ';', '|').Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p.Trim()).ToArray());
 
 			if(!result)
 				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
