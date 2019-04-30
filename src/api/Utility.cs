@@ -82,5 +82,27 @@ namespace Zongsoft.Security.Web
 
 			return null;
 		}
+
+		public static void EnsureAuthroize(CredentialPrincipal principal)
+		{
+			if(principal != null)
+			{
+				if(principal.IsAdministrator)
+					return;
+
+				var roles = (ISet<string>)Zongsoft.Options.OptionManager.Instance.GetOptionValue("/Security/Membership/General.Roles");
+
+				if(roles != null || roles.Count > 0)
+				{
+					foreach(var role in roles)
+					{
+						if(principal.InRole(role))
+							return;
+					}
+				}
+			}
+
+			throw new System.Web.Http.HttpResponseException(System.Net.HttpStatusCode.Forbidden);
+		}
 	}
 }
