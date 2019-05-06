@@ -217,6 +217,7 @@ namespace Zongsoft.Security.Membership
 				if(role == null)
 					continue;
 
+				//如果未指定角色名，则为其设置一个随机名
 				if(string.IsNullOrWhiteSpace(role.Name))
 					role.Name = "R" + RandomGenerator.GenerateString();
 
@@ -233,6 +234,10 @@ namespace Zongsoft.Security.Membership
 				//确认角色名是否存在
 				if(this.Exists(role.Name, role.Namespace))
 					throw new DataConflictException(Zongsoft.Resources.ResourceUtility.GetString("Text.RoleConflict"));
+
+				//确保角色全称不为空
+				if(string.IsNullOrEmpty(role.FullName))
+					role.FullName = role.Name;
 			}
 
 			return this.DataAccess.InsertMany<IRole>(roles);
