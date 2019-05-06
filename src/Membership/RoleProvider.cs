@@ -218,7 +218,7 @@ namespace Zongsoft.Security.Membership
 					continue;
 
 				if(string.IsNullOrWhiteSpace(role.Name))
-					throw new ArgumentException("The role name is empty.");
+					role.Name = "R" + RandomGenerator.GenerateString();
 
 				//如果当前用户的命名空间不为空，则新增角色的命名空间必须与当前用户一致
 				if(!string.IsNullOrEmpty(this.Credential.Namespace))
