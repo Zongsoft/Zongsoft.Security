@@ -591,9 +591,6 @@ namespace Zongsoft.Security.Membership
 			if(secret == null)
 				throw new InvalidOperationException("Missing secret provider.");
 
-			//确认指定的用户编号是否有效
-			userId = GetUserId(userId);
-
 			//如果重置密码的校验码验证成功
 			if(secretProvider.Verify($"{KEY_FORGET_SECRET}:{userId}", secret))
 			{
@@ -665,9 +662,6 @@ namespace Zongsoft.Security.Membership
 
 		public string[] GetPasswordQuestions(uint userId)
 		{
-			//确认指定的用户编号是否有效
-			userId = GetUserId(userId);
-
 			var record = this.DataAccess.Select<UserSecretQuestion>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
 
 			if(record.UserId == 0)
