@@ -41,6 +41,9 @@ namespace Zongsoft.Security.Membership
 		private const string KEY_EMAIL_SECRET = "user.email";
 		private const string KEY_PHONE_SECRET = "user.phone";
 		private const string KEY_FORGET_SECRET = "user.forget";
+
+		private const string KEY_AUTHENTICATION_TEMPLATE = "Authentication";
+		private const string KEY_IMPORTANT_CHANGE_TEMPLATE = "Important.Change";
 		#endregion
 
 		#region 成员字段
@@ -531,7 +534,6 @@ namespace Zongsoft.Security.Membership
 				return 0;
 
 			string secret = null;
-			object parameter = null;
 
 			switch(identityType)
 			{
@@ -543,15 +545,12 @@ namespace Zongsoft.Security.Membership
 					//生成校验密文
 					secret = secretor.Generate($"{KEY_FORGET_SECRET}:{user.UserId}");
 
-					//构造发送的邮件模板的参数
-					parameter = new Dictionary<string, object>
-					{
-						{ "Secret", secret },
-						{ "Data", user },
-					};
-
 					//发送忘记密码的邮件通知
-					CommandExecutor.Default.Execute($"email.send -template:{KEY_FORGET_SECRET} {user.Email}", parameter);
+					CommandExecutor.Default.Execute($"email.send -template:{KEY_AUTHENTICATION_TEMPLATE} {user.Email}", new
+					{
+						Code = secret,
+						Data = user,
+					});
 
 					break;
 				case UserIdentityType.PhoneNumber:
@@ -562,15 +561,12 @@ namespace Zongsoft.Security.Membership
 					//生成校验密文
 					secret = secretor.Generate($"{KEY_FORGET_SECRET}:{user.UserId}");
 
-					//构造发送的短信模板的参数
-					parameter = new Dictionary<string, object>
-					{
-						{ "Secret", secret },
-						{ "Data", user },
-					};
-
 					//发送忘记密码的短信通知
-					CommandExecutor.Default.Execute($"sms.send -template:{KEY_FORGET_SECRET} {user.PhoneNumber}", parameter);
+					CommandExecutor.Default.Execute($"phone.send -template:{KEY_AUTHENTICATION_TEMPLATE} {user.PhoneNumber}", new
+					{
+						Code = secret,
+						Data = user,
+					});
 
 					break;
 				default:
@@ -824,13 +820,11 @@ namespace Zongsoft.Security.Membership
 			{
 				var secret = secretProvider.Generate($"{KEY_PHONE_SECRET}:{user.UserId}", phone);
 
-				var parameter = new Dictionary<string, object>
+				CommandExecutor.Default.Execute($"phone.send -template:{KEY_IMPORTANT_CHANGE_TEMPLATE} {phone}", new
 				{
-					{ "Secret", secret },
-					{ "Data", user },
-				};
-
-				CommandExecutor.Default.Execute($"sms.send -template:{KEY_PHONE_SECRET} {phone}", parameter);
+					Code = secret,
+					Data = user,
+				});
 			}
 		}
 
