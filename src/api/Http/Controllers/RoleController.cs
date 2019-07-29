@@ -40,7 +40,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 	public class RoleController : ApiController
 	{
 		#region 成员字段
-		private IAuthorization _authorization;
+		private IAuthorizer _authorizer;
 		private IRoleProvider _roleProvider;
 		private IMemberProvider _memberProvider;
 		private IPermissionProvider _permissionProvider;
@@ -48,15 +48,15 @@ namespace Zongsoft.Security.Web.Http.Controllers
 
 		#region 公共属性
 		[ServiceDependency]
-		public IAuthorization Authorization
+		public IAuthorizer Authorizer
 		{
 			get
 			{
-				return _authorization;
+				return _authorizer;
 			}
 			set
 			{
-				_authorization = value ?? throw new ArgumentNullException();
+				_authorizer = value ?? throw new ArgumentNullException();
 			}
 		}
 
@@ -286,7 +286,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		[HttpGet]
 		public IEnumerable<AuthorizationState> Authorizes(uint id)
 		{
-			return this.Authorization.Authorizes(id, MemberType.Role);
+			return this.Authorizer.Authorizes(id, MemberType.Role);
 		}
 		#endregion
 

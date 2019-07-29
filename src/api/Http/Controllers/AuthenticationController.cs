@@ -36,41 +36,23 @@ namespace Zongsoft.Security.Web.Http.Controllers
 	public class AuthenticationController : System.Web.Http.ApiController
 	{
 		#region 成员字段
-		private IAuthentication _authentication;
+		private IAuthenticator _authenticator;
 		private ICredentialProvider _credentialProvider;
 		#endregion
 
 		#region 公共属性
 		[ServiceDependency]
-		public IAuthentication Authentication
+		public IAuthenticator Authenticator
 		{
-			get
-			{
-				return _authentication;
-			}
-			set
-			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_authentication = value;
-			}
+			get => _authenticator;
+			set => _authenticator = value ?? throw new ArgumentNullException();
 		}
 
 		[ServiceDependency]
 		public ICredentialProvider CredentialProvider
 		{
-			get
-			{
-				return _credentialProvider;
-			}
-			set
-			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_credentialProvider = value;
-			}
+			get => _credentialProvider;
+			set => _credentialProvider = value ?? throw new ArgumentNullException();
 		}
 		#endregion
 
@@ -93,7 +75,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			this.FillParameters(ref parameters);
 
 			//进行身份验证
-			var result = _authentication.Authenticate(request.Identity, request.Password, request.Namespace, scene, parameters);
+			var result = _authenticator.Authenticate(request.Identity, request.Password, request.Namespace, scene, parameters);
 
 			//注册用户凭证
 			var credential = _credentialProvider.Register(result.User, scene, (result.HasParameters ? result.Parameters : null));

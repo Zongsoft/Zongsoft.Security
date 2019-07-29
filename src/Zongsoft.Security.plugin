@@ -33,8 +33,8 @@
 		<object name="IsUnauthorized" type="Zongsoft.Security.Membership.IsUnauthorizedPredication, Zongsoft.Security" />
 
 		<object name="Attempter" type="Zongsoft.Security.Membership.Attempter, Zongsoft.Security" />
-		<object name="Authentication" type="Zongsoft.Security.Membership.Authentication, Zongsoft.Security" />
-		<object name="Authorization" type="Zongsoft.Security.Membership.Authorization, Zongsoft.Security" />
+		<object name="Authenticator" type="Zongsoft.Security.Membership.Authenticator, Zongsoft.Security" />
+		<object name="Authorizer" type="Zongsoft.Security.Membership.Authorizer, Zongsoft.Security" />
 		<object name="Censorship" type="Zongsoft.Security.Censorship, Zongsoft.Security" />
 		<object name="CredentialProvider" type="Zongsoft.Security.CredentialProvider, Zongsoft.Security" />
 		<object name="RoleProvider" type="Zongsoft.Security.Membership.RoleProvider, Zongsoft.Security" />

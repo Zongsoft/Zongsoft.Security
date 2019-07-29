@@ -41,22 +41,22 @@ namespace Zongsoft.Security.Web.Http.Controllers
 	{
 		#region 成员字段
 		private IUserProvider _userProvider;
-		private IAuthorization _authorization;
+		private IAuthorizer _authorizer;
 		private IMemberProvider _memberProvider;
 		private IPermissionProvider _permissionProvider;
 		#endregion
 
 		#region 公共属性
 		[ServiceDependency]
-		public IAuthorization Authorization
+		public IAuthorizer Authorizer
 		{
 			get
 			{
-				return _authorization;
+				return _authorizer;
 			}
 			set
 			{
-				_authorization = value ?? throw new ArgumentNullException();
+				_authorizer = value ?? throw new ArgumentNullException();
 			}
 		}
 
@@ -481,14 +481,14 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			if(string.IsNullOrWhiteSpace(actionId))
 				throw HttpResponseExceptionUtility.BadRequest("Missing action for the authorize operation.");
 
-			if(!this.Authorization.Authorize(userId, schemaId, actionId))
+			if(!this.Authorizer.Authorize(userId, schemaId, actionId))
 				throw new HttpResponseException(System.Net.HttpStatusCode.Forbidden);
 		}
 
 		[HttpGet]
 		public IEnumerable<AuthorizationState> Authorizes(uint id)
 		{
-			return this.Authorization.Authorizes(id, MemberType.User);
+			return this.Authorizer.Authorizes(id, MemberType.User);
 		}
 		#endregion
 

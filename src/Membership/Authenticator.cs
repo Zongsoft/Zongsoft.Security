@@ -33,7 +33,7 @@ using Zongsoft.Services;
 
 namespace Zongsoft.Security.Membership
 {
-	public class Authentication : IAuthentication
+	public class Authenticator : IAuthenticator
 	{
 		#region 成员字段
 		private IDataAccess _dataAccess;
@@ -45,12 +45,17 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 构造函数
-		public Authentication()
+		public Authenticator()
 		{
 		}
 		#endregion
 
 		#region 公共属性
+		public string Name
+		{
+			get => "Normal";
+		}
+
 		[ServiceDependency]
 		public Attempter Attempter
 		{

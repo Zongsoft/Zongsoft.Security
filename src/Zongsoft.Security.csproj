@@ -42,10 +42,10 @@
   <ItemGroup>
     <Compile Include="CredentialProvider.cs" />
     <Compile Include="Censorship.cs" />
-    <Compile Include="Membership\Authentication.cs" />
+    <Compile Include="Membership\Authenticator.cs" />
     <Compile Include="Membership\Attempter.cs" />
     <Compile Include="Membership\AuthenticationPredications.cs" />
-    <Compile Include="Membership\Authorization.cs" />
+    <Compile Include="Membership\Authorizer.cs" />
     <Compile Include="Membership\AuthorizationPredications.cs" />
     <Compile Include="Membership\Options\Configuration\GeneralConfiguration.cs" />
     <Compile Include="Membership\Options\IConfiguration.cs" />

@@ -38,7 +38,7 @@ namespace Zongsoft.Security.Membership
 
 		#region 成员字段
 		private string _name;
-		private IAuthorization _authorization;
+		private IAuthorizer _authorizer;
 		private Zongsoft.Services.IApplicationContext _applicationContext;
 		#endregion
 
@@ -62,23 +62,23 @@ namespace Zongsoft.Security.Membership
 			}
 		}
 
-		public IAuthorization Authorization
+		public IAuthorizer Authorizer
 		{
 			get
 			{
-				if(_authorization == null)
+				if(_authorizer == null)
 				{
 					var serviceProvider = Services.ServiceProviderFactory.Instance.GetProvider("Security") ?? _applicationContext.Services;
 
 					if(serviceProvider != null)
-						_authorization = serviceProvider.Resolve<IAuthorization>();
+						_authorizer = serviceProvider.Resolve<IAuthorizer>();
 				}
 
-				return _authorization;
+				return _authorizer;
 			}
 			set
 			{
-				_authorization = value;
+				_authorizer = value;
 			}
 		}
 		#endregion
@@ -86,7 +86,7 @@ namespace Zongsoft.Security.Membership
 		#region 保护方法
 		protected bool IsAuthorized(string text)
 		{
-			var authorization = this.Authorization;
+			var authorization = this.Authorizer;
 
 			if(authorization == null)
 				throw new MissingMemberException(this.GetType().FullName, "Authorization");

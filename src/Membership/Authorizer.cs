@@ -33,7 +33,7 @@ using Zongsoft.Services;
 
 namespace Zongsoft.Security.Membership
 {
-	public class Authorization : IAuthorization
+	public class Authorizer : IAuthorizer
 	{
 		#region 成员字段
 		private IDataAccess _dataAccess;
@@ -46,7 +46,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 构造函数
-		public Authorization()
+		public Authorizer()
 		{
 		}
 		#endregion
