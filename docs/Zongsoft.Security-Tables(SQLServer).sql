@@ -17,7 +17,7 @@ CREATE TABLE [dbo].[Security_User] (
   [Password] BINARY(64) NULL,
   [PasswordSalt] BIGINT NULL,
   [Email] VARCHAR(50) NULL,
-  [PhoneNumber] VARCHAR(50) NULL,
+  [Phone] VARCHAR(50) NULL,
   [Status] TINYINT NOT NULL DEFAULT 1,
   [StatusTimestamp] DATETIME NULL,
   [PasswordQuestion1] VARCHAR(50) NULL,
@@ -32,7 +32,7 @@ CREATE TABLE [dbo].[Security_User] (
   CONSTRAINT [PK_Security_User] PRIMARY KEY CLUSTERED ([UserId]),
   CONSTRAINT [UX_Security_User_Name] UNIQUE NONCLUSTERED ([Namespace], [Name]),
   CONSTRAINT [UX_Security_User_Email] UNIQUE NONCLUSTERED ([Namespace], [Email]),
-  CONSTRAINT [UX_Security_User_PhoneNumber] UNIQUE NONCLUSTERED ([Namespace], [PhoneNumber])
+  CONSTRAINT [UX_Security_User_Phone] UNIQUE NONCLUSTERED ([Namespace], [Phone])
 )
 GO
 
