@@ -148,8 +148,8 @@ namespace Zongsoft.Security.Membership
 
 			if(IsNumericString(identity))
 			{
-				identityType = UserIdentityType.PhoneNumber;
-				return Condition.Equal(nameof(IUser.PhoneNumber), identity);
+				identityType = UserIdentityType.Phone;
+				return Condition.Equal(nameof(IUser.Phone), identity);
 			}
 
 			identityType = UserIdentityType.Name;

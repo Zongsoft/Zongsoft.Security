@@ -379,15 +379,16 @@ namespace Zongsoft.Security.Membership
 			}
 
 			//如果新用户的“电话号码”不为空并且需要确认校验，则将新用户的“电话号码”设为空
-			if(!string.IsNullOrWhiteSpace(user.PhoneNumber) && this.IsVerifyPhoneRequired())
+			if(!string.IsNullOrWhiteSpace(user.Phone) && this.IsVerifyPhoneRequired())
 			{
-				phone = user.PhoneNumber;
-				user.PhoneNumber = null;
+				phone = user.Phone;
+				user.Phone = null;
 			}
 
 			//更新创建时间
 			user.Creation = DateTime.Now;
 			user.Modification = null;
+			user.Description = this.GetCreatorInfo(user.Description);
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
@@ -444,6 +445,7 @@ namespace Zongsoft.Security.Membership
 				//更新创建时间
 				user.Creation = DateTime.Now;
 				user.Modification = null;
+				user.Description = this.GetCreatorInfo(user.Description);
 			}
 
 			return this.DataAccess.InsertMany(users);
@@ -553,16 +555,16 @@ namespace Zongsoft.Security.Membership
 					});
 
 					break;
-				case UserIdentityType.PhoneNumber:
+				case UserIdentityType.Phone:
 					//如果用户的电话号码为空，即无法通过短信寻回
-					if(string.IsNullOrWhiteSpace(user.PhoneNumber))
+					if(string.IsNullOrWhiteSpace(user.Phone))
 						throw new InvalidOperationException("The user's phone-number is unset.");
 
 					//生成校验密文
 					secret = secretor.Generate($"{KEY_FORGET_SECRET}:{user.UserId}");
 
 					//发送忘记密码的短信通知
-					CommandExecutor.Default.Execute($"phone.send -template:{KEY_AUTHENTICATION_TEMPLATE} {user.PhoneNumber}", new
+					CommandExecutor.Default.Execute($"phone.send -template:{KEY_AUTHENTICATION_TEMPLATE} {user.Phone}", new
 					{
 						Code = secret,
 						Data = user,
@@ -881,6 +883,20 @@ namespace Zongsoft.Security.Membership
 				return userId;
 
 			throw new AuthorizationException($"The current user cannot operate on other user information.");
+		}
+
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+		private string GetCreatorInfo(string description)
+		{
+			var name = this.Principal?.Identity?.Name;
+
+			if(string.IsNullOrEmpty(name))
+				return description;
+
+			if(string.IsNullOrEmpty(description))
+				return "Creator: " + name;
+			else
+				return description + Environment.NewLine + "Creator: " + name;
 		}
 
 		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
