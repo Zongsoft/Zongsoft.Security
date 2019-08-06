@@ -78,7 +78,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			var result = _authenticator.Authenticate(request.Identity, request.Password, request.Namespace, scene, parameters);
 
 			//注册用户凭证
-			var credential = _credentialProvider.Register(result.User, scene, (result.HasParameters ? result.Parameters : null));
+			var credential = _credentialProvider.Register(result.User, result.Scene, result.Parameters);
 
 			//返回严重通过的凭证
 			return credential;
