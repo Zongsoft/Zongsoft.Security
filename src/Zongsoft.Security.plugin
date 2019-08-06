@@ -23,6 +23,18 @@
 		<object name="Security" value="{path:../Providers/Security}" />
 	</extension>
 
+	<extension path="/Workbench/Security">
+		<object name="Authentication" value="{static:Zongsoft.Security.Membership.Authentication.Instance, Zongsoft.CoreLibrary}">
+			<expose name="Filters" value="{path:../@Filters}" />
+			<object name="Default" value="{path:/Workspace/Services/Security/Authenticator}" />
+		</object>
+
+		<object name="Authorization" value="{static:Zongsoft.Security.Membership.Authorization.Instance, Zongsoft.CoreLibrary}">
+			<expose name="Filters" value="{path:../@Filters}" />
+			<object name="Default" value="{path:/Workspace/Services/Security/Authorizer}" />
+		</object>
+	</extension>
+
 	<!-- 挂载“安全”相关的各种服务 -->
 	<extension path="/Workspace/Services/Security">
 		<object name="Configuration" value="{opt:/Security/Membership/General}" />
