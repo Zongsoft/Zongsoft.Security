@@ -41,7 +41,8 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 事件声明
-		public event EventHandler<AuthenticatedEventArgs> Authenticated;
+		public event EventHandler<AuthenticationContext> Authenticated;
+		public event EventHandler<AuthenticationContext> Authenticating;
 		#endregion
 
 		#region 构造函数
@@ -89,17 +90,29 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException(nameof(identity));
 
+			//创建验证上下文对象
+			var context = new AuthenticationContext(this, identity, @namespace, scene, parameters);
+
+			//激发“Authenticating”事件
+			this.OnAuthenticating(context);
+
 			//获取当前用户的密码及密码向量
 			var userId = this.GetPassword(identity, @namespace, out var storedPassword, out var storedPasswordSalt, out var status, out var statusTimestamp);
 
 			//如果帐户不存在，则抛出异常
 			if(userId == 0)
 			{
-				//激发“Authenticated”事件
-				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
+				//设置当前上下文的异常
+				context.Exception = new AuthenticationException(AuthenticationReason.InvalidIdentity);
 
-				//指定的用户名如果不存在则抛出验证异常
-				throw new AuthenticationException(AuthenticationReason.InvalidIdentity);
+				//激发“Authenticated”事件
+				this.OnAuthenticated(context);
+
+				//抛出异常
+				if(context.Exception != null)
+					throw context.Exception;
+
+				return context.ToResult();
 			}
 
 			//获取验证失败的解决器
@@ -107,22 +120,44 @@ namespace Zongsoft.Security.Membership
 
 			//确认验证失败是否超出限制数，如果超出则抛出账号被禁用的异常
 			if(attempter != null && !attempter.Verify(userId))
-				throw new AuthenticationException(AuthenticationReason.AccountSuspended);
+			{
+				//设置当前上下文的异常
+				context.Exception = new AuthenticationException(AuthenticationReason.AccountSuspended);
+
+				//激发“Authenticated”事件
+				this.OnAuthenticated(context);
+
+				//抛出异常
+				if(context.Exception != null)
+					throw context.Exception;
+
+				return context.ToResult();
+			}
 
 			switch(status)
 			{
 				case UserStatus.Unapproved:
-					//激发“Authenticated”事件
-					this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
-
 					//因为账户状态异常而抛出验证异常
-					throw new AuthenticationException(AuthenticationReason.AccountUnapproved);
+					context.Exception = new AuthenticationException(AuthenticationReason.AccountUnapproved);
+
+					//激发“Authenticated”事件
+					this.OnAuthenticated(context);
+
+					if(context.Exception != null)
+						throw context.Exception;
+
+					return context.ToResult();
 				case UserStatus.Disabled:
-					//激发“Authenticated”事件
-					this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
-
 					//因为账户状态异常而抛出验证异常
-					throw new AuthenticationException(AuthenticationReason.AccountDisabled);
+					context.Exception = new AuthenticationException(AuthenticationReason.AccountDisabled);
+
+					//激发“Authenticated”事件
+					this.OnAuthenticated(context);
+
+					if(context.Exception != null)
+						throw context.Exception;
+
+					return context.ToResult();
 			}
 
 			//如果验证失败，则抛出异常
@@ -132,11 +167,16 @@ namespace Zongsoft.Security.Membership
 				if(attempter != null)
 					attempter.Fail(userId);
 
-				//激发“Authenticated”事件
-				this.OnAuthenticated(new AuthenticatedEventArgs(identity, @namespace, scene));
-
 				//密码校验失败则抛出验证异常
-				throw new AuthenticationException(AuthenticationReason.InvalidPassword);
+				context.Exception = new AuthenticationException(AuthenticationReason.InvalidPassword);
+
+				//激发“Authenticated”事件
+				this.OnAuthenticated(context);
+
+				if(context.Exception != null)
+					throw context.Exception;
+
+				return context.ToResult();
 			}
 
 			//通知验证尝试成功，即清空验证失败记录
@@ -144,16 +184,13 @@ namespace Zongsoft.Security.Membership
 				attempter.Done(userId);
 
 			//获取指定用户编号对应的用户对象
-			var user = this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
-
-			//创建“Authenticated”事件参数
-			var eventArgs = new AuthenticatedEventArgs(identity, @namespace, user, scene, parameters);
+			context.User = this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
 
 			//激发“Authenticated”事件
-			this.OnAuthenticated(eventArgs);
+			this.OnAuthenticated(context);
 
 			//返回成功的验证结果
-			return new AuthenticationResult(eventArgs.User ?? user, scene, (eventArgs.HasParameters ? eventArgs.Parameters : null));
+			return context.ToResult();
 		}
 		#endregion
 
@@ -185,12 +222,14 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 激发事件
-		protected virtual void OnAuthenticated(AuthenticatedEventArgs args)
+		protected virtual void OnAuthenticated(AuthenticationContext context)
 		{
-			var handler = this.Authenticated;
+			this.Authenticated?.Invoke(this, context);
+		}
 
-			if(handler != null)
-				handler(this, args);
+		protected virtual void OnAuthenticating(AuthenticationContext context)
+		{
+			this.Authenticating?.Invoke(this, context);
 		}
 		#endregion
 
@@ -202,6 +241,14 @@ namespace Zongsoft.Security.Membership
 			public long PasswordSalt;
 			public UserStatus Status;
 			public DateTime? StatusTimestamp;
+		}
+	}
+
+	internal static class AuthenticationContextExtension
+	{
+		public static AuthenticationResult ToResult(this AuthenticationContext context)
+		{
+			return new AuthenticationResult(context.User, context.Scene, context.HasParameters ? context.Parameters : null);
 		}
 	}
 }

@@ -41,8 +41,8 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 事件定义
-		public event EventHandler<AuthorizationEventArgs> Authorizing;
-		public event EventHandler<AuthorizationEventArgs> Authorized;
+		public event EventHandler<AuthorizationContext> Authorizing;
+		public event EventHandler<AuthorizationContext> Authorized;
 		#endregion
 
 		#region 构造函数
@@ -86,16 +86,16 @@ namespace Zongsoft.Security.Membership
 		public bool Authorize(uint userId, string schemaId, string actionId)
 		{
 			if(string.IsNullOrWhiteSpace(schemaId))
-				throw new ArgumentNullException("schemaId");
+				throw new ArgumentNullException(nameof(schemaId));
 
-			//创建授权事件参数
-			var args = new AuthorizationEventArgs(userId, schemaId, actionId, true);
+			//创建授权上下文对象
+			var context = new AuthorizationContext(userId, schemaId, actionId, true);
 
 			//激发“Authorizing”事件
-			this.OnAuthorizing(args);
+			this.OnAuthorizing(context);
 
 			//如果时间参数指定的验证结果为失败，则直接返回失败
-			if(!args.IsAuthorized)
+			if(!context.IsAuthorized)
 				return false;
 
 			//如果指定的用户属于系统内置的管理员角色则立即返回授权通过
@@ -106,16 +106,16 @@ namespace Zongsoft.Security.Membership
 			var states = this.Authorizes(userId, MemberType.User);
 
 			if(string.IsNullOrWhiteSpace(actionId) || actionId == "*")
-				args.IsAuthorized = states != null && states.Any(state => string.Equals(state.SchemaId, schemaId, StringComparison.OrdinalIgnoreCase));
+				context.IsAuthorized = states != null && states.Any(state => string.Equals(state.SchemaId, schemaId, StringComparison.OrdinalIgnoreCase));
 			else
-				args.IsAuthorized = states != null && states.Any(state => string.Equals(state.SchemaId, schemaId, StringComparison.OrdinalIgnoreCase) &&
-				                                                          string.Equals(state.ActionId, actionId, StringComparison.OrdinalIgnoreCase));
+				context.IsAuthorized = states != null && states.Any(state => string.Equals(state.SchemaId, schemaId, StringComparison.OrdinalIgnoreCase) &&
+				                                                             string.Equals(state.ActionId, actionId, StringComparison.OrdinalIgnoreCase));
 
 			//激发“Authorized”事件
-			this.OnAuthorized(args);
+			this.OnAuthorized(context);
 
 			//返回最终的验证结果
-			return args.IsAuthorized;
+			return context.IsAuthorized;
 		}
 
 		public IEnumerable<AuthorizationState> Authorizes(uint memberId, MemberType memberType)
@@ -190,20 +190,14 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 事件激发
-		protected virtual void OnAuthorizing(AuthorizationEventArgs args)
+		protected virtual void OnAuthorizing(AuthorizationContext context)
 		{
-			var handler = this.Authorizing;
-
-			if(handler != null)
-				handler(this, args);
+			this.Authorizing?.Invoke(this, context);
 		}
 
-		protected virtual void OnAuthorized(AuthorizationEventArgs args)
+		protected virtual void OnAuthorized(AuthorizationContext context)
 		{
-			var handler = this.Authorized;
-
-			if(handler != null)
-				handler(this, args);
+			this.Authorized?.Invoke(this, context);
 		}
 		#endregion
 
