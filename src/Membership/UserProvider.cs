@@ -25,9 +25,9 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Collections.Generic;
 
 using Zongsoft.Data;
 using Zongsoft.Common;
@@ -120,6 +120,11 @@ namespace Zongsoft.Security.Membership
 			}
 		}
 
+		public ISequence Sequence
+		{
+			get => _dataAccess?.Sequence;
+		}
+
 		public CredentialPrincipal Principal
 		{
 			get
@@ -205,7 +210,7 @@ namespace Zongsoft.Security.Membership
 				}, Condition.Equal(nameof(IUser.UserId), userId)) > 0;
 		}
 
-		public bool SetPhoneNumber(uint userId, string phoneNumber)
+		public bool SetPhone(uint userId, string phone)
 		{
 			//确认指定的用户编号是否有效
 			userId = GetUserId(userId);
@@ -220,7 +225,7 @@ namespace Zongsoft.Security.Membership
 					return false;
 
 				//发送电话号码更改的校验通知
-				this.OnChangePhone(user, phoneNumber);
+				this.OnChangePhone(user, phone);
 
 				//返回成功
 				return true;
@@ -229,7 +234,7 @@ namespace Zongsoft.Security.Membership
 			return this.DataAccess.Update<IUser>(
 				new
 				{
-					PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim(),
+					Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim(),
 					Modification = DateTime.Now,
 				}, Condition.Equal(nameof(IUser.UserId), userId)) > 0;
 		}
@@ -354,7 +359,7 @@ namespace Zongsoft.Security.Membership
 		public bool Create(IUser user, string password)
 		{
 			if(user == null)
-				throw new ArgumentNullException("user");
+				throw new ArgumentNullException(nameof(user));
 
 			if(string.IsNullOrWhiteSpace(user.Name))
 				throw new ArgumentException("The user name is empty.");

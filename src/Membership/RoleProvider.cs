@@ -77,6 +77,11 @@ namespace Zongsoft.Security.Membership
 			}
 		}
 
+		public ISequence Sequence
+		{
+			get => _dataAccess?.Sequence;
+		}
+
 		public Credential Credential
 		{
 			get
