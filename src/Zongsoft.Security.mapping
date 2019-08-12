@@ -71,7 +71,7 @@
 				<link name="MemberId" role="RoleId" />
 
 				<constraints>
-					<constraint name="MemberType" value="1" />
+					<constraint name="MemberType" actor="Principal" value="1" />
 				</constraints>
 			</complexProperty>
 
@@ -79,7 +79,7 @@
 				<link name="MemberId" role="UserId" />
 
 				<constraints>
-					<constraint name="MemberType" value="0" />
+					<constraint name="MemberType" actor="Principal" value="0" />
 				</constraints>
 			</complexProperty>
 		</entity>
