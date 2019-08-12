@@ -23,6 +23,7 @@
 		<object name="Security" value="{path:../Providers/Security}" />
 	</extension>
 
+	<!-- 挂在验证和授权集成模块 -->
 	<extension path="/Workbench/Security">
 		<object name="Authentication" value="{static:Zongsoft.Security.Membership.Authentication.Instance, Zongsoft.CoreLibrary}">
 			<expose name="Filters" value="{path:../@Filters}" />
