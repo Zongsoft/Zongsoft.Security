@@ -268,13 +268,13 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		}
 
 		[HttpPatch]
-		[ActionName("PhoneNumber")]
-		public void SetPhoneNumber(uint id, string args)
+		[ActionName("Phone")]
+		public void SetPhone(uint id, string args)
 		{
 			if(string.IsNullOrWhiteSpace(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing phone-number value of the user.");
+				throw HttpResponseExceptionUtility.BadRequest("Missing phone number of the user.");
 
-			if(!this.UserProvider.SetPhoneNumber(id, args))
+			if(!this.UserProvider.SetPhone(id, args))
 				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
 		}
 
