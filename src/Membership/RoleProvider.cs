@@ -224,7 +224,7 @@ namespace Zongsoft.Security.Membership
 
 				//如果未指定角色名，则为其设置一个随机名
 				if(string.IsNullOrWhiteSpace(role.Name))
-					role.Name = "R" + RandomGenerator.GenerateString();
+					role.Name = "R" + Randomizer.GenerateString();
 
 				//如果当前用户的命名空间不为空，则新增角色的命名空间必须与当前用户一致
 				if(!string.IsNullOrEmpty(this.Credential.Namespace))

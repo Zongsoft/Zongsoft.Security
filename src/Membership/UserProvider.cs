@@ -907,7 +907,7 @@ namespace Zongsoft.Security.Membership
 		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 		private long GetPasswordSalt()
 		{
-			return Math.Abs(Zongsoft.Common.RandomGenerator.GenerateInt64());
+			return Math.Abs(Zongsoft.Common.Randomizer.GenerateInt64());
 		}
 
 		private byte[] GetPasswordAnswerSalt(uint userId, int index)

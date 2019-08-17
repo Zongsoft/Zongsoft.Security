@@ -253,7 +253,7 @@ namespace Zongsoft.Security
 			var timing = (ulong)Math.Abs((DateTime.UtcNow - EPOCH).TotalSeconds);
 
 			//注意：必须确保凭证号以数字打头
-			return timing.ToString() + Zongsoft.Common.RandomGenerator.GenerateString(8);
+			return timing.ToString() + Zongsoft.Common.Randomizer.GenerateString(8);
 		}
 
 		protected virtual Credential CreateCredential(Membership.IUserIdentity user, string scene, IDictionary<string, object> parameters)
