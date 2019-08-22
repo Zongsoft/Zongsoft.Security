@@ -362,7 +362,13 @@ namespace Zongsoft.Security.Membership
 				throw new ArgumentNullException(nameof(user));
 
 			if(string.IsNullOrWhiteSpace(user.Name))
-				throw new ArgumentException("The user name is empty.");
+			{
+				if(string.IsNullOrWhiteSpace(user.Phone) && string.IsNullOrWhiteSpace(user.Email))
+					throw new ArgumentException("The user name is empty.");
+
+				//虽然用户名为空但是指定了绑定的“Phone”或“Email”，则将用户名设置为随机值
+				user.Name = "$U" + Randomizer.GenerateString();
+			}
 
 			//验证指定的名称是否合法
 			this.OnValidateName(user.Name);
@@ -439,7 +445,13 @@ namespace Zongsoft.Security.Membership
 					continue;
 
 				if(string.IsNullOrWhiteSpace(user.Name))
-					throw new ArgumentException("The user name is empty.");
+				{
+					if(string.IsNullOrWhiteSpace(user.Phone) && string.IsNullOrWhiteSpace(user.Email))
+						throw new ArgumentException("The user name is empty.");
+
+					//虽然用户名为空但是指定了绑定的“Phone”或“Email”，则将用户名设置为随机值
+					user.Name = "$U" + Randomizer.GenerateString();
+				}
 
 				//验证指定的名称是否合法
 				this.OnValidateName(user.Name);
