@@ -85,7 +85,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 验证方法
-		public AuthenticationResult Authenticate(string identity, string password, string @namespace, string scene, IDictionary<string, object> parameters = null)
+		public IUserIdentity Authenticate(string identity, string password, string @namespace, string scene, ref IDictionary<string, object> parameters)
 		{
 			if(string.IsNullOrWhiteSpace(identity))
 				throw new ArgumentNullException(nameof(identity));
@@ -112,7 +112,7 @@ namespace Zongsoft.Security.Membership
 				if(context.Exception != null)
 					throw context.Exception;
 
-				return context.ToResult();
+				return null;
 			}
 
 			//获取验证失败的解决器
@@ -131,7 +131,7 @@ namespace Zongsoft.Security.Membership
 				if(context.Exception != null)
 					throw context.Exception;
 
-				return context.ToResult();
+				return context.User;
 			}
 
 			switch(status)
@@ -146,7 +146,7 @@ namespace Zongsoft.Security.Membership
 					if(context.Exception != null)
 						throw context.Exception;
 
-					return context.ToResult();
+					return context.User;
 				case UserStatus.Disabled:
 					//因为账户状态异常而抛出验证异常
 					context.Exception = new AuthenticationException(AuthenticationReason.AccountDisabled);
@@ -157,7 +157,7 @@ namespace Zongsoft.Security.Membership
 					if(context.Exception != null)
 						throw context.Exception;
 
-					return context.ToResult();
+					return context.User;
 			}
 
 			//如果验证失败，则抛出异常
@@ -176,7 +176,7 @@ namespace Zongsoft.Security.Membership
 				if(context.Exception != null)
 					throw context.Exception;
 
-				return context.ToResult();
+				return context.User;
 			}
 
 			//通知验证尝试成功，即清空验证失败记录
@@ -189,8 +189,11 @@ namespace Zongsoft.Security.Membership
 			//激发“Authenticated”事件
 			this.OnAuthenticated(context);
 
+			if(context.HasParameters)
+				parameters = context.Parameters;
+
 			//返回成功的验证结果
-			return context.ToResult();
+			return context.User;
 		}
 		#endregion
 
@@ -241,14 +244,6 @@ namespace Zongsoft.Security.Membership
 			public long PasswordSalt;
 			public UserStatus Status;
 			public DateTime? StatusTimestamp;
-		}
-	}
-
-	internal static class AuthenticationContextExtension
-	{
-		public static AuthenticationResult ToResult(this AuthenticationContext context)
-		{
-			return new AuthenticationResult(context.User, context.Scene, context.HasParameters ? context.Parameters : null);
 		}
 	}
 }
