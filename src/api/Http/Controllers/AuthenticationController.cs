@@ -87,6 +87,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		}
 
 		[HttpGet]
+		[Authorization(AuthorizationMode.Identity)]
 		public void Signout(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
