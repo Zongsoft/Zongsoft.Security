@@ -69,10 +69,10 @@ namespace Zongsoft.Security.Membership
 		/// <summary>
 		/// 校验指定用户是否可以继续验证。
 		/// </summary>
-		/// <param name="userId">指定待验证的用户编号。</param>
+		/// <param name="identity">指定待验证的用户标识。</param>
 		/// <param name="scene">表示验证操作的场景。</param>
-		/// <returns></returns>
-		public bool Verify(uint userId, string scene = null)
+		/// <returns>如果校验成功则返回真(True)，否则返回假(False)。</returns>
+		public bool Verify(string identity, string scene = null)
 		{
 			var config = this.Configuration;
 
@@ -84,29 +84,29 @@ namespace Zongsoft.Security.Membership
 			if(cache == null)
 				return true;
 
-			return cache.GetValue<int>(GetCacheKey(userId, scene)) < config.AttemptThreshold;
+			return cache.GetValue<int>(GetCacheKey(identity, scene)) < config.AttemptThreshold;
 		}
 
 		/// <summary>
 		/// 验证成功方法。
 		/// </summary>
-		/// <param name="userId">指定验证成功的用户编号。</param>
+		/// <param name="identity">指定验证成功的用户标识。</param>
 		/// <param name="scene">表示验证操作的场景。</param>
-		public void Done(uint userId, string scene = null)
+		public void Done(string identity, string scene = null)
 		{
 			var cache = this.Cache;
 
 			if(cache != null)
-				cache.Remove(GetCacheKey(userId, scene));
+				cache.Remove(GetCacheKey(identity, scene));
 		}
 
 		/// <summary>
 		/// 验证失败方法。
 		/// </summary>
-		/// <param name="userId">指定验证失败的用户编号。</param>
+		/// <param name="identity">指定验证失败的用户标识。</param>
 		/// <param name="scene">表示验证操作的场景。</param>
 		/// <returns>返回验证失败是否超过阈值，如果返回真(True)则表示失败次数超过阈值。</returns>
-		public bool Fail(uint userId, string scene = null)
+		public bool Fail(string identity, string scene = null)
 		{
 			var sequence = this.Cache as ISequence;
 
@@ -119,7 +119,7 @@ namespace Zongsoft.Security.Membership
 			if(threshold < 1 || window == TimeSpan.Zero)
 				return false;
 
-			var KEY = GetCacheKey(userId, scene);
+			var KEY = GetCacheKey(identity, scene);
 			var attempts = sequence.Increment(KEY);
 
 			//如果失败计数器为新增（即递增结果为零或1），或者失败计数器到达限制数；
@@ -148,12 +148,12 @@ namespace Zongsoft.Security.Membership
 		}
 
 		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-		private static string GetCacheKey(uint userId, string scene = null)
+		private static string GetCacheKey(string identity, string scene = null)
 		{
 			if(string.IsNullOrEmpty(scene))
-				return $"Zongsoft.Security.Attempts:{userId.ToString()}";
+				return $"Zongsoft.Security.Attempts:{identity.ToLowerInvariant().Trim()}";
 			else
-				return $"Zongsoft.Security.Attempts:{userId.ToString()}@{scene}";
+				return $"Zongsoft.Security.Attempts:{identity.ToLowerInvariant().Trim()}@{scene.ToLowerInvariant().Trim()}";
 		}
 		#endregion
 	}

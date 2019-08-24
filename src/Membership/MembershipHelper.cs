@@ -155,6 +155,20 @@ namespace Zongsoft.Security.Membership
 			identityType = UserIdentityType.Name;
 			return Condition.Equal(nameof(IUser.Name), identity);
 		}
+
+		internal static UserIdentityType GetIdentityType(string identity)
+		{
+			if(string.IsNullOrEmpty(identity))
+				throw new ArgumentNullException(nameof(identity));
+
+			if(identity.Contains("@"))
+				return UserIdentityType.Email;
+
+			if(IsNumericString(identity))
+				return UserIdentityType.Phone;
+
+			return UserIdentityType.Name;
+		}
 		#endregion
 
 		#region 私有方法
