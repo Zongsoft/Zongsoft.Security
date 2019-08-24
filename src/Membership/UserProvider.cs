@@ -495,7 +495,7 @@ namespace Zongsoft.Security.Membership
 			var attempter = this.Attempter;
 
 			//确认验证失败是否超出限制数，如果超出则抛出账号被禁用的异常
-			if(attempter != null && !attempter.Verify("#" + userId.ToString()))
+			if(attempter != null && !attempter.Verify("#" + userId.ToString(), null))
 				throw new AuthenticationException(AuthenticationReason.AccountSuspended);
 
 			//获取用户密码及密码盐
@@ -508,7 +508,7 @@ namespace Zongsoft.Security.Membership
 			{
 				//通知验证尝试失败
 				if(attempter != null)
-					attempter.Fail("#" + userId.ToString());
+					attempter.Fail("#" + userId.ToString(), null);
 
 				//抛出验证失败异常
 				throw new AuthenticationException(AuthenticationReason.InvalidPassword);
@@ -516,7 +516,7 @@ namespace Zongsoft.Security.Membership
 
 			//通知验证尝试成功，即清空验证失败记录
 			if(attempter != null)
-				attempter.Done("#" + userId.ToString());
+				attempter.Done("#" + userId.ToString(), null);
 
 			//重新生成密码随机数
 			var passwordSalt = this.GetPasswordSalt();

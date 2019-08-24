@@ -103,7 +103,7 @@ namespace Zongsoft.Security.Membership
 			var attempter = this.Attempter;
 
 			//确认验证失败是否超出限制数，如果超出则抛出账号被禁用的异常
-			if(attempter != null && !attempter.Verify(identity))
+			if(attempter != null && !attempter.Verify(identity, @namespace))
 			{
 				//设置当前上下文的异常
 				context.Exception = new AuthenticationException(AuthenticationReason.AccountSuspended);
@@ -168,7 +168,7 @@ namespace Zongsoft.Security.Membership
 			{
 				//通知验证尝试失败
 				if(attempter != null)
-					attempter.Fail(identity);
+					attempter.Fail(identity, @namespace);
 
 				//密码校验失败则抛出验证异常
 				context.Exception = new AuthenticationException(AuthenticationReason.InvalidPassword);
@@ -184,7 +184,7 @@ namespace Zongsoft.Security.Membership
 
 			//通知验证尝试成功，即清空验证失败记录
 			if(attempter != null)
-				attempter.Done(identity);
+				attempter.Done(identity, @namespace);
 
 			//获取指定用户编号对应的用户对象
 			context.User = this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
@@ -214,7 +214,7 @@ namespace Zongsoft.Security.Membership
 			var attempter = this.Attempter;
 
 			//确认验证失败是否超出限制数，如果超出则抛出账号被禁用的异常
-			if(attempter != null && !attempter.Verify(identity))
+			if(attempter != null && !attempter.Verify(identity, @namespace))
 			{
 				//设置当前上下文的异常
 				context.Exception = new AuthenticationException(AuthenticationReason.AccountSuspended);
@@ -279,7 +279,7 @@ namespace Zongsoft.Security.Membership
 			{
 				//通知验证尝试失败
 				if(attempter != null)
-					attempter.Fail(identity);
+					attempter.Fail(identity, @namespace);
 
 				//密码校验失败则抛出验证异常
 				context.Exception = new AuthenticationException(AuthenticationReason.InvalidPassword);
@@ -295,7 +295,7 @@ namespace Zongsoft.Security.Membership
 
 			//通知验证尝试成功，即清空验证失败记录
 			if(attempter != null)
-				attempter.Done(identity);
+				attempter.Done(identity, @namespace);
 
 			//更新上下文的用户对象
 			context.User = user;

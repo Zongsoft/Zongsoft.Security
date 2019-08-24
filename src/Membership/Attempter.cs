@@ -72,7 +72,7 @@ namespace Zongsoft.Security.Membership
 		/// <param name="identity">指定待验证的用户标识。</param>
 		/// <param name="scene">表示验证操作的场景。</param>
 		/// <returns>如果校验成功则返回真(True)，否则返回假(False)。</returns>
-		public bool Verify(string identity, string scene = null)
+		public bool Verify(string identity, string @namespace)
 		{
 			var config = this.Configuration;
 
@@ -84,7 +84,7 @@ namespace Zongsoft.Security.Membership
 			if(cache == null)
 				return true;
 
-			return cache.GetValue<int>(GetCacheKey(identity, scene)) < config.AttemptThreshold;
+			return cache.GetValue<int>(GetCacheKey(identity, @namespace)) < config.AttemptThreshold;
 		}
 
 		/// <summary>
@@ -92,12 +92,12 @@ namespace Zongsoft.Security.Membership
 		/// </summary>
 		/// <param name="identity">指定验证成功的用户标识。</param>
 		/// <param name="scene">表示验证操作的场景。</param>
-		public void Done(string identity, string scene = null)
+		public void Done(string identity, string @namespace)
 		{
 			var cache = this.Cache;
 
 			if(cache != null)
-				cache.Remove(GetCacheKey(identity, scene));
+				cache.Remove(GetCacheKey(identity, @namespace));
 		}
 
 		/// <summary>
@@ -106,7 +106,7 @@ namespace Zongsoft.Security.Membership
 		/// <param name="identity">指定验证失败的用户标识。</param>
 		/// <param name="scene">表示验证操作的场景。</param>
 		/// <returns>返回验证失败是否超过阈值，如果返回真(True)则表示失败次数超过阈值。</returns>
-		public bool Fail(string identity, string scene = null)
+		public bool Fail(string identity, string @namespace)
 		{
 			var sequence = this.Cache as ISequence;
 
@@ -119,7 +119,7 @@ namespace Zongsoft.Security.Membership
 			if(threshold < 1 || window == TimeSpan.Zero)
 				return false;
 
-			var KEY = GetCacheKey(identity, scene);
+			var KEY = GetCacheKey(identity, @namespace);
 			var attempts = sequence.Increment(KEY);
 
 			//如果失败计数器为新增（即递增结果为零或1），或者失败计数器到达限制数；
@@ -148,12 +148,13 @@ namespace Zongsoft.Security.Membership
 		}
 
 		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-		private static string GetCacheKey(string identity, string scene = null)
+		private static string GetCacheKey(string identity, string @namespace)
 		{
-			if(string.IsNullOrEmpty(scene))
-				return $"Zongsoft.Security.Attempts:{identity.ToLowerInvariant().Trim()}";
-			else
-				return $"Zongsoft.Security.Attempts:{identity.ToLowerInvariant().Trim()}@{scene.ToLowerInvariant().Trim()}";
+			const string KEY_PREFIX = "Zongsoft.Security.Attempts";
+
+			return string.IsNullOrEmpty(@namespace) ?
+				$"{KEY_PREFIX}:{identity.ToLowerInvariant().Trim()}" :
+				$"{KEY_PREFIX}:{identity.ToLowerInvariant().Trim()}!{@namespace.ToLowerInvariant().Trim()}";
 		}
 		#endregion
 	}
