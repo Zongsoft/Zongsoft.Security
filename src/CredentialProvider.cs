@@ -191,27 +191,6 @@ namespace Zongsoft.Security
 			return this.EnsureCredentialsTimeout(credentialId, DateTime.Now) != null;
 		}
 
-		public string GetNamespace(string credentialId)
-		{
-			if(string.IsNullOrWhiteSpace(credentialId))
-				throw new ArgumentNullException("credentialId");
-
-			//首先从本地内存缓存中获取指定编号的凭证对象
-			var credential = _memoryCache.GetValue(credentialId) as Credential;
-
-			//如果本地缓存获取成功则直接从其获取Namespace属性值返回
-			if(credential != null)
-				return credential.Namespace;
-
-			//在物理存储层中查找指定编号的凭证对象的缓存字典
-			var dictionary = this.Cache.GetValue(this.GetCacheKeyOfCredential(credentialId)) as IDictionary;
-
-			if(dictionary == null || dictionary.Count < 1)
-				return null;
-
-			return dictionary["Namespace"] as string;
-		}
-
 		public Credential GetCredential(string credentialId)
 		{
 			if(string.IsNullOrWhiteSpace(credentialId))
@@ -250,7 +229,7 @@ namespace Zongsoft.Security
 		protected virtual string GenerateCredentialId()
 		{
 			//计算以自定义纪元的总秒数的时序值
-			var timing = (ulong)Math.Abs((DateTime.UtcNow - EPOCH).TotalSeconds);
+			var timing = (ulong)(DateTime.UtcNow - EPOCH).TotalSeconds;
 
 			//注意：必须确保凭证号以数字打头
 			return timing.ToString() + Zongsoft.Common.Randomizer.GenerateString(8);
@@ -274,7 +253,6 @@ namespace Zongsoft.Security
 
 				//将本地内存缓存中的凭证对象删除
 				_memoryCache.Remove(originalCredentialId);
-
 			}
 
 			//设置当前用户及场景所对应的唯一凭证号为新注册的凭证号
@@ -378,16 +356,18 @@ namespace Zongsoft.Security
 
 		private string GetCacheKeyOfUser(uint userId, string scene)
 		{
-			if(string.IsNullOrWhiteSpace(scene))
-				return "Zongsoft.Security:" + userId.ToString();
-			else
-				return string.Format("Zongsoft.Security:{0}:{1}", scene.Trim().ToLowerInvariant(), userId.ToString());
+			return "Zongsoft.Security:" +
+				(
+					string.IsNullOrWhiteSpace(scene) ?
+					userId.ToString() :
+					userId.ToString() + "!" + scene.Trim().ToLowerInvariant()
+				);
 		}
 
 		private string GetCacheKeyOfCredential(string credentialId)
 		{
 			if(string.IsNullOrWhiteSpace(credentialId))
-				throw new ArgumentNullException("credentialId");
+				throw new ArgumentNullException(nameof(credentialId));
 
 			return "Zongsoft.Security.Credential:" + credentialId.Trim().ToUpperInvariant();
 		}
