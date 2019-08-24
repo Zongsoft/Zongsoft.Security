@@ -35,9 +35,13 @@ namespace Zongsoft.Security.Membership
 {
 	public class Authenticator : IAuthenticator
 	{
+		#region 常量定义
+		private const string KEY_AUTHENTICATION_SECRET = "Zongsoft.Security.Authentication";
+		private const string KEY_AUTHENTICATION_TEMPLATE = "Authentication";
+		#endregion
+
 		#region 成员字段
 		private IDataAccess _dataAccess;
-		private Attempter _attempter;
 		#endregion
 
 		#region 事件声明
@@ -60,14 +64,13 @@ namespace Zongsoft.Security.Membership
 		[ServiceDependency]
 		public Attempter Attempter
 		{
-			get
-			{
-				return _attempter;
-			}
-			set
-			{
-				_attempter = value;
-			}
+			get; set;
+		}
+
+		[ServiceDependency]
+		public ISecretProvider Secretor
+		{
+			get; set;
 		}
 
 		[ServiceDependency]
@@ -96,6 +99,25 @@ namespace Zongsoft.Security.Membership
 			//激发“Authenticating”事件
 			this.OnAuthenticating(context);
 
+			//获取验证失败的解决器
+			var attempter = this.Attempter;
+
+			//确认验证失败是否超出限制数，如果超出则抛出账号被禁用的异常
+			if(attempter != null && !attempter.Verify(identity))
+			{
+				//设置当前上下文的异常
+				context.Exception = new AuthenticationException(AuthenticationReason.AccountSuspended);
+
+				//激发“Authenticated”事件
+				this.OnAuthenticated(context);
+
+				//抛出异常
+				if(context.Exception != null)
+					throw context.Exception;
+
+				return context.User;
+			}
+
 			//获取当前用户的密码及密码向量
 			var userId = this.GetPassword(identity, @namespace, out var storedPassword, out var storedPasswordSalt, out var status, out var statusTimestamp);
 
@@ -113,25 +135,6 @@ namespace Zongsoft.Security.Membership
 					throw context.Exception;
 
 				return null;
-			}
-
-			//获取验证失败的解决器
-			var attempter = this.Attempter;
-
-			//确认验证失败是否超出限制数，如果超出则抛出账号被禁用的异常
-			if(attempter != null && !attempter.Verify(userId))
-			{
-				//设置当前上下文的异常
-				context.Exception = new AuthenticationException(AuthenticationReason.AccountSuspended);
-
-				//激发“Authenticated”事件
-				this.OnAuthenticated(context);
-
-				//抛出异常
-				if(context.Exception != null)
-					throw context.Exception;
-
-				return context.User;
 			}
 
 			switch(status)
@@ -165,7 +168,7 @@ namespace Zongsoft.Security.Membership
 			{
 				//通知验证尝试失败
 				if(attempter != null)
-					attempter.Fail(userId);
+					attempter.Fail(identity);
 
 				//密码校验失败则抛出验证异常
 				context.Exception = new AuthenticationException(AuthenticationReason.InvalidPassword);
@@ -181,7 +184,7 @@ namespace Zongsoft.Security.Membership
 
 			//通知验证尝试成功，即清空验证失败记录
 			if(attempter != null)
-				attempter.Done(userId);
+				attempter.Done(identity);
 
 			//获取指定用户编号对应的用户对象
 			context.User = this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
@@ -194,6 +197,143 @@ namespace Zongsoft.Security.Membership
 
 			//返回成功的验证结果
 			return context.User;
+		}
+
+		public IUserIdentity AuthenticateSecret(string identity, string secret, string @namespace, string scene, ref IDictionary<string, object> parameters)
+		{
+			if(string.IsNullOrWhiteSpace(identity))
+				throw new ArgumentNullException(nameof(identity));
+
+			//创建验证上下文对象
+			var context = new AuthenticationContext(this, identity, @namespace, scene, parameters);
+
+			//激发“Authenticating”事件
+			this.OnAuthenticating(context);
+
+			//获取验证失败的解决器
+			var attempter = this.Attempter;
+
+			//确认验证失败是否超出限制数，如果超出则抛出账号被禁用的异常
+			if(attempter != null && !attempter.Verify(identity))
+			{
+				//设置当前上下文的异常
+				context.Exception = new AuthenticationException(AuthenticationReason.AccountSuspended);
+
+				//激发“Authenticated”事件
+				this.OnAuthenticated(context);
+
+				//抛出异常
+				if(context.Exception != null)
+					throw context.Exception;
+
+				return context.User;
+			}
+
+			//获取指定标识的用户对象
+			var user = this.DataAccess.Select<IUser>(MembershipHelper.GetUserIdentity(identity, out var identityType) & this.GetNamespace(@namespace)).FirstOrDefault();
+
+			//如果帐户不存在，则抛出异常
+			if(user == null)
+			{
+				//设置当前上下文的异常
+				context.Exception = new AuthenticationException(AuthenticationReason.InvalidIdentity);
+
+				//激发“Authenticated”事件
+				this.OnAuthenticated(context);
+
+				//抛出异常
+				if(context.Exception != null)
+					throw context.Exception;
+
+				return null;
+			}
+
+			switch(user.Status)
+			{
+				case UserStatus.Unapproved:
+					//因为账户状态异常而抛出验证异常
+					context.Exception = new AuthenticationException(AuthenticationReason.AccountUnapproved);
+
+					//激发“Authenticated”事件
+					this.OnAuthenticated(context);
+
+					if(context.Exception != null)
+						throw context.Exception;
+
+					return context.User;
+				case UserStatus.Disabled:
+					//因为账户状态异常而抛出验证异常
+					context.Exception = new AuthenticationException(AuthenticationReason.AccountDisabled);
+
+					//激发“Authenticated”事件
+					this.OnAuthenticated(context);
+
+					if(context.Exception != null)
+						throw context.Exception;
+
+					return context.User;
+			}
+
+			//如果验证失败，则抛出异常
+			if(!this.Secretor.Verify(GetSecretKey(identity, @namespace), secret))
+			{
+				//通知验证尝试失败
+				if(attempter != null)
+					attempter.Fail(identity);
+
+				//密码校验失败则抛出验证异常
+				context.Exception = new AuthenticationException(AuthenticationReason.InvalidPassword);
+
+				//激发“Authenticated”事件
+				this.OnAuthenticated(context);
+
+				if(context.Exception != null)
+					throw context.Exception;
+
+				return context.User;
+			}
+
+			//通知验证尝试成功，即清空验证失败记录
+			if(attempter != null)
+				attempter.Done(identity);
+
+			//更新上下文的用户对象
+			context.User = user;
+
+			//激发“Authenticated”事件
+			this.OnAuthenticated(context);
+
+			if(context.HasParameters)
+				parameters = context.Parameters;
+
+			//返回成功的验证结果
+			return context.User;
+		}
+		#endregion
+
+		#region 获取秘密
+		public void Secret(string identity, string @namespace = null)
+		{
+			var secretor = this.Secretor ?? throw new InvalidOperationException($"Missing a required secret provider.");
+			var secret = secretor.Generate(GetSecretKey(identity, @namespace));
+
+			switch(MembershipHelper.GetIdentityType(identity))
+			{
+				case UserIdentityType.Email:
+					CommandExecutor.Default.Execute($"email.send -template:{KEY_AUTHENTICATION_TEMPLATE} {identity}", new
+					{
+						Code = secret,
+					});
+					break;
+				case UserIdentityType.Phone:
+					CommandExecutor.Default.Execute($"phone.send -template:{KEY_AUTHENTICATION_TEMPLATE} {identity}", new
+					{
+						Code = secret,
+					});
+					break;
+				default:
+					throw new ArgumentException($"Invalid secret code identity.");
+			}
 		}
 		#endregion
 
@@ -233,6 +373,30 @@ namespace Zongsoft.Security.Membership
 		protected virtual void OnAuthenticating(AuthenticationContext context)
 		{
 			this.Authenticating?.Invoke(this, context);
+		}
+		#endregion
+
+		#region 私有方法
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+		private string GetSecretKey(string identity, string @namespace)
+		{
+			return KEY_AUTHENTICATION_SECRET + ":" +
+				(
+					string.IsNullOrWhiteSpace(@namespace) ?
+					identity.Trim() :
+					identity.Trim() + "!" + @namespace.Trim()
+				).ToLowerInvariant();
+		}
+
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+		private Condition GetNamespace(string @namespace)
+		{
+			if(string.IsNullOrEmpty(@namespace))
+				return Condition.Equal(nameof(IUser.Namespace), null);
+			else if(@namespace != "*")
+				return Condition.Equal(nameof(IUser.Namespace), @namespace);
+
+			return null;
 		}
 		#endregion
 

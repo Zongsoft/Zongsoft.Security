@@ -75,7 +75,9 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			this.FillParameters(ref parameters);
 
 			//进行身份验证
-			var user = _authenticator.Authenticate(request.Identity, request.Password, request.Namespace, scene, ref parameters);
+			var user = string.IsNullOrEmpty(request.Secret) ?
+				_authenticator.Authenticate(request.Identity, request.Password, request.Namespace, scene, ref parameters) :
+				_authenticator.AuthenticateSecret(request.Identity, request.Secret, request.Namespace, scene, ref parameters);
 
 			//注册用户凭证
 			var credential = _credentialProvider.Register(user, scene, parameters);
@@ -91,6 +93,21 @@ namespace Zongsoft.Security.Web.Http.Controllers
 				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
 
 			_credentialProvider.Unregister(id);
+		}
+
+		[HttpGet]
+		[ActionName("Secret")]
+		public void Secret(string id)
+		{
+			if(string.IsNullOrWhiteSpace(id))
+				throw Zongsoft.Web.Http.HttpResponseExceptionUtility.BadRequest("Missing required argument.");
+
+			var parts = id.Split(':');
+
+			if(parts.Length > 1)
+				_authenticator.Secret(parts[1], parts[0]);
+			else
+				_authenticator.Secret(parts[0], null);
 		}
 		#endregion
 
@@ -118,8 +135,6 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		{
 			#region 成员字段
 			private string _identity;
-			private string _password;
-			private string _namespace;
 			#endregion
 
 			#region 公共属性
@@ -140,26 +155,17 @@ namespace Zongsoft.Security.Web.Http.Controllers
 
 			public string Password
 			{
-				get
-				{
-					return _password;
-				}
-				set
-				{
-					_password = value;
-				}
+				get; set;
+			}
+
+			public string Secret
+			{
+				get; set;
 			}
 
 			public string Namespace
 			{
-				get
-				{
-					return _namespace;
-				}
-				set
-				{
-					_namespace = value;
-				}
+				get; set;
 			}
 
 			public IDictionary<string, object> Parameters
