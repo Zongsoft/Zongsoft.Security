@@ -878,7 +878,7 @@ namespace Zongsoft.Security.Membership
 		private Condition GetNamespace(string @namespace)
 		{
 			if(string.IsNullOrEmpty(@namespace))
-				return Condition.Equal(nameof(IUser.Namespace), this.Credential.Namespace);
+				return Condition.Equal(nameof(IUser.Namespace), this.Credential.User.Namespace);
 			else if(@namespace != "*")
 				return Condition.Equal(nameof(IUser.Namespace), @namespace);
 

@@ -25,6 +25,7 @@
  */
 
 using System;
+using System.Net.Http;
 using System.Web.Http;
 
 using Zongsoft.Services;
@@ -58,52 +59,27 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		#endregion
 
 		#region 公共方法
-		public Credential Get(string id)
+		public object Get(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
 				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
 
-			var parts = id.Split('@', ':', '-');
+			var index = id.IndexOf('!');
 			Credential credential = null;
 
-			switch(parts.Length)
-			{
-				case 1:
-					credential = this.CredentialProvider.GetCredential(parts[0]);
-					break;
-				case 2:
-					uint userId;
-					string scene;
-
-					if(uint.TryParse(parts[0], out userId))
-						scene = parts[1];
-					else if(uint.TryParse(parts[1], out userId))
-						scene = parts[0];
-					else
-						throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
-
-					credential = this.CredentialProvider.GetCredential(userId, scene);
-					break;
-				default:
-					throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
-			}
-
-			//如果成功获取到凭证
-			if(credential != null)
-			{
-				//验证凭证是否有效，如果无效则返回空
-				if(!this.CredentialProvider.Validate(credential.CredentialId))
-					credential = null;
-			}
+			if(index > 0 && index < id.Length - 1)
+				credential = this.CredentialProvider.GetCredential(id.Substring(0, index), id.Substring(index + 1));
+			else
+				credential = this.CredentialProvider.GetCredential(id);
 
 			if(credential == null)
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+				return new HttpResponseMessage(System.Net.HttpStatusCode.NoContent);
 
 			return credential;
 		}
 
 		[HttpGet]
-		public Credential Renew(string id)
+		public object Renew(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
 				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
@@ -111,7 +87,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			var credential = this.CredentialProvider.Renew(id);
 
 			if(credential == null)
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+				return new HttpResponseMessage(System.Net.HttpStatusCode.NoContent);
 
 			return credential;
 		}

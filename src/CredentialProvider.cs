@@ -25,8 +25,6 @@
  */
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace Zongsoft.Security
 {
@@ -39,12 +37,7 @@ namespace Zongsoft.Security
 		public event EventHandler<CredentialUnregisterEventArgs> Unregistering;
 		#endregion
 
-		#region 私有常量
-		private static readonly DateTime EPOCH = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-		#endregion
-
 		#region 成员字段
-		private TimeSpan _renewalPeriod;
 		private Runtime.Caching.ICache _cache;
 		private Runtime.Caching.MemoryCache _memoryCache;
 		#endregion
@@ -52,7 +45,6 @@ namespace Zongsoft.Security
 		#region 构造函数
 		public CredentialProvider()
 		{
-			_renewalPeriod = TimeSpan.FromHours(2);
 			_memoryCache = new Runtime.Caching.MemoryCache("Zongsoft.Security.CredentialProvider.MemoryCache");
 
 			//挂载内存缓存容器的事件
@@ -62,188 +54,26 @@ namespace Zongsoft.Security
 
 		#region 公共属性
 		/// <summary>
-		/// 获取或设置凭证的默认续约周期，不能小于60秒。
-		/// </summary>
-		public TimeSpan RenewalPeriod
-		{
-			get
-			{
-				return _renewalPeriod;
-			}
-			set
-			{
-				_renewalPeriod = value.TotalMinutes < 1 ? TimeSpan.FromMinutes(1) : value;
-			}
-		}
-
-		/// <summary>
 		/// 获取或设置凭证的缓存器。
 		/// </summary>
 		public Runtime.Caching.ICache Cache
 		{
-			get
-			{
-				return _cache;
-			}
-			set
-			{
-				_cache = value ?? throw new ArgumentNullException();
-			}
+			get => _cache;
+			set => _cache = value ?? throw new ArgumentNullException();
 		}
 		#endregion
 
 		#region 公共方法
-		public Credential Register(Membership.IUserIdentity user, string scene, IDictionary<string, object> parameters = null)
+		public void Register(Credential credential)
 		{
-			//创建一个新的凭证对象
-			var credential = this.CreateCredential(user, scene, parameters);
-
 			if(credential == null)
-				throw new InvalidOperationException();
+				throw new ArgumentNullException(nameof(credential));
 
 			//激发注册开始事件
-			this.OnRegistering(user, scene, parameters);
+			this.OnRegistering(credential);
 
-			//注册新建的凭证
-			this.Register(credential);
-
-			//激发注册完成事件
-			this.OnRegistered(credential);
-
-			//返回注册成功的凭证
-			return credential;
-		}
-
-		public virtual void Unregister(string credentialId)
-		{
-			if(string.IsNullOrWhiteSpace(credentialId))
-				return;
-
-			//激发准备注销事件
-			this.OnUnregistering(credentialId);
-
-			//获取指定编号的凭证对象
-			var credential = this.GetCredential(credentialId);
-
-			//从本地内存缓存中把指定编号的凭证对象删除
-			_memoryCache.Remove(credentialId);
-
-			if(credential != null)
-			{
-				//将凭证资料从缓存容器中删除
-				this.Cache.Remove(this.GetCacheKeyOfCredential(credentialId));
-				//将当前用户及场景对应的凭证号记录删除
-				this.Cache.Remove(this.GetCacheKeyOfUser(credential.User.UserId, credential.Scene));
-			}
-
-			//激发注销完成事件
-			this.OnUnregistered(credential);
-		}
-
-		public Credential Renew(string credentialId)
-		{
-			if(string.IsNullOrWhiteSpace(credentialId))
-				throw new ArgumentNullException("credentialId");
-
-			//查找指定编号的凭证对象
-			var credential = this.GetCredential(credentialId);
-
-			//指定编号的凭证不存在，则中止续约
-			if(credential == null)
-				return null;
-
-			//创建一个新的凭证对象
-			credential = this.CreateCredential(credential.User, credential.Scene, (credential.HasParameters ? credential.Parameters : null));
-
-			//将新的凭证对象以JSON文本的方式保存到物理存储层中
-			this.Cache.SetValue(this.GetCacheKeyOfCredential(credential.CredentialId), this.SerializeCertificationToJson(credential), credential.Duration);
-
-			//将当前用户及场景对应的凭证号更改为新创建的凭证号
-			this.Cache.SetValue(this.GetCacheKeyOfUser(credential.User.UserId, credential.Scene), credential.CredentialId, credential.Duration);
-
-			//将原来的凭证从物理存储层中删除
-			this.Cache.Remove(credentialId);
-
-			//将原来的凭证从本地内存缓存中删除
-			_memoryCache.Remove(credentialId);
-
-			//将新建的凭证保存到本地内存缓存中
-			_memoryCache.SetValue(credential.CredentialId, credential, DateTime.Now.AddSeconds(credential.Duration.TotalSeconds / 2));
-
-			//返回续约后的新凭证对象
-			return credential;
-		}
-
-		public bool Validate(string credentialId)
-		{
-			if(string.IsNullOrEmpty(credentialId))
-				throw new ArgumentNullException(nameof(credentialId));
-
-			//首先从本地内存缓存中获取指定编号的凭证对象
-			var credential = _memoryCache.GetValue(credentialId) as Credential;
-
-			if(credential != null)
-			{
-				credential.Timestamp = DateTime.Now;
-				return true;
-			}
-
-			return this.EnsureCredentialsTimeout(credentialId, DateTime.Now) != null;
-		}
-
-		public Credential GetCredential(string credentialId)
-		{
-			if(string.IsNullOrWhiteSpace(credentialId))
-				return null;
-
-			//首先从本地内存缓存中获取指定编号的凭证对象
-			var credential = _memoryCache.GetValue(credentialId) as Credential;
-
-			//如果本地缓存获取成功则直接返回
-			if(credential != null)
-				return credential;
-
-			//顺延存储层的凭证并返回其凭证对象
-			return this.EnsureCredentialsTimeout(credentialId, DateTime.Now);
-		}
-
-		public Credential GetCredential(uint userId, string scene)
-		{
-			var credentialId = this.Cache.GetValue(this.GetCacheKeyOfUser(userId, scene)) as string;
-
-			if(string.IsNullOrWhiteSpace(credentialId))
-				return null;
-
-			return this.GetCredential(credentialId);
-		}
-		#endregion
-
-		#region 虚拟方法
-		/// <summary>
-		/// 生成一个随机的凭证号。
-		/// </summary>
-		/// <returns>返回生成的凭证号。</returns>
-		/// <remarks>
-		///		<para>对实现者的建议：凭证号要求以数字打头。</para>
-		/// </remarks>
-		protected virtual string GenerateCredentialId()
-		{
-			//计算以自定义纪元的总秒数的时序值
-			var timing = (ulong)(DateTime.UtcNow - EPOCH).TotalSeconds;
-
-			//注意：必须确保凭证号以数字打头
-			return timing.ToString() + Zongsoft.Common.Randomizer.GenerateString(8);
-		}
-
-		protected virtual Credential CreateCredential(Membership.IUserIdentity user, string scene, IDictionary<string, object> parameters)
-		{
-			return new Credential(this.GenerateCredentialId(), user, scene, _renewalPeriod, DateTime.Now, parameters);
-		}
-
-		protected virtual void Register(Credential credential)
-		{
 			//获取要注册的用户及应用场景已经注册的凭证号
-			var originalCredentialId = this.Cache.GetValue(this.GetCacheKeyOfUser(credential.User.UserId, credential.Scene)) as string;
+			var originalCredentialId = this.Cache.GetValue(this.GetCacheKeyOfUser(credential.User.UserId.ToString(), credential.Scene)) as string;
 
 			//确保同个用户在相同场景下只能存在一个凭证：如果获取的凭证号不为空并且有值，则
 			if(originalCredentialId != null && originalCredentialId.Length > 0)
@@ -256,13 +86,132 @@ namespace Zongsoft.Security
 			}
 
 			//设置当前用户及场景所对应的唯一凭证号为新注册的凭证号
-			this.Cache.SetValue(this.GetCacheKeyOfUser(credential.User.UserId, credential.Scene), credential.CredentialId, credential.Duration);
+			this.Cache.SetValue(this.GetCacheKeyOfUser(credential.User.UserId.ToString(), credential.Scene), credential.CredentialId, credential.Duration);
 
 			//将当前凭证信息以JSON文本的方式保存到物理存储层中
 			this.Cache.SetValue(this.GetCacheKeyOfCredential(credential.CredentialId), this.SerializeCertificationToJson(credential), credential.Duration);
 
-			//将缓存对象保存到本地内存缓存中
-			_memoryCache.SetValue(credential.CredentialId, credential, DateTime.Now.AddSeconds(credential.Duration.TotalSeconds / 2));
+			//将凭证对象保存到本地内存缓存中
+			_memoryCache.SetValue(credential.CredentialId, new CredentialToken(credential), DateTime.Now.AddSeconds(credential.Duration.TotalSeconds / 2));
+
+			//激发注册完成事件
+			this.OnRegistered(credential);
+		}
+
+		public void Unregister(string credentialId)
+		{
+			if(string.IsNullOrEmpty(credentialId))
+				return;
+
+			//激发准备注销事件
+			this.OnUnregistering(credentialId);
+
+			//获取指定编号的凭证对象
+			var credential = this.GetCredential(credentialId);
+
+			if(credential != null)
+			{
+				//从本地内存缓存中把指定编号的凭证对象删除
+				_memoryCache.Remove(credentialId);
+
+				//将凭证资料从缓存容器中删除
+				this.Cache.Remove(this.GetCacheKeyOfCredential(credentialId));
+				//将当前用户及场景对应的凭证号记录删除
+				this.Cache.Remove(this.GetCacheKeyOfUser(credential.User.UserId.ToString(), credential.Scene));
+			}
+
+			//激发注销完成事件
+			this.OnUnregistered(credential);
+		}
+
+		public Credential Renew(string credentialId)
+		{
+			if(string.IsNullOrEmpty(credentialId))
+				throw new ArgumentNullException(nameof(credentialId));
+
+			//查找指定编号的凭证对象
+			var credential = this.GetCredential(credentialId);
+
+			//指定编号的凭证不存在，则中止续约
+			if(credential == null)
+				return null;
+
+			//创建一个新的凭证对象
+			credential = credential.Renew();
+
+			//将新的凭证对象以JSON文本的方式保存到物理存储层中
+			this.Cache.SetValue(this.GetCacheKeyOfCredential(credential.CredentialId), this.SerializeCertificationToJson(credential), credential.Duration);
+
+			//将当前用户及场景对应的凭证号更改为新创建的凭证号
+			this.Cache.SetValue(this.GetCacheKeyOfUser(credential.User.UserId.ToString(), credential.Scene), credential.CredentialId, credential.Duration);
+
+			//将新建的凭证保存到本地内存缓存中
+			_memoryCache.SetValue(credential.CredentialId, new CredentialToken(credential), DateTime.Now.AddSeconds(credential.Duration.TotalSeconds / 2));
+
+			//将原来的凭证从物理存储层中删除
+			this.Cache.Remove(this.GetCacheKeyOfCredential(credentialId));
+
+			//将原来的凭证从本地内存缓存中删除
+			_memoryCache.Remove(credentialId);
+
+			//返回续约后的新凭证对象
+			return credential;
+		}
+
+		public Credential GetCredential(string credentialId)
+		{
+			if(string.IsNullOrEmpty(credentialId))
+				return null;
+
+			//首先从本地内存缓存中获取指定编号的凭证标记
+			var token = _memoryCache.GetValue(credentialId) as CredentialToken;
+
+			//如果本地缓存获取成功则直接返回
+			if(token != null)
+			{
+				if(token.Active())
+					this.Refresh(token);
+
+				return token.Credential;
+			}
+
+			//在缓存容器中查找指定编号的凭证对象的序列化后的JSON文本
+			var text = this.Cache.GetValue(this.GetCacheKeyOfCredential(credentialId)) as string;
+
+			//如果缓存容器中没有找到指定编号的凭证则说明指定的编号无效或者该编号对应的凭证已经过期
+			if(string.IsNullOrEmpty(text))
+				return null;
+
+			//反序列化JSON文本到凭证对象
+			var credential = Zongsoft.Runtime.Serialization.Serializer.Json.Deserialize<Credential>(text);
+
+			//如果反序列化失败则始终抛出异常
+			if(credential == null)
+				throw new CredentialException(credentialId, $"The cached content of the specified '{credentialId}' credential cannot be deserialized.");
+
+			//顺延当前用户及场景对应凭证号的缓存项的过期时长
+			this.Cache.SetExpiry(this.GetCacheKeyOfUser(credential.User.UserId.ToString(), credential.Scene), credential.Duration);
+
+			//顺延当前凭证缓存项的过期时长
+			this.Cache.SetExpiry(this.GetCacheKeyOfCredential(credential.CredentialId), credential.Duration);
+
+			//将获取到的凭证保存到本地内存缓存中
+			_memoryCache.SetValue(credential.CredentialId, new CredentialToken(credential), DateTime.Now.AddSeconds(credential.Duration.TotalSeconds / 2));
+
+			return credential;
+		}
+
+		public Credential GetCredential(string identity, string scene)
+		{
+			if(string.IsNullOrWhiteSpace(identity))
+				throw new ArgumentNullException(nameof(identity));
+
+			var credentialId = this.Cache.GetValue(this.GetCacheKeyOfUser(identity, scene)) as string;
+
+			if(string.IsNullOrEmpty(credentialId))
+				return null;
+
+			return this.GetCredential(credentialId);
 		}
 		#endregion
 
@@ -272,11 +221,7 @@ namespace Zongsoft.Security
 			if(e.Reason != Runtime.Caching.CacheChangedReason.Expired)
 				return;
 
-			var credential = e.OldValue as Credential;
-			var now = DateTime.Now;
-
-			if(credential != null && (now > credential.IssuedTime && now < credential.Expires))
-				this.EnsureCredentialsTimeout(e.OldKey, credential.Timestamp);
+			this.Refresh(e.OldValue as CredentialToken);
 		}
 		#endregion
 
@@ -286,9 +231,9 @@ namespace Zongsoft.Security
 			this.Registered?.Invoke(this, new CredentialRegisterEventArgs(credential));
 		}
 
-		protected virtual void OnRegistering(Membership.IUserIdentity user, string scene, IDictionary<string, object> parameters = null)
+		protected virtual void OnRegistering(Credential credential)
 		{
-			this.Registering?.Invoke(this, new CredentialRegisterEventArgs(user, scene, parameters));
+			this.Registering?.Invoke(this, new CredentialRegisterEventArgs(credential));
 		}
 
 		protected virtual void OnUnregistered(Credential credential)
@@ -303,45 +248,19 @@ namespace Zongsoft.Security
 		#endregion
 
 		#region 私有方法
-		private Credential EnsureCredentialsTimeout(string credentialId, DateTime timestamp)
+		private void Refresh(CredentialToken token)
 		{
-			if(string.IsNullOrWhiteSpace(credentialId))
-				throw new ArgumentNullException("credentialId");
+			if(token == null)
+				return;
 
-			//在缓存容器中查找指定编号的凭证对象的序列化后的JSON文本
-			var text = this.Cache.GetValue(this.GetCacheKeyOfCredential(credentialId)) as string;
+			//顺延当前用户及场景对应凭证号的缓存项的过期时长
+			this.Cache.SetExpiry(this.GetCacheKeyOfUser(token.Credential.User.UserId.ToString(), token.Credential.Scene), token.Credential.Duration);
 
-			//如果缓存容器中没有找到指定编号的凭证则说明指定的编号无效或者该编号对应的凭证已经过期
-			if(string.IsNullOrEmpty(text))
-				return null;
+			//顺延当前凭证缓存项的过期时长
+			this.Cache.SetExpiry(this.GetCacheKeyOfCredential(token.Credential.CredentialId), token.Credential.Duration);
 
-			//反序列化JSON文本到凭证对象
-			var credential = Zongsoft.Runtime.Serialization.Serializer.Json.Deserialize<Credential>(text);
-
-			//如果反序列化失败则始终抛出异常
-			if(credential == null)
-				throw new InvalidOperationException("*** INTERNAL ERROR *** The credential text is invalid.");
-
-			//如果指定的活动时间超出凭证的期限范围则返回空
-			if(timestamp < credential.IssuedTime || timestamp > credential.Expires)
-				return null;
-
-			//计算实际要顺延的期限
-			var duration = credential.Duration - (DateTime.Now - timestamp);
-
-			//更新最新的访问时间
-			credential.Timestamp = timestamp;
-
-			//将当前凭证信息以JSON文本的方式保存到物理存储层中
-			this.Cache.SetValue(this.GetCacheKeyOfCredential(credentialId), this.SerializeCertificationToJson(credential), duration);
-
-			//顺延当前用户及场景对应凭证号的缓存项
-			this.Cache.SetExpiry(this.GetCacheKeyOfUser(credential.User.UserId, credential.Scene), duration);
-
-			//将缓存对象保存到本地内存缓存中
-			_memoryCache.SetValue(credential.CredentialId, credential, DateTime.Now.AddSeconds(duration.TotalSeconds / 2));
-
-			return credential;
+			//重置本地缓存项
+			token.Reset();
 		}
 
 		private string SerializeCertificationToJson(Credential credential)
@@ -354,13 +273,13 @@ namespace Zongsoft.Security
 			});
 		}
 
-		private string GetCacheKeyOfUser(uint userId, string scene)
+		private string GetCacheKeyOfUser(string identity, string scene)
 		{
 			return "Zongsoft.Security:" +
 				(
 					string.IsNullOrWhiteSpace(scene) ?
-					userId.ToString() :
-					userId.ToString() + "!" + scene.Trim().ToLowerInvariant()
+					identity :
+					identity + "!" + scene.Trim().ToLowerInvariant()
 				);
 		}
 
@@ -370,6 +289,54 @@ namespace Zongsoft.Security
 				throw new ArgumentNullException(nameof(credentialId));
 
 			return "Zongsoft.Security.Credential:" + credentialId.Trim().ToUpperInvariant();
+		}
+		#endregion
+
+		#region 嵌套结构
+		private class CredentialToken
+		{
+			#region 成员字段
+			private DateTime _issuedTime;
+			private DateTime _activeTime;
+			#endregion
+
+			#region 构造函数
+			public CredentialToken(Credential credential)
+			{
+				this.Credential = credential ?? throw new ArgumentNullException(nameof(credential));
+				_issuedTime = _activeTime = DateTime.Now;
+			}
+			#endregion
+
+			#region 公共属性
+			public Credential Credential
+			{
+				get;
+			}
+
+			public DateTime IssuedTime
+			{
+				get => _issuedTime;
+			}
+
+			public DateTime ActiveTime
+			{
+				get => _activeTime;
+			}
+			#endregion
+
+			#region 公共方法
+			public bool Active()
+			{
+				_activeTime = DateTime.Now;
+				return (_activeTime - _issuedTime).TotalHours > 1;
+			}
+
+			public void Reset()
+			{
+				_issuedTime = _activeTime = DateTime.Now;
+			}
+			#endregion
 		}
 		#endregion
 	}

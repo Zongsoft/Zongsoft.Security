@@ -79,10 +79,13 @@ namespace Zongsoft.Security.Web.Http.Controllers
 				_authenticator.Authenticate(request.Identity, request.Password, request.Namespace, scene, ref parameters) :
 				_authenticator.AuthenticateSecret(request.Identity, request.Secret, request.Namespace, scene, ref parameters);
 
-			//注册用户凭证
-			var credential = _credentialProvider.Register(user, scene, parameters);
+			//创建用户凭证
+			var credential = new Credential(user, scene, TimeSpan.FromHours(2), parameters);
 
-			//返回严重通过的凭证
+			//注册用户凭证
+			_credentialProvider.Register(credential);
+
+			//返回注册的凭证
 			return credential;
 		}
 
