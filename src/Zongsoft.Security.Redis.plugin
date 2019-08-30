@@ -16,7 +16,6 @@
 
 	<extension path="/Workspace/Services/Security">
 		<attempter.cache>{path:/Workspace/Externals/Redis}</attempter.cache>
-		<secretProvider.cache>{path:/Workspace/Externals/Redis}</secretProvider.cache>
 		<credentialProvider.cache>{path:/Workspace/Externals/Redis}</credentialProvider.cache>
 	</extension>
 </plugin>

@@ -68,7 +68,6 @@
     <Compile Include="Membership\PermissionProvider.cs" />
     <Compile Include="Membership\RoleProvider.cs" />
     <Compile Include="Membership\UserProvider.cs" />
-    <Compile Include="Membership\Utility.cs" />
     <Compile Include="Membership\Common\PasswordValidator.cs" />
     <Compile Include="Membership\Common\RoleNameValidator.cs" />
     <Compile Include="Membership\Common\UserNameValidator.cs" />

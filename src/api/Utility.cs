@@ -90,14 +90,12 @@ namespace Zongsoft.Security.Web
 			return null;
 		}
 
-		public static void EnsureAuthroize(CredentialPrincipal principal)
+		public static void EnsureAuthroize(CredentialPrincipal principal, ISet<string> roles)
 		{
 			if(principal != null)
 			{
 				if(principal.IsAdministrator)
 					return;
-
-				var roles = (ISet<string>)Zongsoft.Options.OptionManager.Instance.GetOptionValue("/Security/Membership/General.Roles");
 
 				if(roles != null || roles.Count > 0)
 				{
