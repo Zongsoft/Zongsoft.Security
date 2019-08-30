@@ -1,8 +1,15 @@
 ﻿/*
- * Authors:
- *   钟峰(Popeye Zhong) <zongsoft@gmail.com>
+ *   _____                                ______
+ *  /_   /  ____  ____  ____  _________  / __/ /_
+ *    / /  / __ \/ __ \/ __ \/ ___/ __ \/ /_/ __/
+ *   / /__/ /_/ / / / / /_/ /\_ \/ /_/ / __/ /_
+ *  /____/\____/_/ /_/\__  /____/\____/_/  \__/
+ *                   /____/
  *
- * Copyright (C) 2017 Zongsoft Corporation <http://www.zongsoft.com>
+ * Authors:
+ *   钟峰(Popeye Zhong) <zongsoft@qq.com>
+ *
+ * Copyright (C) 2015-2019 Zongsoft Corporation <http://www.zongsoft.com>
  *
  * This file is part of Zongsoft.Security.Web.
  *
@@ -13,7 +20,7 @@
  *
  * Zongsoft.Security.Web is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * The above copyright notice and this permission notice shall be
@@ -79,8 +86,37 @@ namespace Zongsoft.Security.Web.Http.Controllers
 				_authenticator.Authenticate(request.Identity, request.Password, request.Namespace, scene, ref parameters) :
 				_authenticator.AuthenticateSecret(request.Identity, request.Secret, request.Namespace, scene, ref parameters);
 
+			//设置凭证的默认有效期为2小时
+			var duration = TimeSpan.FromHours(2);
+
+			//尝试通过验证上下文的参数集获取其他程序指定的凭证配置项
+			if(parameters != null && parameters.TryGetValue("Credential:Option", out var value) && value is Membership.Options.ICredentialOption option)
+			{
+				if(option.Policies.TryGet(scene, out var period))
+					duration = period.Period;
+				else
+					duration = option.Period;
+
+				//用完即从参数集中移除掉凭证配置项
+				parameters.Remove("Credential:Option");
+			}
+
+			//尝试通过验证上下文的参数集获取其他程序指定的凭证有效期时长
+			if(parameters != null && parameters.TryGetValue("Credential:Period", out value) && value != null)
+			{
+				if(value is TimeSpan period)
+					duration = period;
+				else if(value is int integer && integer > 0)
+					duration = TimeSpan.FromMinutes(integer);
+				else if(value is string text && TimeSpan.TryParse(text, out period))
+					duration = period;
+
+				//用完即从参数集中移除掉凭证有效期时长
+				parameters.Remove("Credential:Period");
+			}
+
 			//创建用户凭证
-			var credential = new Credential(user, scene, TimeSpan.FromHours(2), parameters);
+			var credential = new Credential(user, scene, duration, parameters);
 
 			//注册用户凭证
 			_credentialProvider.Register(credential);
