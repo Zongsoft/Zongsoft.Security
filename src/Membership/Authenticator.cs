@@ -1,8 +1,15 @@
 ﻿/*
- * Authors:
- *   钟峰(Popeye Zhong) <zongsoft@gmail.com>
+ *   _____                                ______
+ *  /_   /  ____  ____  ____  _________  / __/ /_
+ *    / /  / __ \/ __ \/ __ \/ ___/ __ \/ /_/ __/
+ *   / /__/ /_/ / / / / /_/ /\_ \/ /_/ / __/ /_
+ *  /____/\____/_/ /_/\__  /____/\____/_/  \__/
+ *                   /____/
  *
- * Copyright (C) 2010-2015 Zongsoft Corporation <http://www.zongsoft.com>
+ * Authors:
+ *   钟峰(Popeye Zhong) <zongsoft@qq.com>
+ *
+ * Copyright (C) 2015-2019 Zongsoft Corporation <http://www.zongsoft.com>
  *
  * This file is part of Zongsoft.Security.
  *
@@ -59,6 +66,11 @@ namespace Zongsoft.Security.Membership
 		public string Name
 		{
 			get => "Normal";
+		}
+
+		public Options.ICredentialOption Option
+		{
+			get; set;
 		}
 
 		[ServiceDependency]
@@ -189,6 +201,10 @@ namespace Zongsoft.Security.Membership
 			//获取指定用户编号对应的用户对象
 			context.User = this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault();
 
+			//设置凭证有效期的配置策略
+			if(this.Option != null)
+				context.Parameters["Credential:Option"] = this.Option;
+
 			//激发“Authenticated”事件
 			this.OnAuthenticated(context);
 
@@ -300,6 +316,10 @@ namespace Zongsoft.Security.Membership
 			//更新上下文的用户对象
 			context.User = user;
 
+			//设置凭证有效期的配置策略
+			if(this.Option != null)
+				context.Parameters["Credential:Option"] = this.Option;
+
 			//激发“Authenticated”事件
 			this.OnAuthenticated(context);
 
@@ -400,6 +420,7 @@ namespace Zongsoft.Security.Membership
 		}
 		#endregion
 
+		#region 嵌套结构
 		[Zongsoft.Data.Entity("Security.User")]
 		private struct UserSecret
 		{
@@ -409,5 +430,6 @@ namespace Zongsoft.Security.Membership
 			public UserStatus Status;
 			public DateTime? StatusTimestamp;
 		}
+		#endregion
 	}
 }

@@ -2,11 +2,23 @@
 
 <options>
 	<option path="/Security/Membership">
-		<general general.type="Zongsoft.Security.Membership.Options.Configuration.GeneralConfiguration, Zongsoft.Security"
-		         passwordLength="0" passwordStrength="None"
-		         attemptThreshold="3" attemptWindow="60"
-		         verifyEmailEnabled="false" verifyPhoneEnabled="false"
-		         roles="security,securities">
+		<general general.type="Zongsoft.Security.Membership.Options.Configuration.GeneralConfiguration, Zongsoft.Security">
+			<user verification="none"
+			      passwordLength="0" passwordStrength="None" />
+
+			<authorization roles="security,securities" />
+
+			<authentication>
+				<attempter threshold="3" window="1:0:0" />
+
+				<credential period="2:0:0">
+					<policies>
+						<policy scene="app" period="24:0:0" />
+						<policy scene="mobile" period="24:00:00" />
+						<policy scene="wechat" period="24:00:00" />
+					</policies>
+				</credential>
+			</authentication>
 		</general>
 	</option>
 </options>

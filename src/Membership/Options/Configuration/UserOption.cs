@@ -39,34 +39,34 @@ using Zongsoft.Options.Configuration;
 
 namespace Zongsoft.Security.Membership.Options.Configuration
 {
-	public class GeneralConfiguration : OptionConfigurationElement, IConfiguration
+	public class UserOption : OptionConfigurationElement, IUserOption
 	{
 		#region 常量定义
-		private const string XML_USER_ELEMENT = "user";
-		private const string XML_AUTHORIZATION_ELEMENT = "authorization";
-		private const string XML_AUTHENTICATION_ELEMENT = "authentication";
+		private const string XML_VERIFICATION_ATTRIBUTE = "verification";
+		private const string XML_PASSWORDLENGTH_ATTRIBUTE = "passwordLength";
+		private const string XML_PASSWORDSTRENGTH_ATTRIBUTE = "passwordStrength";
 		#endregion
 
 		#region 公共属性
-		[OptionConfigurationProperty(XML_USER_ELEMENT, typeof(UserOption))]
-		public IUserOption User
+		[OptionConfigurationProperty(XML_PASSWORDLENGTH_ATTRIBUTE, DefaultValue = 6)]
+		public int PasswordLength
 		{
-			get => (IUserOption)this[XML_USER_ELEMENT];
-			set => this[XML_USER_ELEMENT] = value;
+			get => (int)this[XML_PASSWORDLENGTH_ATTRIBUTE];
+			set => this[XML_PASSWORDLENGTH_ATTRIBUTE] = value;
 		}
 
-		[OptionConfigurationProperty(XML_AUTHORIZATION_ELEMENT, typeof(AuthorizationOption))]
-		public IAuthorizationOption Authorization
+		[OptionConfigurationProperty(XML_PASSWORDSTRENGTH_ATTRIBUTE, DefaultValue = PasswordStrength.None)]
+		public PasswordStrength PasswordStrength
 		{
-			get => (IAuthorizationOption)this[XML_AUTHORIZATION_ELEMENT];
-			set => this[XML_AUTHORIZATION_ELEMENT] = value;
+			get => (PasswordStrength)this[XML_PASSWORDSTRENGTH_ATTRIBUTE];
+			set => this[XML_PASSWORDSTRENGTH_ATTRIBUTE] = value;
 		}
 
-		[OptionConfigurationProperty(XML_AUTHENTICATION_ELEMENT, typeof(AuthenticationOption))]
-		public IAuthenticationOption Authentication
+		[OptionConfigurationProperty(XML_VERIFICATION_ATTRIBUTE, DefaultValue = UserVerification.None)]
+		public UserVerification Verification
 		{
-			get => (IAuthenticationOption)this[XML_AUTHENTICATION_ELEMENT];
-			set => this[XML_AUTHENTICATION_ELEMENT] = value;
+			get => (UserVerification)this[XML_VERIFICATION_ATTRIBUTE];
+			set => this[XML_VERIFICATION_ATTRIBUTE] = value;
 		}
 		#endregion
 	}

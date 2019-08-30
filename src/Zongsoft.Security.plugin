@@ -45,17 +45,16 @@
 		<object name="IsAuthorized" type="Zongsoft.Security.Membership.IsAuthorizedPredication, Zongsoft.Security" />
 		<object name="IsUnauthorized" type="Zongsoft.Security.Membership.IsUnauthorizedPredication, Zongsoft.Security" />
 
-		<object name="Attempter" type="Zongsoft.Security.Membership.Attempter, Zongsoft.Security" />
-		<object name="Authenticator" type="Zongsoft.Security.Membership.Authenticator, Zongsoft.Security" />
+		<object name="Attempter" option="{path:../configuration.authentication.attempter}" type="Zongsoft.Security.Membership.Attempter, Zongsoft.Security" />
+		<object name="Authenticator" option="{path:../configuration.authentication.credential}" type="Zongsoft.Security.Membership.Authenticator, Zongsoft.Security" />
 		<object name="Authorizer" type="Zongsoft.Security.Membership.Authorizer, Zongsoft.Security" />
 		<object name="Censorship" type="Zongsoft.Security.Censorship, Zongsoft.Security" />
 		<object name="CredentialProvider" type="Zongsoft.Security.CredentialProvider, Zongsoft.Security" />
 		<object name="RoleProvider" type="Zongsoft.Security.Membership.RoleProvider, Zongsoft.Security" />
-		<object name="UserProvider" type="Zongsoft.Security.Membership.UserProvider, Zongsoft.Security" />
+		<object name="UserProvider" option="{path:../configuration.user}" type="Zongsoft.Security.Membership.UserProvider, Zongsoft.Security" />
 		<object name="PermissionProvider" type="Zongsoft.Security.Membership.PermissionProvider, Zongsoft.Security" />
 
-		<object name="SecretProvider" type="Zongsoft.Security.SecretProvider, Zongsoft.CoreLibrary" />
-		<object name="PasswordValidator" type="Zongsoft.Security.Membership.Common.PasswordValidator, Zongsoft.Security" />
+		<object name="PasswordValidator" option="{path:../configuration.user}" type="Zongsoft.Security.Membership.Common.PasswordValidator, Zongsoft.Security" />
 		<object name="RoleNameValidator" type="Zongsoft.Security.Membership.Common.RoleNameValidator, Zongsoft.Security" />
 		<object name="UserNameValidator" type="Zongsoft.Security.Membership.Common.UserNameValidator, Zongsoft.Security" />
 	</extension>

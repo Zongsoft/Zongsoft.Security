@@ -47,7 +47,6 @@ namespace Zongsoft.Security.Membership
 	{
 		#region 成员字段
 		private ICache _cache;
-		private Options.IConfiguration _configuration;
 		#endregion
 
 		#region 公共属性
@@ -57,11 +56,9 @@ namespace Zongsoft.Security.Membership
 			set => _cache = value ?? throw new ArgumentNullException();
 		}
 
-		[Services.ServiceDependency]
-		public Options.IConfiguration Configuration
+		public Options.IAttempterOption Option
 		{
-			get => _configuration;
-			set => _configuration = value;
+			get; set;
 		}
 		#endregion
 
@@ -74,9 +71,9 @@ namespace Zongsoft.Security.Membership
 		/// <returns>如果校验成功则返回真(True)，否则返回假(False)。</returns>
 		public bool Verify(string identity, string @namespace)
 		{
-			var config = this.Configuration;
+			var option = this.Option;
 
-			if(config == null || config.AttemptThreshold < 1)
+			if(option == null || option.Threshold < 1)
 				return true;
 
 			var cache = this.Cache;
@@ -84,7 +81,7 @@ namespace Zongsoft.Security.Membership
 			if(cache == null)
 				return true;
 
-			return cache.GetValue<int>(GetCacheKey(identity, @namespace)) < config.AttemptThreshold;
+			return cache.GetValue<int>(GetCacheKey(identity, @namespace)) < option.Threshold;
 		}
 
 		/// <summary>
@@ -138,12 +135,12 @@ namespace Zongsoft.Security.Membership
 			threshold = 3;
 			window = TimeSpan.FromHours(1);
 
-			var config = this.Configuration;
+			var option = this.Option;
 
-			if(config != null)
+			if(option != null)
 			{
-				threshold = config.AttemptThreshold;
-				window = TimeSpan.FromMinutes(config.AttemptWindow > 0 ? config.AttemptWindow : 60);
+				threshold = option.Threshold;
+				window = option.Window;
 			}
 		}
 

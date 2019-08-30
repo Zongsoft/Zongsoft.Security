@@ -1,6 +1,13 @@
 ﻿/*
+ *   _____                                ______
+ *  /_   /  ____  ____  ____  _________  / __/ /_
+ *    / /  / __ \/ __ \/ __ \/ ___/ __ \/ /_/ __/
+ *   / /__/ /_/ / / / / /_/ /\_ \/ /_/ / __/ /_
+ *  /____/\____/_/ /_/\__  /____/\____/_/  \__/
+ *                   /____/
+ *
  * Authors:
- *   钟峰(Popeye Zhong) <zongsoft@gmail.com>
+ *   钟峰(Popeye Zhong) <zongsoft@qq.com>
  *
  * Copyright (C) 2010-2018 Zongsoft Corporation <http://www.zongsoft.com>
  *
@@ -48,8 +55,7 @@ namespace Zongsoft.Security.Membership.Common
 		#endregion
 
 		#region 公共属性
-		[Services.ServiceDependency]
-		public Options.IConfiguration Configuration
+		public Options.IUserOption Option
 		{
 			get;
 			set;
@@ -59,22 +65,22 @@ namespace Zongsoft.Security.Membership.Common
 		#region 验证方法
 		public bool Validate(string data, Action<string> failure = null)
 		{
-			var config = this.Configuration;
+			var option = this.Option;
 
 			//如果没有设置密码验证策略，则返回验证成功
-			if(config == null || config.PasswordLength < 1)
+			if(option == null || option.PasswordLength < 1)
 				return true;
 
 			//如果如果密码长度小于配置要求的长度，则返回验证失败
-			if(string.IsNullOrEmpty(data) || data.Length < config.PasswordLength)
+			if(string.IsNullOrEmpty(data) || data.Length < option.PasswordLength)
 			{
-				failure?.Invoke($"The password length must be no less than {config.PasswordLength.ToString()} characters.");
+				failure?.Invoke($"The password length must be no less than {option.PasswordLength.ToString()} characters.");
 				return false;
 			}
 
 			var isValidate = true;
 
-			switch(config.PasswordStrength)
+			switch(option.PasswordStrength)
 			{
 				case PasswordStrength.Digits:
 					isValidate = this.GetStrength(data) == PASSWORD_STRENGTH_DIGIT;

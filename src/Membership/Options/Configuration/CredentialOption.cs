@@ -39,34 +39,28 @@ using Zongsoft.Options.Configuration;
 
 namespace Zongsoft.Security.Membership.Options.Configuration
 {
-	public class GeneralConfiguration : OptionConfigurationElement, IConfiguration
+	public class CredentialOption : OptionConfigurationElement, ICredentialOption
 	{
 		#region 常量定义
-		private const string XML_USER_ELEMENT = "user";
-		private const string XML_AUTHORIZATION_ELEMENT = "authorization";
-		private const string XML_AUTHENTICATION_ELEMENT = "authentication";
+		private const string XML_PERIOD_ATTRIBUTE = "period";
+		private const string XML_POLICIES_COLLECTION = "policies";
 		#endregion
 
 		#region 公共属性
-		[OptionConfigurationProperty(XML_USER_ELEMENT, typeof(UserOption))]
-		public IUserOption User
+		[OptionConfigurationProperty(XML_PERIOD_ATTRIBUTE, OptionConfigurationPropertyBehavior.IsRequired)]
+		public TimeSpan Period
 		{
-			get => (IUserOption)this[XML_USER_ELEMENT];
-			set => this[XML_USER_ELEMENT] = value;
+			get => (TimeSpan)this[XML_PERIOD_ATTRIBUTE];
+			set => this[XML_PERIOD_ATTRIBUTE] = value;
 		}
 
-		[OptionConfigurationProperty(XML_AUTHORIZATION_ELEMENT, typeof(AuthorizationOption))]
-		public IAuthorizationOption Authorization
+		[OptionConfigurationProperty(XML_POLICIES_COLLECTION, typeof(CredentialPolicyCollection))]
+		public Collections.INamedCollection<ICredentialPolicy> Policies
 		{
-			get => (IAuthorizationOption)this[XML_AUTHORIZATION_ELEMENT];
-			set => this[XML_AUTHORIZATION_ELEMENT] = value;
-		}
-
-		[OptionConfigurationProperty(XML_AUTHENTICATION_ELEMENT, typeof(AuthenticationOption))]
-		public IAuthenticationOption Authentication
-		{
-			get => (IAuthenticationOption)this[XML_AUTHENTICATION_ELEMENT];
-			set => this[XML_AUTHENTICATION_ELEMENT] = value;
+			get
+			{
+				return (Collections.INamedCollection<ICredentialPolicy>)this[XML_POLICIES_COLLECTION];
+			}
 		}
 		#endregion
 	}

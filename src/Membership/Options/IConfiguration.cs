@@ -1,8 +1,15 @@
 ﻿/*
- * Authors:
- *   钟峰(Popeye Zhong) <zongsoft@gmail.com>
+ *   _____                                ______
+ *  /_   /  ____  ____  ____  _________  / __/ /_
+ *    / /  / __ \/ __ \/ __ \/ ___/ __ \/ /_/ __/
+ *   / /__/ /_/ / / / / /_/ /\_ \/ /_/ / __/ /_
+ *  /____/\____/_/ /_/\__  /____/\____/_/  \__/
+ *                   /____/
  *
- * Copyright (C) 2010-2018 Zongsoft Corporation <http://www.zongsoft.com>
+ * Authors:
+ *   钟峰(Popeye Zhong) <zongsoft@qq.com>
+ *
+ * Copyright (C) 2015-2019 Zongsoft Corporation <http://www.zongsoft.com>
  *
  * This file is part of Zongsoft.Security.
  *
@@ -35,57 +42,25 @@ namespace Zongsoft.Security.Membership.Options
 	public interface IConfiguration
 	{
 		/// <summary>
-		/// 获取或设置密码的最小长度，零表示不限制。
+		/// 获取用户提供程序的配置信息。
 		/// </summary>
-		int PasswordLength
+		IUserOption User
 		{
-			get; set;
+			get;
 		}
 
 		/// <summary>
-		/// 获取或设置密码的强度。
+		/// 获取授权配置信息。
 		/// </summary>
-		PasswordStrength PasswordStrength
+		IAuthorizationOption Authorization
 		{
-			get; set;
+			get;
 		}
 
 		/// <summary>
-		/// 获取或设置验证失败的阈值，零表示不限制。
+		/// 获取验证配置信息。
 		/// </summary>
-		int AttemptThreshold
-		{
-			get; set;
-		}
-
-		/// <summary>
-		/// 获取或设置验证失败超过指定的阈值后的锁定时长，单位：分钟。
-		/// </summary>
-		int AttemptWindow
-		{
-			get; set;
-		}
-
-		/// <summary>
-		/// 获取或设置是否启用邮箱地址的有效性校验。
-		/// </summary>
-		bool VerifyEmailEnabled
-		{
-			get; set;
-		}
-
-		/// <summary>
-		/// 获取或设置是否启用手机号码的有效性校验。
-		/// </summary>
-		bool VerifyPhoneEnabled
-		{
-			get; set;
-		}
-
-		/// <summary>
-		/// 获取一个可以进行授权管理的角色集。
-		/// </summary>
-		ISet<string> Roles
+		IAuthenticationOption Authentication
 		{
 			get;
 		}

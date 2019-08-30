@@ -48,9 +48,6 @@ namespace Zongsoft.Security.Membership
 
 		#region 成员字段
 		private IDataAccess _dataAccess;
-		private Attempter _attempter;
-		private ICensorship _censorship;
-		private ISecretProvider _secretProvider;
 		private Services.IServiceProvider _services;
 		#endregion
 
@@ -62,7 +59,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共属性
-		[ServiceDependency]
+		[ServiceDependency(IsRequired = true)]
 		public IDataAccess DataAccess
 		{
 			get
@@ -78,51 +75,29 @@ namespace Zongsoft.Security.Membership
 		[ServiceDependency]
 		public Attempter Attempter
 		{
-			get
-			{
-				return _attempter;
-			}
-			set
-			{
-				_attempter = value;
-			}
-		}
-
-		[ServiceDependency]
-		public Options.IConfiguration Configuration
-		{
 			get; set;
 		}
 
 		[ServiceDependency]
 		public ISecretProvider SecretProvider
 		{
-			get
-			{
-				return _secretProvider;
-			}
-			set
-			{
-				_secretProvider = value;
-			}
+			get; set;
 		}
 
 		[ServiceDependency]
 		public ICensorship Censorship
 		{
-			get
-			{
-				return _censorship;
-			}
-			set
-			{
-				_censorship = value;
-			}
+			get; set;
 		}
 
 		public ISequence Sequence
 		{
 			get => _dataAccess?.Sequence;
+		}
+
+		public Options.IUserOption Option
+		{
+			get; set;
 		}
 
 		public CredentialPrincipal Principal
@@ -744,7 +719,7 @@ namespace Zongsoft.Security.Membership
 			if(string.IsNullOrWhiteSpace(type))
 				throw new ArgumentNullException(nameof(type));
 
-			var verifier = _secretProvider;
+			var verifier = SecretProvider;
 
 			if(verifier == null)
 				return false;
@@ -783,12 +758,12 @@ namespace Zongsoft.Security.Membership
 		#region 虚拟方法
 		protected virtual bool IsVerifyEmailRequired()
 		{
-			return this.Configuration.VerifyEmailEnabled && _secretProvider != null;
+			return (this.Option.Verification & Options.UserVerification.Email) == Options.UserVerification.Email && SecretProvider != null;
 		}
 
 		protected virtual bool IsVerifyPhoneRequired()
 		{
-			return this.Configuration.VerifyPhoneEnabled && _secretProvider != null;
+			return (this.Option.Verification & Options.UserVerification.Phone) == Options.UserVerification.Phone && SecretProvider != null;
 		}
 
 		protected virtual void OnChangeEmail(IUser user, string email)

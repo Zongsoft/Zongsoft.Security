@@ -34,40 +34,27 @@
 using System;
 using System.Collections.Generic;
 
-using Zongsoft.Options;
-using Zongsoft.Options.Configuration;
-
-namespace Zongsoft.Security.Membership.Options.Configuration
+namespace Zongsoft.Security.Membership.Options
 {
-	public class GeneralConfiguration : OptionConfigurationElement, IConfiguration
+	/// <summary>
+	/// 表示恶意检测器的配置接口。
+	/// </summary>
+	public interface IAttempterOption
 	{
-		#region 常量定义
-		private const string XML_USER_ELEMENT = "user";
-		private const string XML_AUTHORIZATION_ELEMENT = "authorization";
-		private const string XML_AUTHENTICATION_ELEMENT = "authentication";
-		#endregion
-
-		#region 公共属性
-		[OptionConfigurationProperty(XML_USER_ELEMENT, typeof(UserOption))]
-		public IUserOption User
+		/// <summary>
+		/// 获取或设置验证失败的阈值，零表示不限制。
+		/// </summary>
+		int Threshold
 		{
-			get => (IUserOption)this[XML_USER_ELEMENT];
-			set => this[XML_USER_ELEMENT] = value;
+			get; set;
 		}
 
-		[OptionConfigurationProperty(XML_AUTHORIZATION_ELEMENT, typeof(AuthorizationOption))]
-		public IAuthorizationOption Authorization
+		/// <summary>
+		/// 获取或设置验证失败超过指定的阈值后的锁定时长，默认为60分钟。
+		/// </summary>
+		TimeSpan Window
 		{
-			get => (IAuthorizationOption)this[XML_AUTHORIZATION_ELEMENT];
-			set => this[XML_AUTHORIZATION_ELEMENT] = value;
+			get; set;
 		}
-
-		[OptionConfigurationProperty(XML_AUTHENTICATION_ELEMENT, typeof(AuthenticationOption))]
-		public IAuthenticationOption Authentication
-		{
-			get => (IAuthenticationOption)this[XML_AUTHENTICATION_ELEMENT];
-			set => this[XML_AUTHENTICATION_ELEMENT] = value;
-		}
-		#endregion
 	}
 }

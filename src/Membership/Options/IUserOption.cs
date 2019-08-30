@@ -34,40 +34,35 @@
 using System;
 using System.Collections.Generic;
 
-using Zongsoft.Options;
-using Zongsoft.Options.Configuration;
-
-namespace Zongsoft.Security.Membership.Options.Configuration
+namespace Zongsoft.Security.Membership.Options
 {
-	public class GeneralConfiguration : OptionConfigurationElement, IConfiguration
+	/// <summary>
+	/// 表示用户管理配置的接口。
+	/// </summary>
+	public interface IUserOption
 	{
-		#region 常量定义
-		private const string XML_USER_ELEMENT = "user";
-		private const string XML_AUTHORIZATION_ELEMENT = "authorization";
-		private const string XML_AUTHENTICATION_ELEMENT = "authentication";
-		#endregion
-
-		#region 公共属性
-		[OptionConfigurationProperty(XML_USER_ELEMENT, typeof(UserOption))]
-		public IUserOption User
+		/// <summary>
+		/// 获取或设置密码的最小长度，零表示不限制。
+		/// </summary>
+		int PasswordLength
 		{
-			get => (IUserOption)this[XML_USER_ELEMENT];
-			set => this[XML_USER_ELEMENT] = value;
+			get; set;
 		}
 
-		[OptionConfigurationProperty(XML_AUTHORIZATION_ELEMENT, typeof(AuthorizationOption))]
-		public IAuthorizationOption Authorization
+		/// <summary>
+		/// 获取或设置密码的强度。
+		/// </summary>
+		PasswordStrength PasswordStrength
 		{
-			get => (IAuthorizationOption)this[XML_AUTHORIZATION_ELEMENT];
-			set => this[XML_AUTHORIZATION_ELEMENT] = value;
+			get; set;
 		}
 
-		[OptionConfigurationProperty(XML_AUTHENTICATION_ELEMENT, typeof(AuthenticationOption))]
-		public IAuthenticationOption Authentication
+		/// <summary>
+		/// 获取或设置用户信息的有效性校验项。
+		/// </summary>
+		UserVerification Verification
 		{
-			get => (IAuthenticationOption)this[XML_AUTHENTICATION_ELEMENT];
-			set => this[XML_AUTHENTICATION_ELEMENT] = value;
+			get; set;
 		}
-		#endregion
 	}
 }

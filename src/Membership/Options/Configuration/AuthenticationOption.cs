@@ -39,34 +39,50 @@ using Zongsoft.Options.Configuration;
 
 namespace Zongsoft.Security.Membership.Options.Configuration
 {
-	public class GeneralConfiguration : OptionConfigurationElement, IConfiguration
+	public class AuthenticationOption : OptionConfigurationElement, IAuthenticationOption
 	{
 		#region 常量定义
-		private const string XML_USER_ELEMENT = "user";
-		private const string XML_AUTHORIZATION_ELEMENT = "authorization";
-		private const string XML_AUTHENTICATION_ELEMENT = "authentication";
+		private const string XML_ATTEMPTER_ELEMENT = "attempter";
+		private const string XML_CREDENTIAL_ELEMENT = "credential";
 		#endregion
 
 		#region 公共属性
-		[OptionConfigurationProperty(XML_USER_ELEMENT, typeof(UserOption))]
-		public IUserOption User
+		[OptionConfigurationProperty(XML_ATTEMPTER_ELEMENT, typeof(AttempterOption))]
+		public IAttempterOption Attempter
 		{
-			get => (IUserOption)this[XML_USER_ELEMENT];
-			set => this[XML_USER_ELEMENT] = value;
+			get => (AttempterOption)this[XML_ATTEMPTER_ELEMENT];
 		}
 
-		[OptionConfigurationProperty(XML_AUTHORIZATION_ELEMENT, typeof(AuthorizationOption))]
-		public IAuthorizationOption Authorization
+		[OptionConfigurationProperty(XML_CREDENTIAL_ELEMENT, typeof(CredentialOption))]
+		public ICredentialOption Credential
 		{
-			get => (IAuthorizationOption)this[XML_AUTHORIZATION_ELEMENT];
-			set => this[XML_AUTHORIZATION_ELEMENT] = value;
+			get => (ICredentialOption)this[XML_CREDENTIAL_ELEMENT];
 		}
+		#endregion
 
-		[OptionConfigurationProperty(XML_AUTHENTICATION_ELEMENT, typeof(AuthenticationOption))]
-		public IAuthenticationOption Authentication
+		#region 嵌套子类
+		public class AttempterOption : OptionConfigurationElement, IAttempterOption
 		{
-			get => (IAuthenticationOption)this[XML_AUTHENTICATION_ELEMENT];
-			set => this[XML_AUTHENTICATION_ELEMENT] = value;
+			#region 常量定义
+			private const string XML_THRESHOLD_ATTRIBUTE = "threshold";
+			private const string XML_WINDOW_ATTRIBUTE = "window";
+			#endregion
+
+			#region 公共属性
+			[OptionConfigurationProperty(XML_THRESHOLD_ATTRIBUTE, DefaultValue = 3)]
+			public int Threshold
+			{
+				get => (int)this[XML_THRESHOLD_ATTRIBUTE];
+				set => this[XML_THRESHOLD_ATTRIBUTE] = value;
+			}
+
+			[OptionConfigurationProperty(XML_WINDOW_ATTRIBUTE, DefaultValue = "1:0:0")]
+			public TimeSpan Window
+			{
+				get => (TimeSpan)this[XML_WINDOW_ATTRIBUTE];
+				set => this[XML_WINDOW_ATTRIBUTE] = value;
+			}
+			#endregion
 		}
 		#endregion
 	}

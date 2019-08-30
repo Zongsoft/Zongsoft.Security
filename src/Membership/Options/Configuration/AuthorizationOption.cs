@@ -32,6 +32,9 @@
  */
 
 using System;
+using System.Linq;
+using System.Globalization;
+using System.ComponentModel;
 using System.Collections.Generic;
 
 using Zongsoft.Options;
@@ -39,34 +42,60 @@ using Zongsoft.Options.Configuration;
 
 namespace Zongsoft.Security.Membership.Options.Configuration
 {
-	public class GeneralConfiguration : OptionConfigurationElement, IConfiguration
+	public class AuthorizationOption : OptionConfigurationElement, IAuthorizationOption
 	{
 		#region 常量定义
-		private const string XML_USER_ELEMENT = "user";
-		private const string XML_AUTHORIZATION_ELEMENT = "authorization";
-		private const string XML_AUTHENTICATION_ELEMENT = "authentication";
+		private const string XML_ROLES_ATTRIBUTE = "roles";
 		#endregion
 
 		#region 公共属性
-		[OptionConfigurationProperty(XML_USER_ELEMENT, typeof(UserOption))]
-		public IUserOption User
+		[TypeConverter(typeof(SetConverter))]
+		[OptionConfigurationProperty(XML_ROLES_ATTRIBUTE)]
+		public ISet<string> Roles
 		{
-			get => (IUserOption)this[XML_USER_ELEMENT];
-			set => this[XML_USER_ELEMENT] = value;
+			get
+			{
+				return (ISet<string>)this[XML_ROLES_ATTRIBUTE];
+			}
 		}
+		#endregion
 
-		[OptionConfigurationProperty(XML_AUTHORIZATION_ELEMENT, typeof(AuthorizationOption))]
-		public IAuthorizationOption Authorization
+		#region 嵌套子类
+		private class SetConverter : TypeConverter
 		{
-			get => (IAuthorizationOption)this[XML_AUTHORIZATION_ELEMENT];
-			set => this[XML_AUTHORIZATION_ELEMENT] = value;
-		}
+			public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
+			{
+				return sourceType == typeof(string);
+			}
 
-		[OptionConfigurationProperty(XML_AUTHENTICATION_ELEMENT, typeof(AuthenticationOption))]
-		public IAuthenticationOption Authentication
-		{
-			get => (IAuthenticationOption)this[XML_AUTHENTICATION_ELEMENT];
-			set => this[XML_AUTHENTICATION_ELEMENT] = value;
+			public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
+			{
+				return destinationType == typeof(string);
+			}
+
+			public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
+			{
+				if(value != null && value is string text)
+				{
+					if(string.IsNullOrWhiteSpace(text))
+						return null;
+
+					return new HashSet<string>(text.Split(',', ';', '|').Select(p => p.Trim()).Where(p => p.Length > 0), StringComparer.OrdinalIgnoreCase);
+				}
+
+				return base.ConvertFrom(context, culture, value);
+			}
+
+			public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+			{
+				if(destinationType == typeof(string))
+				{
+					if(value != null && value is ISet<string> set && set.Count > 0)
+						return string.Join(",", set);
+				}
+
+				return base.ConvertTo(context, culture, value, destinationType);
+			}
 		}
 		#endregion
 	}
