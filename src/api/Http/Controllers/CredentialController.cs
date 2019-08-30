@@ -1,8 +1,15 @@
 ﻿/*
- * Authors:
- *   钟峰(Popeye Zhong) <zongsoft@gmail.com>
+ *   _____                                ______
+ *  /_   /  ____  ____  ____  _________  / __/ /_
+ *    / /  / __ \/ __ \/ __ \/ ___/ __ \/ /_/ __/
+ *   / /__/ /_/ / / / / /_/ /\_ \/ /_/ / __/ /_
+ *  /____/\____/_/ /_/\__  /____/\____/_/  \__/
+ *                   /____/
  *
- * Copyright (C) 2017 Zongsoft Corporation <http://www.zongsoft.com>
+ * Authors:
+ *   钟峰(Popeye Zhong) <zongsoft@qq.com>
+ *
+ * Copyright (C) 2015-2019 Zongsoft Corporation <http://www.zongsoft.com>
  *
  * This file is part of Zongsoft.Security.Web.
  *
@@ -13,7 +20,7 @@
  *
  * Zongsoft.Security.Web is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * The above copyright notice and this permission notice shall be
@@ -50,10 +57,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			}
 			set
 			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_credentialProvider = value;
+				_credentialProvider = value ?? throw new ArgumentNullException();
 			}
 		}
 		#endregion
@@ -64,7 +68,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			if(string.IsNullOrWhiteSpace(id))
 				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
 
-			var index = id.IndexOf('!');
+			var index = id.IndexOfAny(new[] { '!', '@' });
 			Credential credential = null;
 
 			if(index > 0 && index < id.Length - 1)
@@ -76,6 +80,14 @@ namespace Zongsoft.Security.Web.Http.Controllers
 				return new HttpResponseMessage(System.Net.HttpStatusCode.NoContent);
 
 			return credential;
+		}
+
+		public void Delete(string id)
+		{
+			if(string.IsNullOrWhiteSpace(id))
+				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
+
+			this.CredentialProvider.Unregister(id);
 		}
 
 		[HttpGet]
