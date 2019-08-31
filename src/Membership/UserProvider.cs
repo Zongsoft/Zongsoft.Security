@@ -912,7 +912,7 @@ namespace Zongsoft.Security.Membership
 		}
 		#endregion
 
-		[Zongsoft.Data.Entity("Security.User")]
+		[Zongsoft.Data.Model("Security.User")]
 		private struct UserPasswordToken
 		{
 			public uint UserId;
@@ -927,7 +927,7 @@ namespace Zongsoft.Security.Membership
 			}
 		}
 
-		[Zongsoft.Data.Entity("Security.User")]
+		[Zongsoft.Data.Model("Security.User")]
 		private struct UserSecretQuestion
 		{
 			public uint UserId;
@@ -936,7 +936,7 @@ namespace Zongsoft.Security.Membership
 			public string PasswordQuestion3;
 		}
 
-		[Zongsoft.Data.Entity("Security.User")]
+		[Zongsoft.Data.Model("Security.User")]
 		private struct UserSecretAnswer
 		{
 			public uint UserId;

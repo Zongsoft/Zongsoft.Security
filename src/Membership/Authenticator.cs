@@ -421,7 +421,7 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 嵌套结构
-		[Zongsoft.Data.Entity("Security.User")]
+		[Zongsoft.Data.Model("Security.User")]
 		private struct UserSecret
 		{
 			public uint UserId;
