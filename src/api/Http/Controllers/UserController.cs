@@ -142,7 +142,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		///				<term>/api/Security/User/13812345678!phone</term>
 		///				<description>
 		///					<para>因为手机号与用户编号都是数字，所以必须以叹号分隔的后缀以示区别。</para>
-		///					<para>查询用户<seealso cref="User.PhoneNumber"/>为：13812345678，且<seealso cref="User.Namespace"/>为空的用户。</para>
+		///					<para>查询用户<seealso cref="User.Phone"/>为：13812345678，且<seealso cref="User.Namespace"/>为空的用户。</para>
 		///				</description>
 		///			</item>
 		///			<item>
@@ -155,7 +155,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		///			</item>
 		///			<item>
 		///				<term>/api/Security/User/zongsoft:13812345678</term>
-		///				<description>查询用户<seealso cref="User.PhoneNumber"/>为：13812345678，且<seealso cref="User.Namespace"/>为：zongsoft的用户。</description>
+		///				<description>查询用户<seealso cref="User.Phone"/>为：13812345678，且<seealso cref="User.Namespace"/>为：zongsoft的用户。</description>
 		///			</item>
 		///			<item>
 		///				<term>/api/Security/User/zongsoft:popeye@zongsoft.com</term>
@@ -171,7 +171,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		///			</item>
 		///			<item>
 		///				<term>/api/Security/User/:13812345678</term>
-		///				<description>查询<seealso cref="User.Namespace"/>为空，且用户<seealso cref="User.PhoneNumber"/>为：13812345678 的用户。</description>
+		///				<description>查询<seealso cref="User.Namespace"/>为空，且用户<seealso cref="User.Phone"/>为：13812345678 的用户。</description>
 		///			</item>
 		///			<item>
 		///				<term>/api/Security/User/:zongsoft@gmail.com</term>
