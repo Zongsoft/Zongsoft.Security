@@ -46,6 +46,10 @@ namespace Zongsoft.Security.Membership
 		private const string KEY_IMPORTANT_CHANGE_TEMPLATE = "Important.Change";
 		#endregion
 
+		#region 事件定义
+		public event EventHandler<ChangedEventArgs> Changed;
+		#endregion
+
 		#region 成员字段
 		private IDataAccess _dataAccess;
 		private Services.IServiceProvider _services;
@@ -177,12 +181,18 @@ namespace Zongsoft.Security.Membership
 				return true;
 			}
 
-			return this.DataAccess.Update<IUser>(
+			if(this.DataAccess.Update<IUser>(
 				new
 				{
 					Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim(),
 					Modification = DateTime.Now,
-				}, Condition.Equal(nameof(IUser.UserId), userId)) > 0;
+				}, Condition.Equal(nameof(IUser.UserId), userId)) > 0)
+			{
+				this.OnChanged(userId, nameof(IUser.Email), email);
+				return true;
+			}
+
+			return false;
 		}
 
 		public bool SetPhone(uint userId, string phone)
@@ -206,12 +216,18 @@ namespace Zongsoft.Security.Membership
 				return true;
 			}
 
-			return this.DataAccess.Update<IUser>(
+			if(this.DataAccess.Update<IUser>(
 				new
 				{
 					Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim(),
 					Modification = DateTime.Now,
-				}, Condition.Equal(nameof(IUser.UserId), userId)) > 0;
+				}, Condition.Equal(nameof(IUser.UserId), userId)) > 0)
+			{
+				this.OnChanged(userId, nameof(IUser.Phone), phone);
+				return true;
+			}
+
+			return false;
 		}
 
 		public bool SetNamespace(uint userId, string @namespace)
@@ -219,13 +235,19 @@ namespace Zongsoft.Security.Membership
 			//确认指定的用户编号是否有效
 			userId = GetUserId(userId);
 
-			return this.DataAccess.Update<IUser>(
+			if(this.DataAccess.Update<IUser>(
 				new
 				{
 					Namespace = string.IsNullOrWhiteSpace(@namespace) ? null : @namespace.Trim(),
 					Modification = DateTime.Now,
 				},
-				new Condition(nameof(IUser.UserId), userId)) > 0;
+				new Condition(nameof(IUser.UserId), userId)) > 0)
+			{
+				this.OnChanged(userId, nameof(IUser.Namespace), @namespace);
+				return true;
+			}
+
+			return false;
 		}
 
 		public int SetNamespaces(string oldNamespace, string newNamespace)
@@ -253,13 +275,19 @@ namespace Zongsoft.Security.Membership
 			//确保用户名是审核通过的
 			this.Censor(name);
 
-			return this.DataAccess.Update<IUser>(
+			if(this.DataAccess.Update<IUser>(
 				new
 				{
 					Name = name.Trim(),
 					Modification = DateTime.Now,
 				},
-				new Condition(nameof(IUser.UserId), userId)) > 0;
+				new Condition(nameof(IUser.UserId), userId)) > 0)
+			{
+				this.OnChanged(userId, nameof(IUserIdentity.Name), name);
+				return true;
+			}
+
+			return false;
 		}
 
 		public bool SetFullName(uint userId, string fullName)
@@ -267,13 +295,19 @@ namespace Zongsoft.Security.Membership
 			//确认指定的用户编号是否有效
 			userId = GetUserId(userId);
 
-			return this.DataAccess.Update<IUser>(
+			if(this.DataAccess.Update<IUser>(
 				new
 				{
 					FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName.Trim(),
 					Modification = DateTime.Now,
 				},
-				new Condition(nameof(IUser.UserId), userId)) > 0;
+				new Condition(nameof(IUser.UserId), userId)) > 0)
+			{
+				this.OnChanged(userId, nameof(IUserIdentity.FullName), fullName);
+				return true;
+			}
+
+			return false;
 		}
 
 		public bool SetStatus(uint userId, UserStatus status)
@@ -283,14 +317,20 @@ namespace Zongsoft.Security.Membership
 
 			var timestamp = DateTime.Now;
 
-			return this.DataAccess.Update<IUser>(
+			if(this.DataAccess.Update<IUser>(
 				new
 				{
 					Status = status,
 					StatusTimestamp = timestamp,
 					Modification = timestamp,
 				},
-				new Condition(nameof(IUser.UserId), userId)) > 0;
+				new Condition(nameof(IUser.UserId), userId)) > 0)
+			{
+				this.OnChanged(userId, nameof(IUser.Status), status);
+				return true;
+			}
+
+			return false;
 		}
 
 		public bool SetDescription(uint userId, string description)
@@ -298,13 +338,19 @@ namespace Zongsoft.Security.Membership
 			//确认指定的用户编号是否有效
 			userId = GetUserId(userId);
 
-			return this.DataAccess.Update<IUser>(
+			if(this.DataAccess.Update<IUser>(
 				new
 				{
 					Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
 					Modification = DateTime.Now,
 				},
-				new Condition(nameof(IUser.UserId), userId)) > 0;
+				new Condition(nameof(IUser.UserId), userId)) > 0)
+			{
+				this.OnChanged(userId, nameof(IUser.Description), description);
+				return true;
+			}
+
+			return false;
 		}
 
 		public int Delete(params uint[] ids)
@@ -733,19 +779,21 @@ namespace Zongsoft.Security.Membership
 				switch(type)
 				{
 					case KEY_EMAIL_SECRET:
-						this.DataAccess.Update<IUser>(new
+						if(this.DataAccess.Update<IUser>(new
 						{
 							Email = string.IsNullOrWhiteSpace(extra) ? null : extra.Trim(),
 							Modification = DateTime.Now,
-						}, Condition.Equal(nameof(IUser.UserId), userId));
+						}, Condition.Equal(nameof(IUser.UserId), userId)) > 0)
+							this.OnChanged(userId, nameof(IUser.Email), extra);
 
 						break;
 					case KEY_PHONE_SECRET:
-						this.DataAccess.Update<IUser>(new
+						if(this.DataAccess.Update<IUser>(new
 						{
-							PhoneNumber = string.IsNullOrWhiteSpace(extra) ? null : extra.Trim(),
+							Phone = string.IsNullOrWhiteSpace(extra) ? null : extra.Trim(),
 							Modification = DateTime.Now,
-						}, Condition.Equal(nameof(IUser.UserId), userId));
+						}, Condition.Equal(nameof(IUser.UserId), userId)) > 0)
+							this.OnChanged(userId, nameof(IUser.Phone), extra);
 
 						break;
 				}
@@ -758,12 +806,12 @@ namespace Zongsoft.Security.Membership
 		#region 虚拟方法
 		protected virtual bool IsVerifyEmailRequired()
 		{
-			return (this.Option.Verification & Options.UserVerification.Email) == Options.UserVerification.Email && SecretProvider != null;
+			return (this.Option.Verification & Options.UserVerification.Email) == Options.UserVerification.Email && this.SecretProvider != null;
 		}
 
 		protected virtual bool IsVerifyPhoneRequired()
 		{
-			return (this.Option.Verification & Options.UserVerification.Phone) == Options.UserVerification.Phone && SecretProvider != null;
+			return (this.Option.Verification & Options.UserVerification.Phone) == Options.UserVerification.Phone && this.SecretProvider != null;
 		}
 
 		protected virtual void OnChangeEmail(IUser user, string email)
@@ -771,28 +819,14 @@ namespace Zongsoft.Security.Membership
 			if(user == null)
 				return;
 
-			var secretProvider = this.SecretProvider;
+			var secretProvider = this.SecretProvider ?? throw new InvalidOperationException("Missing required secret provider for the user's email change operation.");
+			var secret = secretProvider.Generate($"{KEY_EMAIL_SECRET}:{user.UserId}", email);
 
-			if(secretProvider == null)
+			CommandExecutor.Default.Execute($"email.send -template:{KEY_EMAIL_SECRET} {email}", new
 			{
-				this.DataAccess.Update<IUser>(new
-				{
-					Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim(),
-					Modification = DateTime.Now,
-				}, Condition.Equal(nameof(IUser.UserId), user.UserId));
-			}
-			else
-			{
-				var secret = secretProvider.Generate($"{KEY_EMAIL_SECRET}:{user.UserId}", email);
-
-				var parameter = new Dictionary<string, object>
-				{
-					{ "Secret", secret },
-					{ "Data", user },
-				};
-
-				CommandExecutor.Default.Execute($"email.send -template:{KEY_EMAIL_SECRET} {email}", parameter);
-			}
+				Code = secret,
+				Data = user,
+			});
 		}
 
 		protected virtual void OnChangePhone(IUser user, string phone)
@@ -800,26 +834,14 @@ namespace Zongsoft.Security.Membership
 			if(user == null)
 				return;
 
-			var secretProvider = this.SecretProvider;
+			var secretProvider = this.SecretProvider ?? throw new InvalidOperationException("Missing required secret provider for the user's phone change operation.");
+			var secret = secretProvider.Generate($"{KEY_PHONE_SECRET}:{user.UserId}", phone);
 
-			if(secretProvider == null)
+			CommandExecutor.Default.Execute($"phone.send -template:{KEY_IMPORTANT_CHANGE_TEMPLATE} {phone}", new
 			{
-				this.DataAccess.Update<IUser>(new
-				{
-					PhoneNumber = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim(),
-					Modification = DateTime.Now,
-				}, Condition.Equal(nameof(IUser.UserId), user.UserId));
-			}
-			else
-			{
-				var secret = secretProvider.Generate($"{KEY_PHONE_SECRET}:{user.UserId}", phone);
-
-				CommandExecutor.Default.Execute($"phone.send -template:{KEY_IMPORTANT_CHANGE_TEMPLATE} {phone}", new
-				{
-					Code = secret,
-					Data = user,
-				});
-			}
+				Code = secret,
+				Data = user,
+			});
 		}
 
 		protected virtual void OnValidateName(string name)
@@ -836,6 +858,13 @@ namespace Zongsoft.Security.Membership
 
 			if(validator != null)
 				validator.Validate(password, message => throw new SecurityException("password.illegality", message));
+		}
+		#endregion
+
+		#region 激发事件
+		protected virtual void OnChanged(uint userId, string propertyName, object propertyValue)
+		{
+			this.Changed?.Invoke(this, new ChangedEventArgs(userId, propertyName, propertyValue));
 		}
 		#endregion
 

@@ -37,6 +37,10 @@ namespace Zongsoft.Security.Membership
 {
 	public class RoleProvider : IRoleProvider, IMemberProvider
 	{
+		#region 事件定义
+		public event EventHandler<ChangedEventArgs> Changed;
+		#endregion
+
 		#region 成员字段
 		private IDataAccess _dataAccess;
 		private ICensorship _censorship;
@@ -131,10 +135,17 @@ namespace Zongsoft.Security.Membership
 
 		public bool SetNamespace(uint roleId, string @namespace)
 		{
-			return this.DataAccess.Update<IRole>(new
+			if(this.DataAccess.Update<IRole>(
+				new
 				{
 					Namespace = string.IsNullOrWhiteSpace(@namespace) ? null : @namespace.Trim()
-				}, new Condition(nameof(IRole.RoleId), roleId)) > 0;
+				}, new Condition(nameof(IRole.RoleId), roleId)) > 0)
+			{
+				this.OnChanged(roleId, nameof(IRole.Namespace), @namespace);
+				return true;
+			}
+
+			return false;
 		}
 
 		public int SetNamespaces(string oldNamespace, string newNamespace)
@@ -156,28 +167,49 @@ namespace Zongsoft.Security.Membership
 			//确保角色名是审核通过的
 			this.Censor(name);
 
-			return this.DataAccess.Update<IRole>(new
+			if(this.DataAccess.Update<IRole>(
+				new
+				{
+					Name = name.Trim()
+				},
+				new Condition(nameof(IRole.RoleId), roleId)) > 0)
 			{
-				Name = name.Trim()
-			},
-			new Condition(nameof(IRole.RoleId), roleId)) > 0;
+				this.OnChanged(roleId, nameof(IRole.Name), name);
+				return true;
+			}
+
+			return false;
 		}
 
 		public bool SetFullName(uint roleId, string fullName)
 		{
-			return this.DataAccess.Update<IRole>(new
+			if(this.DataAccess.Update<IRole>(
+				new
+				{
+					FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName.Trim(),
+				},
+				new Condition(nameof(IRole.RoleId), roleId)) > 0)
 			{
-				FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName.Trim(),
-			},
-			new Condition(nameof(IRole.RoleId), roleId)) > 0;
+				this.OnChanged(roleId, nameof(IRole.FullName), fullName);
+				return true;
+			}
+
+			return false;
 		}
 
 		public bool SetDescription(uint roleId, string description)
 		{
-			return this.DataAccess.Update<IRole>(new
+			if(this.DataAccess.Update<IRole>(
+				new
+				{
+					Description = string.IsNullOrEmpty(description) ? null : description
+				}, new Condition(nameof(IRole.RoleId), roleId)) > 0)
 			{
-				Description = string.IsNullOrEmpty(description) ? null : description
-			}, new Condition(nameof(IRole.RoleId), roleId)) > 0;
+				this.OnChanged(roleId, nameof(IRole.Description), description);
+				return true;
+			}
+
+			return false;
 		}
 
 		public int Delete(params uint[] ids)
@@ -359,6 +391,13 @@ namespace Zongsoft.Security.Membership
 
 			if(validator != null)
 				validator.Validate(name, message => throw new SecurityException("rolename.illegality", message));
+		}
+		#endregion
+
+		#region 激发事件
+		protected virtual void OnChanged(uint roleId, string propertyName, object propertyValue)
+		{
+			this.Changed?.Invoke(this, new ChangedEventArgs(roleId, propertyName, propertyValue));
 		}
 		#endregion
 
