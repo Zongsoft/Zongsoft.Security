@@ -143,6 +143,9 @@ namespace Zongsoft.Security
 			if(credential == null)
 				return null;
 
+			//激发续约开始事件
+			this.OnRenewing(credential);
+
 			//创建一个新的凭证对象
 			credential = credential.Renew();
 
@@ -160,6 +163,9 @@ namespace Zongsoft.Security
 
 			//将原来的凭证从本地内存缓存中删除
 			_memoryCache.Remove(credentialId);
+
+			//激发续约完成事件
+			this.OnRenewed(credential);
 
 			//返回续约后的新凭证对象
 			return credential;
@@ -251,6 +257,16 @@ namespace Zongsoft.Security
 		protected virtual void OnUnregistering(string credentialId)
 		{
 			this.Unregistering?.Invoke(this, new CredentialUnregisterEventArgs(credentialId));
+		}
+
+		protected virtual void OnRenewed(Credential credential)
+		{
+			this.Registered?.Invoke(this, new CredentialRegisterEventArgs(credential, true));
+		}
+
+		protected virtual void OnRenewing(Credential credential)
+		{
+			this.Unregistered?.Invoke(this, new CredentialUnregisterEventArgs(credential, true));
 		}
 		#endregion
 
