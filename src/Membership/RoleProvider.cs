@@ -236,6 +236,20 @@ namespace Zongsoft.Security.Membership
 			return result;
 		}
 
+		public IRole Create(string name, string @namespace, string fullName = null, string description = null)
+		{
+			if(string.IsNullOrWhiteSpace(name))
+				throw new ArgumentNullException(nameof(name));
+
+			var role = Model.Build<IRole>();
+			role.Name = name;
+			role.FullName = fullName;
+			role.Namespace = @namespace;
+			role.Description = description;
+
+			return this.Create(role) ? role : null;
+		}
+
 		public bool Create(IRole role)
 		{
 			if(role == null)

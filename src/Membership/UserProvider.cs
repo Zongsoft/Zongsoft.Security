@@ -377,7 +377,39 @@ namespace Zongsoft.Security.Membership
 			return result;
 		}
 
-		public bool Create(IUser user, string password)
+		public IUser Create(string identity, string @namespace, UserStatus status = UserStatus.Active, string description = null)
+		{
+			return this.Create(identity, @namespace, null, status, description);
+		}
+
+		public IUser Create(string identity, string @namespace, string password, UserStatus status = UserStatus.Active, string description = null)
+		{
+			if(string.IsNullOrWhiteSpace(identity))
+				throw new ArgumentNullException(nameof(identity));
+
+			var user = Model.Build<IUser>();
+
+			user.Namespace = @namespace;
+			user.Status = status;
+			user.Description = description;
+
+			switch(MembershipHelper.GetIdentityType(identity))
+			{
+				case UserIdentityType.Name:
+					user.Name = identity;
+					break;
+				case UserIdentityType.Phone:
+					user.Phone = identity;
+					break;
+				case UserIdentityType.Email:
+					user.Email = identity;
+					break;
+			}
+
+			return this.Create(user, password) ? user : null;
+		}
+
+		public bool Create(IUser user, string password = null)
 		{
 			if(user == null)
 				throw new ArgumentNullException(nameof(user));
