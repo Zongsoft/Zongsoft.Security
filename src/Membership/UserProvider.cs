@@ -452,7 +452,6 @@ namespace Zongsoft.Security.Membership
 			//更新创建时间
 			user.Creation = DateTime.Now;
 			user.Modification = null;
-			user.Description = this.GetCreatorInfo(user.Description);
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
@@ -515,7 +514,6 @@ namespace Zongsoft.Security.Membership
 				//更新创建时间
 				user.Creation = DateTime.Now;
 				user.Modification = null;
-				user.Description = this.GetCreatorInfo(user.Description);
 			}
 
 			return this.DataAccess.InsertMany(users);
@@ -936,20 +934,6 @@ namespace Zongsoft.Security.Membership
 				return userId;
 
 			throw new AuthorizationException($"The current user cannot operate on other user information.");
-		}
-
-		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-		private string GetCreatorInfo(string description)
-		{
-			var name = this.Principal?.Identity?.Name;
-
-			if(string.IsNullOrEmpty(name))
-				return description;
-
-			if(string.IsNullOrEmpty(description))
-				return "Creator: " + name;
-			else
-				return description + Environment.NewLine + "Creator: " + name;
 		}
 
 		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
