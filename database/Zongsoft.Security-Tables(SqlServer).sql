@@ -1,9 +1,9 @@
-﻿CREATE TABLE [dbo].[Security_Role] (
+CREATE TABLE [dbo].[Security_Role] (
   [RoleId] INT NOT NULL,
   [Namespace] VARCHAR(100) NULL,
   [Name] VARCHAR(50) NOT NULL,
-  [FullName] VARCHAR(50) NULL,
-  [Description] VARCHAR(500) NULL,
+  [FullName] NVARCHAR(50) NULL,
+  [Description] NVARCHAR(500) NULL,
   CONSTRAINT [PK_Security_Role] PRIMARY KEY CLUSTERED ([RoleId]),
   CONSTRAINT [UX_Security_Role_Name] UNIQUE NONCLUSTERED ([Namespace], [Name])
 )
@@ -14,21 +14,21 @@ CREATE TABLE [dbo].[Security_User] (
   [Namespace] VARCHAR(100) NULL,
   [Name] VARCHAR(50) NOT NULL,
   [FullName] NVARCHAR(50) NULL,
-  [Password] BINARY(64) NULL,
+  [Password] VARBINARY(64) NULL,
   [PasswordSalt] BIGINT NULL,
   [Email] VARCHAR(50) NULL,
   [Phone] VARCHAR(50) NULL,
-  [Status] TINYINT NOT NULL DEFAULT 1,
+  [Status] TINYINT NOT NULL DEFAULT 0,
   [StatusTimestamp] DATETIME NULL,
-  [PasswordQuestion1] VARCHAR(50) NULL,
+  [PasswordQuestion1] NVARCHAR(50) NULL,
   [PasswordAnswer1] VARBINARY(64) NULL,
-  [PasswordQuestion2] VARCHAR(50) NULL,
+  [PasswordQuestion2] NVARCHAR(50) NULL,
   [PasswordAnswer2] VARBINARY(64) NULL,
-  [PasswordQuestion3] VARCHAR(50) NULL,
+  [PasswordQuestion3] NVARCHAR(50) NULL,
   [PasswordAnswer3] VARBINARY(64) NULL,
   [Creation] DATETIME NOT NULL DEFAULT getdate(),
   [Modification] DATETIME NULL,
-  [Description] VARCHAR(500) NULL,
+  [Description] NVARCHAR(500) NULL,
   CONSTRAINT [PK_Security_User] PRIMARY KEY CLUSTERED ([UserId]),
   CONSTRAINT [UX_Security_User_Name] UNIQUE NONCLUSTERED ([Namespace], [Name]),
   CONSTRAINT [UX_Security_User_Email] UNIQUE NONCLUSTERED ([Namespace], [Email]),
@@ -59,14 +59,14 @@ CREATE TABLE [dbo].[Security_PermissionFilter] (
   [MemberType] TINYINT NOT NULL,
   [SchemaId] VARCHAR(50) NOT NULL,
   [ActionId] VARCHAR(50) NOT NULL,
-  [Filter] VARCHAR(4000) NOT NULL,
+  [Filter] VARCHAR(1000) NOT NULL,
   CONSTRAINT [PK_Security_PermissionFilter] PRIMARY KEY CLUSTERED ([MemberId], [MemberType], [SchemaId], [ActionId])
 )
 GO
 
 CREATE TABLE [dbo].[Security_Censorship] (
   [Name] VARCHAR(50) NOT NULL,
-  [Word] VARCHAR(50) NOT NULL,
+  [Word] NVARCHAR(50) NOT NULL,
   CONSTRAINT [PK_Security_Censorship] PRIMARY KEY CLUSTERED ([Name], [Word])
 )
 GO
@@ -84,10 +84,6 @@ EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'主键，角�
 EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'角色所属的命名空间，该字段表示应用或组织机构的标识', @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Security_Role', @level2type=N'COLUMN',@level2name=N'Namespace'
 EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'角色名称，该名称在所属命名空间内具有唯一性', @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Security_Role', @level2type=N'COLUMN',@level2name=N'Name'
 EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'角色全称', @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Security_Role', @level2type=N'COLUMN',@level2name=N'FullName'
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'创建者编号', @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Security_Role', @level2type=N'COLUMN',@level2name=N'CreatorId'
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'创建时间', @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Security_Role', @level2type=N'COLUMN',@level2name=N'CreatedTime'
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'最后修改者编号', @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Security_Role', @level2type=N'COLUMN',@level2name=N'ModifierId'
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'最后修改时间', @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Security_Role', @level2type=N'COLUMN',@level2name=N'ModifiedTime'
 EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'描述信息', @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Security_Role', @level2type=N'COLUMN',@level2name=N'Description'
 GO
 
