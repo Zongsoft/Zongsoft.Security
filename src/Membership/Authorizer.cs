@@ -37,7 +37,6 @@ namespace Zongsoft.Security.Membership
 	{
 		#region 成员字段
 		private IDataAccess _dataAccess;
-		private IMemberProvider _memberProvider;
 		#endregion
 
 		#region 事件定义
@@ -64,22 +63,6 @@ namespace Zongsoft.Security.Membership
 				_dataAccess = value ?? throw new ArgumentNullException();
 			}
 		}
-
-		[ServiceDependency]
-		public IMemberProvider MemberProvider
-		{
-			get
-			{
-				return _memberProvider;
-			}
-			set
-			{
-				if(value == null)
-					throw new ArgumentNullException();
-
-				_memberProvider = value;
-			}
-		}
 		#endregion
 
 		#region 公共方法
@@ -99,7 +82,7 @@ namespace Zongsoft.Security.Membership
 				return false;
 
 			//如果指定的用户属于系统内置的管理员角色则立即返回授权通过
-			if(this.MemberProvider.InRoles(userId, MembershipHelper.Administrators))
+			if(this.InRoles(userId, MembershipHelper.Administrators))
 				return true;
 
 			//获取指定的安全凭证对应的有效的授权状态集
@@ -125,6 +108,54 @@ namespace Zongsoft.Security.Membership
 			//将结果缓存在内存容器中，默认有效期为10分钟
 			return Zongsoft.Runtime.Caching.MemoryCache.Default.GetValue("Zongsoft.Security.Authorization:" + memberType.ToString() + ":" + memberId.ToString(),
 				key => new Zongsoft.Runtime.Caching.CacheEntry(this.GetAuthorizedStates(memberId, memberType), TimeSpan.FromMinutes(10))) as IEnumerable<AuthorizationState>;
+		}
+
+		public bool InRole(uint userId, uint roleId)
+		{
+			//获取指定用户编号对应的用户
+			var user = this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), userId), "UserId, Name, Namespace").FirstOrDefault();
+
+			//如果指定的用户编号对应的是系统内置管理员（即 Administrator）则进行特殊处理，即系统内置管理员账号只能默认属于内置的管理员角色，它不能隶属于其它角色
+			if(user != null && string.Equals(user.Name, MembershipHelper.Administrator, StringComparison.OrdinalIgnoreCase))
+			{
+				//获取指定角色编号对应的角色名
+				var role = this.DataAccess.Select<IRole>(Condition.Equal(nameof(IRole.RoleId), roleId) & Condition.Equal(nameof(IRole.Namespace), user.Namespace), "RoleId, Name, Namespace").FirstOrDefault();
+
+				//如果指定的角色编号对应的是系统内置管理员角色（即 Administrators）则返回真，否则一律返回假。
+				return role != null &&
+					   string.Equals(role.Name, MembershipHelper.Administrators, StringComparison.OrdinalIgnoreCase) &&
+					   string.Equals(role.Namespace, user.Namespace, StringComparison.OrdinalIgnoreCase);
+			}
+
+			//处理非系统内置管理员账号
+			if(MembershipHelper.GetAncestors(this.DataAccess, userId, MemberType.User, out var flats, out var hierarchies) > 0)
+				return flats.Any(role => role.RoleId == roleId);
+
+			return false;
+		}
+
+		public bool InRole(uint userId, string roleName)
+		{
+			return this.InRoles(userId, new string[] { roleName });
+		}
+
+		public bool InRoles(uint userId, params string[] roleNames)
+		{
+			if(roleNames == null || roleNames.Length < 1)
+				return false;
+
+			//获取指定用户编号对应的用户
+			var user = this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), userId), "UserId, Name, Namespace").FirstOrDefault();
+
+			//如果指定的用户编号对应的是系统内置管理员（即 Administrator）则进行特殊处理，即系统内置管理员账号只能默认属于内置的管理员角色，它不能隶属于其它角色
+			if(user != null && string.Equals(user.Name, MembershipHelper.Administrator, StringComparison.OrdinalIgnoreCase))
+				return roleNames.Contains(MembershipHelper.Administrators, StringComparer.OrdinalIgnoreCase);
+
+			//处理非系统内置管理员账号
+			if(MembershipHelper.GetAncestors(this.DataAccess, userId, MemberType.User, out var flats, out var hierarchies) > 0)
+				return flats.Any(role => roleNames.Contains(role.Name));
+
+			return false;
 		}
 		#endregion
 

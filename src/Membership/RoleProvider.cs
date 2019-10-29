@@ -296,49 +296,6 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 成员管理
-		public bool InRole(uint userId, uint roleId)
-		{
-			//获取指定用户编号对应的用户
-			var user = this.DataAccess.Select<IUser>(Condition.Equal("UserId", userId), "!, UserId, Name, Namespace").FirstOrDefault();
-
-			//如果指定的用户编号对应的是系统内置管理员（即 Administrator）则进行特殊处理，即系统内置管理员账号只能默认属于内置的管理员角色，它不能隶属于其它角色
-			if(user != null && string.Equals(user.Name, MembershipHelper.Administrator, StringComparison.OrdinalIgnoreCase))
-			{
-				//获取指定角色编号对应的角色名
-				var role = this.DataAccess.Select<IRole>(Condition.Equal("RoleId", roleId), "!, RoleId, Name, Namespace").FirstOrDefault();
-
-				//如果指定的角色编号对应的是系统内置管理员角色（即 Administrators）则返回真，否则一律返回假。
-				return role != null &&
-				       string.Equals(role.Name, MembershipHelper.Administrators, StringComparison.OrdinalIgnoreCase) &&
-				       string.Equals(role.Namespace, user.Namespace, StringComparison.OrdinalIgnoreCase);
-			}
-
-			//处理非系统内置管理员账号
-			if(MembershipHelper.GetAncestors(this.DataAccess, userId, MemberType.User, out var flats, out var hierarchies) > 0)
-				return flats.Any(role => role.RoleId == roleId);
-
-			return false;
-		}
-
-		public bool InRoles(uint userId, params string[] roleNames)
-		{
-			if(roleNames == null || roleNames.Length < 1)
-				return false;
-
-			//获取指定用户编号对应的用户
-			var user = this.DataAccess.Select<IUser>(Condition.Equal("UserId", userId), "!, UserId, Name, Namespace").FirstOrDefault();
-
-			//如果指定的用户编号对应的是系统内置管理员（即 Administrator）则进行特殊处理，即系统内置管理员账号只能默认属于内置的管理员角色，它不能隶属于其它角色
-			if(user != null && string.Equals(user.Name, MembershipHelper.Administrator, StringComparison.OrdinalIgnoreCase))
-				return roleNames.Contains(MembershipHelper.Administrators, StringComparer.OrdinalIgnoreCase);
-
-			//处理非系统内置管理员账号
-			if(MembershipHelper.GetAncestors(this.DataAccess, userId, MemberType.User, out var flats, out var hierarchies) > 0)
-				return flats.Any(role => roleNames.Contains(role.Name));
-
-			return false;
-		}
-
 		public IEnumerable<IRole> GetRoles(uint memberId, MemberType memberType)
 		{
 			var members = this.DataAccess.Select<Member>(Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType), "*, Role{*}");
