@@ -43,7 +43,7 @@ using Zongsoft.Security.Membership;
 
 namespace Zongsoft.Security.Web.Http.Controllers
 {
-	[Authorization(AuthorizationMode.Identity)]
+	[Authorization(Roles = "Security")]
 	public class RoleController : ApiController
 	{
 		#region 成员字段
@@ -198,7 +198,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		}
 
 		[HttpGet]
-		[Authorization(AuthorizationMode.Anonymous)]
+		[Authorization(Suppressed = true)]
 		public virtual void Exists(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))

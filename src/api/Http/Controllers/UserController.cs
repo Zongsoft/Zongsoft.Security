@@ -43,7 +43,7 @@ using Zongsoft.Web.Http;
 
 namespace Zongsoft.Security.Web.Http.Controllers
 {
-	[Authorization(AuthorizationMode.Identity)]
+	[Authorization(Roles = "Security")]
 	public class UserController : ApiController
 	{
 		#region 成员字段
@@ -308,7 +308,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		}
 
 		[HttpGet]
-		[Authorization(AuthorizationMode.Anonymous)]
+		[Authorization(Suppressed = true)]
 		public virtual void Exists(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
@@ -327,7 +327,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		}
 
 		[HttpGet]
-		[Authorization(AuthorizationMode.Anonymous)]
+		[Authorization(Suppressed = true)]
 		public void Verify(uint id, [FromRoute("args")]string type, [FromUri]string secret)
 		{
 			if(!this.UserProvider.Verify(id, type, secret))
@@ -362,7 +362,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		}
 
 		[HttpPost]
-		[Authorization(AuthorizationMode.Anonymous)]
+		[Authorization(Suppressed = true)]
 		public uint ForgetPassword(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
@@ -383,7 +383,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		}
 
 		[HttpPost]
-		[Authorization(AuthorizationMode.Anonymous)]
+		[Authorization(Suppressed = true)]
 		public void ResetPassword(string id, [FromBody]PasswordResetEntity content)
 		{
 			if(!string.IsNullOrWhiteSpace(content.Secret))
@@ -413,7 +413,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 
 		[HttpGet]
 		[ActionName("PasswordQuestions")]
-		[Authorization(AuthorizationMode.Anonymous)]
+		[Authorization(Suppressed = true)]
 		public string[] GetPasswordQuestions(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
@@ -469,9 +469,9 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			var result = false;
 
 			if(uint.TryParse(roles, out var roleId))
-				result = this.MemberProvider.InRole(userId, roleId);
+				result = this.Authorizer.InRole(userId, roleId);
 			else
-				result = this.MemberProvider.InRoles(userId, roles.Split(',', ';', '|').Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p.Trim()).ToArray());
+				result = this.Authorizer.InRoles(userId, roles.Split(',', ';', '|').Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p.Trim()).ToArray());
 
 			if(!result)
 				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);

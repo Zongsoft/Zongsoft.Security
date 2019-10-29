@@ -40,7 +40,7 @@ using Zongsoft.Security.Membership;
 
 namespace Zongsoft.Security.Web.Http.Controllers
 {
-	[Authorization(AuthorizationMode.Identity)]
+	[Authorization]
 	public class CredentialController : System.Web.Http.ApiController
 	{
 		#region 成员字段
