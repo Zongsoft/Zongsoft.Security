@@ -43,7 +43,7 @@ using Zongsoft.Web.Http;
 
 namespace Zongsoft.Security.Web.Http.Controllers
 {
-	[Authorization(Roles = "Security")]
+	[Authorization]
 	public class UserController : ApiController
 	{
 		#region 成员字段
