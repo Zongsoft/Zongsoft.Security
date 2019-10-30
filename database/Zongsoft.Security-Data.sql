@@ -4,7 +4,7 @@ INSERT INTO Security_Role (RoleId, Name, FullName, Description) VALUES (2, 'Secu
 
 /* 添加系统内置用户 */
 INSERT INTO Security_User (UserId, Name, FullName, Description, Status) VALUES (1, 'Administrator', 'Administrator', '系统管理员(系统内置帐号)', 0);
-INSERT INTO Security_User (UserId, Name, FullName, Description, Status) VALUES (2, 'Guest', 'Guest', '来宾(系统内置帐号)', 0);
+INSERT INTO Security_User (UserId, Name, FullName, Description, Status) VALUES (2, 'Guest', 'Guest', '来宾(系统内置帐号)', 1);
 
 /* 添加系统内置保留名字 */
 INSERT INTO Security_Censorship (Name, Word) VALUES ('Names', 'Automao');
