@@ -30,11 +30,14 @@ CREATE TABLE [dbo].[Security_User] (
   [Modification] DATETIME NULL,
   [Description] NVARCHAR(500) NULL,
   CONSTRAINT [PK_Security_User] PRIMARY KEY CLUSTERED ([UserId]),
-  CONSTRAINT [UX_Security_User_Name] UNIQUE NONCLUSTERED ([Namespace], [Name]),
-  CONSTRAINT [UX_Security_User_Email] UNIQUE NONCLUSTERED ([Namespace], [Email]),
-  CONSTRAINT [UX_Security_User_Phone] UNIQUE NONCLUSTERED ([Namespace], [Phone])
+  CONSTRAINT [UX_Security_User_Name] UNIQUE NONCLUSTERED ([Namespace], [Name])
 )
 GO
+
+CREATE UNIQUE NONCLUSTERED INDEX [UX_Security_User_Phone]
+    ON [dbo].[Security_User]([Namespace] ASC, [Phone] ASC) WHERE ([Phone] IS NOT NULL);
+CREATE UNIQUE NONCLUSTERED INDEX [UX_Security_User_Email]
+    ON [dbo].[Security_User]([Namespace] ASC, [Email] ASC) WHERE ([Email] IS NOT NULL);
 
 CREATE TABLE [dbo].[Security_Member] (
   [RoleId] INT NOT NULL,
