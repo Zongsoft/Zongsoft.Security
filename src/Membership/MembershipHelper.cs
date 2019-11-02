@@ -35,6 +35,8 @@ namespace Zongsoft.Security.Membership
 	internal static class MembershipHelper
 	{
 		#region 常量定义
+		internal const string Security = "Security";
+		internal const string Securities = "Securities";
 		internal const string Administrator = "Administrator";
 		internal const string Administrators = "Administrators";
 		#endregion
