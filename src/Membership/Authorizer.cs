@@ -153,7 +153,13 @@ namespace Zongsoft.Security.Membership
 
 			//处理非系统内置管理员账号
 			if(MembershipHelper.GetAncestors(this.DataAccess, userId, MemberType.User, out var flats, out var hierarchies) > 0)
-				return flats.Any(role => roleNames.Contains(role.Name));
+			{
+				//如果所属的角色中包括系统内置管理员，则该用户自然属于任何角色
+				return flats.Any(role =>
+					string.Equals(role.Name, MembershipHelper.Administrators, StringComparison.OrdinalIgnoreCase) ||
+					roleNames.Contains(role.Name)
+				);
+			}
 
 			return false;
 		}
