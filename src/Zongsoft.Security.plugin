@@ -23,7 +23,12 @@
 		<object name="Security" value="{path:../Providers/Security}" />
 	</extension>
 
-	<!-- 挂在验证和授权集成模块 -->
+	<!-- 挂载新的数据访问器 -->
+	<extension path="/Workbench/Data/Accessors">
+		<object name="Security" />
+	</extension>
+
+	<!-- 挂载验证和授权集成模块 -->
 	<extension path="/Workbench/Security">
 		<object name="Authentication" value="{static:Zongsoft.Security.Membership.Authentication.Instance, Zongsoft.CoreLibrary}">
 			<expose name="Filters" value="{path:../@Filters}" />
@@ -38,6 +43,7 @@
 
 	<!-- 挂载“安全”相关的各种服务 -->
 	<extension path="/Workspace/Services/Security">
+		<object name="Data" value="{path:/Workbench/Data/Accessors/Security}" />
 		<object name="Configuration" value="{opt:/Security/Membership/General}" />
 
 		<object name="IsAuthenticated" type="Zongsoft.Security.Membership.IsAuthenticatedPredication, Zongsoft.Security" />

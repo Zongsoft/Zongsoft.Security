@@ -14,6 +14,10 @@
 		</dependencies>
 	</manifest>
 
+	<extension path="/Workbench/Data/Accessors">
+		<security.sequence>{path:/Workspace/Externals/Redis}</security.sequence>
+	</extension>
+
 	<extension path="/Workspace/Services/Security">
 		<attempter.cache>{path:/Workspace/Externals/Redis}</attempter.cache>
 		<credentialProvider.cache>{path:/Workspace/Externals/Redis}</credentialProvider.cache>
