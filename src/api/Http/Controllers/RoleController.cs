@@ -108,6 +108,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		#endregion
 
 		#region 公共方法
+		[Authorization]
 		public virtual object Get(string id = null, [FromUri]Paging paging = null)
 		{
 			//如果标识为空或星号，则进行多角色查询
