@@ -32,8 +32,9 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 using Zongsoft.Data;
@@ -232,79 +233,86 @@ namespace Zongsoft.Security.Web.Http.Controllers
 
 		[HttpPatch]
 		[ActionName("Namespace")]
-		public void SetNamespace(uint id, string args)
+		public async Task<IHttpActionResult> SetNamespace(uint id)
 		{
-			if(string.IsNullOrWhiteSpace(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing namespace value of the user.");
+			var content = await this.Request.Content.ReadAsStringAsync();
 
-			if(!this.UserProvider.SetNamespace(id, args))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			if(string.IsNullOrWhiteSpace(content))
+				return this.BadRequest();
+
+			return this.UserProvider.SetNamespace(id, content) ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpPatch]
 		[ActionName("Name")]
-		public void SetName(uint id, string args)
+		public async Task<IHttpActionResult> SetName(uint id)
 		{
-			if(string.IsNullOrWhiteSpace(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing name value of the user.");
+			var content = await this.Request.Content.ReadAsStringAsync();
 
-			if(!this.UserProvider.SetName(id, args))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			if(string.IsNullOrWhiteSpace(content))
+				return this.BadRequest();
+
+			return this.UserProvider.SetName(id, content) ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpPatch]
 		[ActionName("FullName")]
-		public void SetFullName(uint id, string args)
+		public async Task<IHttpActionResult> SetFullName(uint id)
 		{
-			if(string.IsNullOrWhiteSpace(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing full-name value of the user.");
+			var content = await this.Request.Content.ReadAsStringAsync();
 
-			if(!this.UserProvider.SetFullName(id, args))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			if(string.IsNullOrWhiteSpace(content))
+				return this.BadRequest();
+
+			return this.UserProvider.SetFullName(id, content) ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpPatch]
 		[ActionName("Email")]
-		public void SetEmail(uint id, string args)
+		public async Task<IHttpActionResult> SetEmail(uint id)
 		{
-			if(string.IsNullOrWhiteSpace(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing email value of the user.");
+			var content = await this.Request.Content.ReadAsStringAsync();
 
-			if(!this.UserProvider.SetEmail(id, args))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			if(string.IsNullOrWhiteSpace(content))
+				return this.BadRequest();
+
+			return this.UserProvider.SetEmail(id, content) ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpPatch]
 		[ActionName("Phone")]
-		public void SetPhone(uint id, string args)
+		public async Task<IHttpActionResult> SetPhone(uint id)
 		{
-			if(string.IsNullOrWhiteSpace(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing phone number of the user.");
+			var content = await this.Request.Content.ReadAsStringAsync();
 
-			if(!this.UserProvider.SetPhone(id, args))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			if(string.IsNullOrWhiteSpace(content))
+				return this.BadRequest();
+
+			return this.UserProvider.SetPhone(id, content) ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpPatch]
 		[ActionName("Status")]
-		public virtual void SetStatus(uint id, string args)
+		public virtual async Task<IHttpActionResult> SetStatus(uint id)
 		{
-			if(string.IsNullOrWhiteSpace(args) || !Common.Convert.TryConvertValue<UserStatus>(args, out var status))
-				throw HttpResponseExceptionUtility.BadRequest("Invalid status value of the user.");
+			var content = await this.Request.Content.ReadAsStringAsync();
 
-			if(!this.UserProvider.SetStatus(id, status))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			if(string.IsNullOrWhiteSpace(content) || !Enum.TryParse<UserStatus>(content, out var status))
+				return this.BadRequest();
+
+			return this.UserProvider.SetStatus(id, status) ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpPatch]
 		[ActionName("Description")]
-		public void SetDescription(uint id, string args)
+		public async Task<IHttpActionResult> SetDescription(uint id)
 		{
-			if(string.IsNullOrWhiteSpace(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing description value of the user.");
+			var content = await this.Request.Content.ReadAsStringAsync();
 
-			if(!this.UserProvider.SetDescription(id, args))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			if(string.IsNullOrWhiteSpace(content))
+				return this.BadRequest();
+
+			return this.UserProvider.SetDescription(id, content) ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpGet]
