@@ -305,7 +305,6 @@ namespace Zongsoft.Security.Membership
 
 		public IEnumerable<Member> GetMembers(uint roleId, string schema = null)
 		{
-			//查出指定角色的所有子级成员
 			return this.DataAccess.Select<Member>(Condition.Equal("RoleId", roleId), schema);
 		}
 

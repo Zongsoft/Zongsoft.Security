@@ -66,13 +66,21 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共方法
-		public bool Authorize(uint userId, string schemaId, string actionId)
+		public bool Authorize(uint userId, string schema, string action)
 		{
-			if(string.IsNullOrWhiteSpace(schemaId))
-				throw new ArgumentNullException(nameof(schemaId));
+			return this.Authorize(this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), userId)).FirstOrDefault(), schema, action);
+		}
+
+		public bool Authorize(IUserIdentity user, string schema, string action)
+		{
+			if(user == null)
+				throw new ArgumentNullException(nameof(user));
+
+			if(string.IsNullOrEmpty(schema))
+				throw new ArgumentNullException(nameof(schema));
 
 			//创建授权上下文对象
-			var context = new AuthorizationContext(userId, schemaId, actionId, true);
+			var context = new AuthorizationContext(user, schema, action, true);
 
 			//激发“Authorizing”事件
 			this.OnAuthorizing(context);
@@ -82,17 +90,19 @@ namespace Zongsoft.Security.Membership
 				return false;
 
 			//如果指定的用户属于系统内置的管理员角色则立即返回授权通过
-			if(this.InRoles(userId, MembershipHelper.Administrators))
+			if(this.InRoles(user, MembershipHelper.Administrators))
 				return true;
 
 			//获取指定的安全凭证对应的有效的授权状态集
-			var states = this.Authorizes(userId, MemberType.User);
+			var tokens = this.Authorizes(user);
 
-			if(string.IsNullOrWhiteSpace(actionId) || actionId == "*")
-				context.IsAuthorized = states != null && states.Any(state => string.Equals(state.SchemaId, schemaId, StringComparison.OrdinalIgnoreCase));
+			if(string.IsNullOrWhiteSpace(action) || action == "*")
+				context.IsAuthorized = tokens != null && tokens.Any(state => string.Equals(state.Schema, schema, StringComparison.OrdinalIgnoreCase));
 			else
-				context.IsAuthorized = states != null && states.Any(state => string.Equals(state.SchemaId, schemaId, StringComparison.OrdinalIgnoreCase) &&
-				                                                             string.Equals(state.ActionId, actionId, StringComparison.OrdinalIgnoreCase));
+				context.IsAuthorized = tokens != null && tokens.Any(
+					token => string.Equals(token.Schema, schema, StringComparison.OrdinalIgnoreCase) &&
+					         token.Actions.Any(p => string.Equals(p.Action, action, StringComparison.OrdinalIgnoreCase))
+				);
 
 			//激发“Authorized”事件
 			this.OnAuthorized(context);
@@ -101,13 +111,54 @@ namespace Zongsoft.Security.Membership
 			return context.IsAuthorized;
 		}
 
-		public IEnumerable<AuthorizationState> Authorizes(uint memberId, MemberType memberType)
+		public IEnumerable<AuthorizationToken> Authorizes(IUserIdentity user)
 		{
-			return this.GetAuthorizedStates(memberId, memberType);
+			if(user == null)
+				throw new ArgumentNullException(nameof(user));
+
+			return this.GetAuthorizedTokens(user.Namespace, user.UserId, MemberType.User);
+		}
+
+		public IEnumerable<AuthorizationToken> Authorizes(IRole role)
+		{
+			if(role == null)
+				throw new ArgumentNullException(nameof(role));
+
+			return this.GetAuthorizedTokens(role.Namespace, role.RoleId, MemberType.Role);
+		}
+
+		public IEnumerable<AuthorizationToken> Authorizes(uint memberId, MemberType memberType)
+		{
+			string @namespace = null;
+
+			if(memberType == MemberType.User)
+			{
+				//获取指定编号的用户对象
+				var user = this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), memberId), "!, UserId, Name, Namespace").FirstOrDefault();
+
+				//如果指定编号的用户不存在，则退出
+				if(user == null)
+					return Array.Empty<AuthorizationToken>();
+
+				@namespace = user.Namespace;
+			}
+			else
+			{
+				//获取指定编号的角色对象
+				var role = this.DataAccess.Select<IRole>(Condition.Equal(nameof(IRole.RoleId), memberId), "!, RoleId, Name, Namespace").FirstOrDefault();
+
+				//如果指定编号的角色不存在或是一个内置角色（内置角色没有归属），则退出
+				if(role == null)
+					return Array.Empty<AuthorizationToken>();
+
+				@namespace = role.Namespace;
+			}
+
+			return this.GetAuthorizedTokens(@namespace, memberId, memberType);
 
 			//将结果缓存在内存容器中，默认有效期为10分钟
 			return Zongsoft.Runtime.Caching.MemoryCache.Default.GetValue("Zongsoft.Security.Authorization:" + memberType.ToString() + ":" + memberId.ToString(),
-				key => new Zongsoft.Runtime.Caching.CacheEntry(this.GetAuthorizedStates(memberId, memberType), TimeSpan.FromMinutes(10))) as IEnumerable<AuthorizationState>;
+				key => new Zongsoft.Runtime.Caching.CacheEntry(this.GetAuthorizedTokens(@namespace, memberId, memberType), TimeSpan.FromMinutes(10))) as IEnumerable<AuthorizationToken>;
 		}
 
 		public bool InRole(uint userId, uint roleId)
@@ -128,15 +179,10 @@ namespace Zongsoft.Security.Membership
 			}
 
 			//处理非系统内置管理员账号
-			if(MembershipHelper.GetAncestors(this.DataAccess, userId, MemberType.User, out var flats, out var hierarchies) > 0)
+			if(MembershipHelper.GetAncestors(this.DataAccess, user, out var flats, out var hierarchies) > 0)
 				return flats.Any(role => role.RoleId == roleId);
 
 			return false;
-		}
-
-		public bool InRole(uint userId, string roleName)
-		{
-			return this.InRoles(userId, new string[] { roleName });
 		}
 
 		public bool InRoles(uint userId, params string[] roleNames)
@@ -144,15 +190,20 @@ namespace Zongsoft.Security.Membership
 			if(roleNames == null || roleNames.Length < 1)
 				return false;
 
-			//获取指定用户编号对应的用户
-			var user = this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), userId), "UserId, Name, Namespace").FirstOrDefault();
+			return this.InRoles(this.DataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), userId), "UserId, Name, Namespace").FirstOrDefault(), roleNames);
+		}
+
+		public bool InRoles(IUserIdentity user, params string[] roleNames)
+		{
+			if(user == null || user.Name == null || roleNames == null || roleNames.Length < 1)
+				return false;
 
 			//如果指定的用户编号对应的是系统内置管理员（即 Administrator）则进行特殊处理，即系统内置管理员账号只能默认属于内置的管理员角色，它不能隶属于其它角色
-			if(user != null && string.Equals(user.Name, MembershipHelper.Administrator, StringComparison.OrdinalIgnoreCase))
+			if(string.Equals(user.Name, MembershipHelper.Administrator, StringComparison.OrdinalIgnoreCase))
 				return roleNames.Contains(MembershipHelper.Administrators, StringComparer.OrdinalIgnoreCase);
 
 			//处理非系统内置管理员账号
-			if(MembershipHelper.GetAncestors(this.DataAccess, userId, MemberType.User, out var flats, out var hierarchies) > 0)
+			if(MembershipHelper.GetAncestors(this.DataAccess, user, out var flats, out var hierarchies) > 0)
 			{
 				//如果所属的角色中包括系统内置管理员，则该用户自然属于任何角色
 				return flats.Any(role =>
@@ -166,12 +217,12 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 虚拟方法
-		protected virtual ICollection<AuthorizationState> GetAuthorizedStates(uint memberId, MemberType memberType)
+		protected virtual IEnumerable<AuthorizationToken> GetAuthorizedTokens(string @namespace, uint memberId, MemberType memberType)
 		{
 			var conditions = Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType);
 
 			//获取指定成员的所有上级角色集和上级角色的层级列表
-			if(MembershipHelper.GetAncestors(this.DataAccess, memberId, memberType, out var flats, out var hierarchies) > 0)
+			if(MembershipHelper.GetAncestors(this.DataAccess, @namespace, memberId, memberType, out var flats, out var hierarchies) > 0)
 			{
 				//如果指定成员有上级角色，则进行权限定义的查询条件还需要加上所有上级角色
 				conditions = ConditionCollection.Or(
@@ -222,7 +273,10 @@ namespace Zongsoft.Security.Membership
 			//更新授权集中的相关目标的过滤文本
 			this.SetPermissionFilters(states, permissionFilters.Where(p => p.MemberId == memberId && p.MemberType == memberType));
 
-			return states;
+			foreach(var group in states.GroupBy(p => p.SchemaId))
+			{
+				yield return new AuthorizationToken(group.Key, group.Select(p => new AuthorizationToken.ActionToken(p.ActionId, p.Filter)));
+			}
 		}
 		#endregion
 
@@ -255,6 +309,60 @@ namespace Zongsoft.Security.Membership
 						state.Filter += " | " + string.Join("; ", group.Select(p => p.Filter));
 				}
 			}
+		}
+		#endregion
+
+		#region 嵌套子类
+		private class AuthorizationState : IEquatable<AuthorizationState>
+		{
+			#region 公共字段
+			public readonly string SchemaId;
+			public readonly string ActionId;
+			public string Filter;
+			#endregion
+
+			#region 构造函数
+			public AuthorizationState(string schemaId, string actionId, string filter = null)
+			{
+				if(string.IsNullOrEmpty(schemaId))
+					throw new ArgumentNullException(nameof(schemaId));
+				if(string.IsNullOrEmpty(actionId))
+					throw new ArgumentNullException(nameof(actionId));
+
+				this.SchemaId = schemaId.ToUpperInvariant();
+				this.ActionId = actionId.ToUpperInvariant();
+				this.Filter = filter;
+			}
+			#endregion
+
+			#region 重写方法
+			public bool Equals(AuthorizationState other)
+			{
+				return string.Equals(this.SchemaId, other.SchemaId) &&
+				       string.Equals(this.ActionId, other.ActionId);
+			}
+
+			public override bool Equals(object obj)
+			{
+				if(obj == null || obj.GetType() != typeof(AuthorizationState))
+					return false;
+
+				return this.Equals((AuthorizationState)obj);
+			}
+
+			public override int GetHashCode()
+			{
+				return this.SchemaId.GetHashCode() ^ this.ActionId.GetHashCode();
+			}
+
+			public override string ToString()
+			{
+				if(string.IsNullOrEmpty(this.Filter))
+					return this.SchemaId + ":" + this.ActionId;
+				else
+					return this.SchemaId + ":" + this.ActionId + "(" + this.Filter + ")";
+			}
+			#endregion
 		}
 		#endregion
 	}

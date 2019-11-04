@@ -496,14 +496,9 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		}
 
 		[HttpGet]
-		public System.Collections.IEnumerable Authorizes(uint id)
+		public IEnumerable<AuthorizationToken> Authorizes(uint id)
 		{
-			var states = this.Authorizer.Authorizes(id, MemberType.User);
-
-			foreach(var group in states.GroupBy(p => p.SchemaId))
-			{
-				yield return new AuthorizeEntity(group.Key, group.Select(p => p.ActionId));
-			}
+			return this.Authorizer.Authorizes(id, MemberType.User);
 		}
 		#endregion
 
@@ -556,18 +551,6 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			public string Password;
 			public string[] Questions;
 			public string[] Answers;
-		}
-
-		private struct AuthorizeEntity
-		{
-			public string Schema;
-			public IEnumerable<string> Actions;
-
-			public AuthorizeEntity(string schema, IEnumerable<string> actions)
-			{
-				this.Schema = schema;
-				this.Actions = actions;
-			}
 		}
 		#endregion
 	}

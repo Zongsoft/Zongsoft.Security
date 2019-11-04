@@ -42,6 +42,45 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共方法
+		public static int GetAncestors(IDataAccess dataAccess, IUserIdentity user, out ISet<IRole> flats, out IList<IEnumerable<IRole>> hierarchies)
+		{
+			flats = null;
+			hierarchies = null;
+
+			//如果指定编号的用户不存在，则退出
+			if(user == null)
+				return 0;
+
+			//如果指定编号的用户是内置的“Administrator”账号，则直接返回（因为内置管理员只隶属于内置的“Administrators”角色，而不能属于其他角色）
+			if(string.Equals(user.Name, Administrator, StringComparison.OrdinalIgnoreCase))
+			{
+				//获取当前用户同命名空间下的“Administrators”内置角色
+				flats = new HashSet<IRole>(dataAccess.Select<IRole>(Condition.Equal(nameof(IRole.Name), Administrators) & Condition.Equal(nameof(IRole.Namespace), user.Namespace)));
+
+				if(flats.Count > 0)
+				{
+					hierarchies = new List<IEnumerable<IRole>>();
+					hierarchies.Add(flats);
+				}
+
+				return flats.Count;
+			}
+
+			return GetAncestors(dataAccess, user.Namespace, user.UserId, MemberType.User, out flats, out hierarchies);
+		}
+
+		public static int GetAncestors(IDataAccess dataAccess, IRole role, out ISet<IRole> flats, out IList<IEnumerable<IRole>> hierarchies)
+		{
+			flats = null;
+			hierarchies = null;
+
+			//如果指定编号的角色不存在或是一个内置角色（内置角色没有归属），则退出
+			if(role == null || IsBuiltin(role.Name))
+				return 0;
+
+			return GetAncestors(dataAccess, role.Namespace, role.RoleId, MemberType.Role, out flats, out hierarchies);
+		}
+
 		/// <summary>
 		/// 获取指定用户或角色的上级角色集。
 		/// </summary>
@@ -51,55 +90,13 @@ namespace Zongsoft.Security.Membership
 		/// <param name="flats">输出参数，表示所隶属的所有上级角色集，该集已经去除重复。</param>
 		/// <param name="hierarchies">输出参数，表示所隶属的所有上级角色的层级列表，该列表包含的所有角色已经去除重复。</param>
 		/// <returns>返回指定成员隶属的所有上级角色去重后的数量。</returns>
-		public static int GetAncestors(IDataAccess dataAccess, uint memberId, MemberType memberType, out ISet<IRole> flats, out IList<IEnumerable<IRole>> hierarchies)
+		public static int GetAncestors(IDataAccess dataAccess, string @namespace, uint memberId, MemberType memberType, out ISet<IRole> flats, out IList<IEnumerable<IRole>> hierarchies)
 		{
 			if(dataAccess == null)
 				throw new ArgumentNullException(nameof(dataAccess));
 
 			flats = null;
 			hierarchies = null;
-
-			//指定成员的所属命名空间
-			string @namespace = null;
-
-			if(memberType == MemberType.User)
-			{
-				//获取指定编号的用户对象
-				var user = dataAccess.Select<IUser>(Condition.Equal(nameof(IUser.UserId), memberId), "!, UserId, Name, Namespace").FirstOrDefault();
-
-				//如果指定编号的用户不存在，则退出
-				if(user == null)
-					return 0;
-
-				//如果指定编号的用户是内置的“Administrator”账号，则直接返回（因为内置管理员只隶属于内置的“Administrators”角色，而不能属于其他角色）
-				if(string.Equals(user.Name, Administrator, StringComparison.OrdinalIgnoreCase))
-				{
-					//获取当前用户同命名空间下的“Administrators”内置角色
-					flats = new HashSet<IRole>(dataAccess.Select<IRole>(Condition.Equal(nameof(IRole.Name), Administrators) & Condition.Equal(nameof(IRole.Namespace), user.Namespace)));
-
-					if(flats.Count > 0)
-					{
-						hierarchies = new List<IEnumerable<IRole>>();
-						hierarchies.Add(flats);
-					}
-
-					//返回（零或者一）
-					return flats.Count;
-				}
-
-				@namespace = user.Namespace;
-			}
-			else
-			{
-				//获取指定编号的角色对象
-				var role = dataAccess.Select<IRole>(Condition.Equal(nameof(IRole.RoleId), memberId), "!, RoleId, Name, Namespace").FirstOrDefault();
-
-				//如果指定编号的角色不存在或是一个内置角色（内置角色没有归属），则退出
-				if(role == null || IsBuiltin(role.Name))
-					return 0;
-
-				@namespace = role.Namespace;
-			}
 
 			//获取指定用户所属命名空间下的所有成员及其关联的角色对象（注：即时加载到内存中）
 			var members = dataAccess.Select<Member>(Condition.Equal("Role.Namespace", @namespace), "*, Role{*}")
@@ -111,7 +108,7 @@ namespace Zongsoft.Security.Membership
 
 			//从角色成员集合中查找出指定成员的父级角色
 			var parents = members.Where(m => m.MemberId == memberId && m.MemberType == memberType)
-			                     .Select(m => m.Role).ToArray();
+			                     .Select(m => m.Role);
 
 			//如果父级角色集不为空
 			while(parents.Any())
@@ -124,7 +121,7 @@ namespace Zongsoft.Security.Membership
 				//从角色成员集合中查找出当前层级中所有角色的父级角色集合（并进行全局去重）
 				parents = members.Where(m => parents.Any(p => p.RoleId == m.MemberId) && m.MemberType == MemberType.Role)
 				                 .Select(m => m.Role)
-				                 .Except(flats).ToArray();
+				                 .Except(flats);
 			}
 
 			return flats.Count;

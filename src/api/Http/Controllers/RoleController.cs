@@ -292,7 +292,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 
 		#region 授权方法
 		[HttpGet]
-		public IEnumerable<AuthorizationState> Authorizes(uint id)
+		public IEnumerable<AuthorizationToken> Authorizes(uint id)
 		{
 			return this.Authorizer.Authorizes(id, MemberType.Role);
 		}
