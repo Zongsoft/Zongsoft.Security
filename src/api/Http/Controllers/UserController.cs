@@ -292,18 +292,6 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		}
 
 		[HttpPatch]
-		[ActionName("Status")]
-		public virtual async Task<IHttpActionResult> SetStatus(uint id)
-		{
-			var content = await this.Request.Content.ReadAsStringAsync();
-
-			if(string.IsNullOrWhiteSpace(content) || !Enum.TryParse<UserStatus>(content, out var status))
-				return this.BadRequest();
-
-			return this.UserProvider.SetStatus(id, status) ? (IHttpActionResult)this.Ok() : this.NotFound();
-		}
-
-		[HttpPatch]
 		[ActionName("Description")]
 		public async Task<IHttpActionResult> SetDescription(uint id)
 		{
@@ -313,6 +301,13 @@ namespace Zongsoft.Security.Web.Http.Controllers
 				return this.BadRequest();
 
 			return this.UserProvider.SetDescription(id, content) ? (IHttpActionResult)this.Ok() : this.NotFound();
+		}
+
+		[HttpPatch]
+		[ActionName("Status")]
+		public virtual IHttpActionResult SetStatus(uint id, [FromRoute("args")]UserStatus status)
+		{
+			return this.UserProvider.SetStatus(id, status) ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpGet]
