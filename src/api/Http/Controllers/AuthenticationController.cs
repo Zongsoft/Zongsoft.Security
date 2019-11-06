@@ -129,18 +129,16 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		[Authorization]
 		public void Signout(string id)
 		{
-			if(string.IsNullOrWhiteSpace(id))
-				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
-
-			_credentialProvider.Unregister(id);
+			if(id != null && id.Length > 0)
+				_credentialProvider.Unregister(id);
 		}
 
 		[HttpGet]
 		[ActionName("Secret")]
-		public void Secret(string id)
+		public IHttpActionResult Secret(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
-				throw Zongsoft.Web.Http.HttpResponseExceptionUtility.BadRequest("Missing required argument.");
+				return this.BadRequest();
 
 			var parts = id.Split(':');
 
@@ -148,6 +146,8 @@ namespace Zongsoft.Security.Web.Http.Controllers
 				_authenticator.Secret(parts[1], parts[0]);
 			else
 				_authenticator.Secret(parts[0], null);
+
+			return this.StatusCode(System.Net.HttpStatusCode.NoContent);
 		}
 		#endregion
 

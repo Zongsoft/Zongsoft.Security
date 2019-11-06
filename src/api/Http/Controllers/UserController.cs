@@ -55,7 +55,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		#endregion
 
 		#region 公共属性
-		[ServiceDependency]
+		[ServiceDependency(IsRequired = true)]
 		public IAuthorizer Authorizer
 		{
 			get
@@ -68,7 +68,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			}
 		}
 
-		[ServiceDependency]
+		[ServiceDependency(IsRequired = true)]
 		public IUserProvider UserProvider
 		{
 			get
@@ -81,7 +81,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			}
 		}
 
-		[ServiceDependency]
+		[ServiceDependency(IsRequired = true)]
 		public IMemberProvider MemberProvider
 		{
 			get
@@ -94,7 +94,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			}
 		}
 
-		[ServiceDependency]
+		[ServiceDependency(IsRequired = true)]
 		public IPermissionProvider PermissionProvider
 		{
 			get
@@ -201,23 +201,19 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			return this.UserProvider.GetUser(identity, @namespace);
 		}
 
-		public virtual int Delete(string id)
+		public virtual object Delete(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
-				return 0;
+				return this.BadRequest();
 
-			var parts = id.Split(',', ';').Where(p => p.Length > 0).Select(p => uint.Parse(p)).Where(p => p > 0).ToArray();
-
-			if(parts.Length > 0)
-				return this.UserProvider.Delete(parts);
-
-			return 0;
+			var count = this.UserProvider.Delete(Common.StringExtension.Slice<uint>(id, chr => chr == ',' || chr == '|', uint.TryParse).Where(p => p > 0).ToArray());
+			return count > 0 ? (IHttpActionResult)this.Ok(count) : this.NotFound();
 		}
 
 		public virtual object Post(IUser model)
 		{
 			if(model == null)
-				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
+				return this.BadRequest();
 
 			string password = null;
 
@@ -228,7 +224,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			if(this.UserProvider.Create(model, password))
 				return model;
 
-			throw new HttpResponseException(System.Net.HttpStatusCode.Conflict);
+			return this.Conflict();
 		}
 
 		[HttpPatch]
@@ -312,10 +308,10 @@ namespace Zongsoft.Security.Web.Http.Controllers
 
 		[HttpGet]
 		[Authorization(Suppressed = true)]
-		public virtual void Exists(string id)
+		public virtual IHttpActionResult Exists(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
-				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
+				return this.BadRequest();
 
 			var existed = false;
 			var userId = Utility.ResolvePattern(id, out var identity, out var @namespace, out var suffix);
@@ -325,25 +321,24 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			else
 				existed = this.UserProvider.Exists(identity, @namespace);
 
-			if(!existed)
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			return existed ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpGet]
 		[Authorization(Suppressed = true)]
-		public void Verify(uint id, [FromRoute("args")]string type, [FromUri]string secret)
+		public IHttpActionResult Verify(uint id, [FromRoute("args")]string type, [FromUri]string secret)
 		{
-			if(!this.UserProvider.Verify(id, type, secret))
-				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
+			return this.UserProvider.Verify(id, type, secret) ?
+			       (IHttpActionResult)this.Ok() : this.BadRequest();
 		}
 		#endregion
 
 		#region 密码处理
 		[HttpGet]
-		public void HasPassword(string id)
+		public IHttpActionResult HasPassword(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
-				throw HttpResponseExceptionUtility.BadRequest("Missing required argument.");
+				return this.BadRequest();
 
 			var existed = false;
 			var userId = Utility.ResolvePattern(id, out var identity, out var @namespace, out var suffix);
@@ -353,23 +348,22 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			else
 				existed = this.UserProvider.HasPassword(identity, @namespace);
 
-			if(!existed)
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			return existed ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpPut]
-		public void ChangePassword(uint id, PasswordChangeEntity password)
+		public IHttpActionResult ChangePassword(uint id, PasswordChangeEntity password)
 		{
-			if(!this.UserProvider.ChangePassword(id, password.OldPassword, password.NewPassword))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			return this.UserProvider.ChangePassword(id, password.OldPassword, password.NewPassword) ?
+				(IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpPost]
 		[Authorization(Suppressed = true)]
-		public uint ForgetPassword(string id)
+		public IHttpActionResult ForgetPassword(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
-				throw HttpResponseExceptionUtility.BadRequest("Missing required argument.");
+				return this.BadRequest();
 
 			var parts = id.Split(':');
 			var userId = 0u;
@@ -379,23 +373,20 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			else
 				userId = this.UserProvider.ForgetPassword(parts[0], null);
 
-			if(userId == 0)
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
-
-			return userId;
+			return userId == 0 ? (IHttpActionResult)this.NotFound() : this.Ok(userId);
 		}
 
 		[HttpPost]
 		[Authorization(Suppressed = true)]
-		public void ResetPassword(string id, [FromBody]PasswordResetEntity content)
+		public IHttpActionResult ResetPassword(string id, [FromBody]PasswordResetEntity content)
 		{
 			if(!string.IsNullOrWhiteSpace(content.Secret))
 			{
 				if(!uint.TryParse(id, out var userId))
-					throw HttpResponseExceptionUtility.BadRequest("Invalid id argument, it must be a integer.");
+					return this.BadRequest("Invalid id argument, it must be a integer.");
 
 				if(!this.UserProvider.ResetPassword(userId, content.Secret, content.Password))
-					throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+					return this.NotFound();
 			}
 			else if(content.PasswordAnswers != null && content.PasswordAnswers.Length > 0)
 			{
@@ -406,21 +397,23 @@ namespace Zongsoft.Security.Web.Http.Controllers
 					identity = userId.ToString();
 
 				if(!this.UserProvider.ResetPassword(identity, @namespace, content.PasswordAnswers, content.Password))
-					throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+					return this.NotFound();
 			}
 			else
 			{
-				throw HttpResponseExceptionUtility.BadRequest();
+				return this.BadRequest();
 			}
+
+			return this.Ok();
 		}
 
 		[HttpGet]
 		[ActionName("PasswordQuestions")]
 		[Authorization(Suppressed = true)]
-		public string[] GetPasswordQuestions(string id)
+		public IHttpActionResult GetPasswordQuestions(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
-				throw HttpResponseExceptionUtility.BadRequest("Missing required argument.");
+				return this.BadRequest();
 
 			var userId = Utility.ResolvePattern(id, out var identity, out var @namespace, out var suffix);
 			string[] result = null;
@@ -432,25 +425,25 @@ namespace Zongsoft.Security.Web.Http.Controllers
 
 			//如果返回的结果为空表示指定的表示的用户不存在
 			if(result == null)
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+				return this.NotFound();
 
 			//如果问题数组内容不是全空，则返回该数组
 			for(int i = 0; i < result.Length; i++)
 			{
 				if(!string.IsNullOrEmpty(result[i]))
-					return result;
+					return this.Ok(result);
 			}
 
-			//返回空
-			return null;
+			//返回空消息
+			return this.StatusCode(System.Net.HttpStatusCode.NoContent);
 		}
 
 		[HttpPut]
 		[ActionName("PasswordAnswers")]
-		public void SetPasswordQuestionsAndAnswers(uint id, [FromBody]PasswordQuestionsAndAnswersEntity content)
+		public IHttpActionResult SetPasswordQuestionsAndAnswers(uint id, [FromBody]PasswordQuestionsAndAnswersEntity content)
 		{
-			if(!this.UserProvider.SetPasswordQuestionsAndAnswers(id, content.Password, content.Questions, content.Answers))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			return this.UserProvider.SetPasswordQuestionsAndAnswers(id, content.Password, content.Questions, content.Answers) ?
+				(IHttpActionResult)this.Ok() : this.NotFound();
 		}
 		#endregion
 
@@ -464,35 +457,29 @@ namespace Zongsoft.Security.Web.Http.Controllers
 
 		[HttpGet]
 		[ActionName("In")]
-		public void InRole([FromRoute("id")]uint userId, [FromRoute("args")]string roles)
+		public IHttpActionResult InRole([FromRoute("id")]uint userId, [FromRoute("args")]string roles)
 		{
 			if(string.IsNullOrEmpty(roles))
-				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
+				return this.BadRequest();
 
-			var result = false;
-
-			if(uint.TryParse(roles, out var roleId))
-				result = this.Authorizer.InRole(userId, roleId);
-			else
-				result = this.Authorizer.InRoles(userId, Common.StringExtension.Slice(roles, ',', ';', '|').ToArray());
-
-			if(!result)
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			return this.Authorizer.InRoles(userId, Common.StringExtension.Slice(roles, ',', ';', '|').ToArray()) ?
+			       (IHttpActionResult)this.Ok() :
+			       (IHttpActionResult)this.NotFound();
 		}
 		#endregion
 
 		#region 授权方法
 		[HttpGet]
-		public void Authorize([FromRoute("id")]uint userId, [FromRoute("args")]string schemaId, [FromRoute("args")]string actionId)
+		public IHttpActionResult Authorize([FromRoute("id")]uint userId, [FromRoute("args")]string schemaId, [FromRoute("args")]string actionId)
 		{
 			if(string.IsNullOrWhiteSpace(schemaId))
-				throw HttpResponseExceptionUtility.BadRequest("Missing schema for the authorize operation.");
+				return this.BadRequest("Missing schema for the authorize operation.");
 
 			if(string.IsNullOrWhiteSpace(actionId))
-				throw HttpResponseExceptionUtility.BadRequest("Missing action for the authorize operation.");
+				return this.BadRequest("Missing action for the authorize operation.");
 
-			if(!this.Authorizer.Authorize(userId, schemaId, actionId))
-				throw new HttpResponseException(System.Net.HttpStatusCode.Forbidden);
+			return this.Authorizer.Authorize(userId, schemaId, actionId) ?
+				(IHttpActionResult)this.Ok() : this.StatusCode(System.Net.HttpStatusCode.Forbidden);
 		}
 
 		[HttpGet]

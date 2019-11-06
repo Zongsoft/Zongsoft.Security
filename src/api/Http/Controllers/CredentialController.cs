@@ -65,11 +65,11 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		#region 公共方法
 		public object Get(string id)
 		{
-			if(string.IsNullOrWhiteSpace(id))
-				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
+			if(string.IsNullOrEmpty(id))
+				return this.BadRequest();
 
-			var index = id.IndexOfAny(new[] { '!', '@' });
-			Credential credential = null;
+			Credential credential;
+			var index = id.LastIndexOfAny(new[] { '!', '@' });
 
 			if(index > 0 && index < id.Length - 1)
 				credential = this.CredentialProvider.GetCredential(id.Substring(0, index), id.Substring(index + 1));
@@ -77,31 +77,25 @@ namespace Zongsoft.Security.Web.Http.Controllers
 				credential = this.CredentialProvider.GetCredential(id);
 
 			if(credential == null)
-				return new HttpResponseMessage(System.Net.HttpStatusCode.NoContent);
+				return this.StatusCode(System.Net.HttpStatusCode.NoContent);
 
 			return credential;
 		}
 
 		public void Delete(string id)
 		{
-			if(string.IsNullOrWhiteSpace(id))
-				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
-
-			this.CredentialProvider.Unregister(id);
+			if(id != null && id.Length > 0)
+				this.CredentialProvider.Unregister(id);
 		}
 
 		[HttpGet]
 		public object Renew(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
-				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
+				return this.BadRequest();
 
 			var credential = this.CredentialProvider.Renew(id);
-
-			if(credential == null)
-				return new HttpResponseMessage(System.Net.HttpStatusCode.NoContent);
-
-			return credential;
+			return credential == null ? (IHttpActionResult)this.BadRequest() : this.Ok(credential);
 		}
 		#endregion
 	}

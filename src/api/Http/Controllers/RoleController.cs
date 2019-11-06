@@ -32,8 +32,9 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 using Zongsoft.Data;
@@ -54,7 +55,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		#endregion
 
 		#region 公共属性
-		[ServiceDependency]
+		[ServiceDependency(IsRequired = true)]
 		public IAuthorizer Authorizer
 		{
 			get
@@ -67,7 +68,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			}
 		}
 
-		[ServiceDependency]
+		[ServiceDependency(IsRequired = true)]
 		public IRoleProvider RoleProvider
 		{
 			get
@@ -80,7 +81,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			}
 		}
 
-		[ServiceDependency]
+		[ServiceDependency(IsRequired = true)]
 		public IMemberProvider MemberProvider
 		{
 			get
@@ -93,7 +94,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			}
 		}
 
-		[ServiceDependency]
+		[ServiceDependency(IsRequired = true)]
 		public IPermissionProvider PermissionProvider
 		{
 			get
@@ -130,91 +131,90 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			return this.RoleProvider.GetRole(identity, @namespace);
 		}
 
-		public virtual int Delete(string id)
+		public virtual object Delete(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
-				return 0;
+				return this.BadRequest();
 
-			var parts = id.Split(',').Where(p => p.Length > 0).Select(p => uint.Parse(p)).Where(p => p > 0).ToArray();
-
-			if(parts.Length > 0)
-				return this.RoleProvider.Delete(parts);
-
-			return 0;
+			var count = this.RoleProvider.Delete(Common.StringExtension.Slice<uint>(id, chr => chr == ',' || chr == '|', uint.TryParse).Where(p => p > 0).ToArray());
+			return count > 0 ? (IHttpActionResult)this.Ok(count) : this.NotFound();
 		}
 
 		public virtual object Post(IRole model)
 		{
 			if(model == null)
-				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
+				return this.BadRequest();
 
 			if(this.RoleProvider.Create(model))
 				return model;
 
-			throw new HttpResponseException(System.Net.HttpStatusCode.Conflict);
+			return this.Conflict();
 		}
 
 		[HttpPatch]
 		[ActionName("Namespace")]
-		public void SetNamespace(uint id, string args)
+		public async Task<IHttpActionResult> SetNamespace(uint id)
 		{
-			if(string.IsNullOrWhiteSpace(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing namespace value of the role.");
+			var content = await this.Request.Content.ReadAsStringAsync();
 
-			if(!this.RoleProvider.SetNamespace(id, args))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			if(string.IsNullOrWhiteSpace(content))
+				return this.BadRequest();
+
+			return this.RoleProvider.SetNamespace(id, content) ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpPatch]
 		[ActionName("Name")]
-		public void SetName(uint id, string args)
+		public async Task<IHttpActionResult> SetName(uint id)
 		{
-			if(string.IsNullOrWhiteSpace(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing name value of the role.");
+			var content = await this.Request.Content.ReadAsStringAsync();
 
-			if(!this.RoleProvider.SetName(id, args))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			if(string.IsNullOrWhiteSpace(content))
+				return this.BadRequest();
+
+			return this.RoleProvider.SetName(id, content) ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpPatch]
 		[ActionName("FullName")]
-		public void SetFullName(uint id, string args)
+		public async Task<IHttpActionResult> SetFullName(uint id)
 		{
-			if(string.IsNullOrWhiteSpace(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing full-name value of the role.");
+			var content = await this.Request.Content.ReadAsStringAsync();
 
-			if(!this.RoleProvider.SetFullName(id, args))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			if(string.IsNullOrWhiteSpace(content))
+				return this.BadRequest();
+
+			return this.RoleProvider.SetFullName(id, content) ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpPatch]
 		[ActionName("Description")]
-		public void SetDescription(uint id, string args)
+		public async Task<IHttpActionResult> SetDescription(uint id)
 		{
-			if(string.IsNullOrWhiteSpace(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing description value of the role.");
+			var content = await this.Request.Content.ReadAsStringAsync();
 
-			if(!this.RoleProvider.SetDescription(id, args))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			if(string.IsNullOrWhiteSpace(content))
+				return this.BadRequest();
+
+			return this.RoleProvider.SetDescription(id, content) ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 
 		[HttpGet]
 		[Authorization(Suppressed = true)]
-		public virtual void Exists(string id)
+		public virtual IHttpActionResult Exists(string id)
 		{
 			if(string.IsNullOrWhiteSpace(id))
-				throw new HttpResponseException(System.Net.HttpStatusCode.BadRequest);
+				return this.BadRequest();
 
 			var existed = false;
-			var roleId = Utility.ResolvePattern(id, out var identity, out var @namespace, out var suffix);
+			var userId = Utility.ResolvePattern(id, out var identity, out var @namespace, out var suffix);
 
-			if(roleId > 0)
-				existed = this.RoleProvider.Exists(roleId);
+			if(userId > 0)
+				existed = this.RoleProvider.Exists(userId);
 			else
 				existed = this.RoleProvider.Exists(identity, @namespace);
 
-			if(!existed)
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			return existed ? (IHttpActionResult)this.Ok() : this.NotFound();
 		}
 		#endregion
 
@@ -235,58 +235,56 @@ namespace Zongsoft.Security.Web.Http.Controllers
 
 		[HttpPost]
 		[ActionName("Member")]
-		public void SetMember(uint id, string args)
+		public IHttpActionResult SetMember(uint id, string args)
 		{
 			if(string.IsNullOrEmpty(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing required member argument.");
+				return this.BadRequest();
 
 			var parts = args.Split(':');
 
 			if(!Enum.TryParse<MemberType>(parts[0], true, out var memberType))
-				throw HttpResponseExceptionUtility.BadRequest("Invalid value of the member-type argument.");
+				return this.BadRequest("Invalid value of the member-type argument.");
 
 			if(!uint.TryParse(parts[1], out var memberId))
-				throw HttpResponseExceptionUtility.BadRequest("Invalid value of the member-id argument.");
+				return this.BadRequest("Invalid value of the member-id argument.");
 
-			this.MemberProvider.SetMembers(id, new[] { new Member(id, memberId, memberType) }, false);
+			return this.MemberProvider.SetMembers(id, new[] { new Member(id, memberId, memberType) }, false) > 0 ?
+				(IHttpActionResult)this.StatusCode(System.Net.HttpStatusCode.NoContent) : this.NotFound();
 		}
 
 		[HttpPost]
 		[ActionName("Members")]
-		public int SetMembers(uint id, [FromBody]IEnumerable<Member> members)
+		public IHttpActionResult SetMembers(uint id, [FromBody]IEnumerable<Member> members)
 		{
-			return this.MemberProvider.SetMembers(id, members, false);
+			var count = this.MemberProvider.SetMembers(id, members, false);
+			return count > 0 ? (IHttpActionResult)this.Ok(count) : this.NotFound();
 		}
 
 		[HttpDelete]
 		[ActionName("Member")]
-		public void RemoveMember(uint id, string args)
+		public IHttpActionResult RemoveMember(uint id, string args)
 		{
 			if(string.IsNullOrEmpty(args))
-				throw HttpResponseExceptionUtility.BadRequest("Missing required member argument.");
+				return this.BadRequest();
 
 			var parts = args.Split(':');
 
 			if(!Enum.TryParse<MemberType>(parts[0], true, out var memberType))
-				throw HttpResponseExceptionUtility.BadRequest("Invalid value of the member-type argument.");
+				return this.BadRequest("Invalid value of the member-type argument.");
 
 			if(!uint.TryParse(parts[1], out var memberId))
-				throw HttpResponseExceptionUtility.BadRequest("Invalid value of the member-id argument.");
+				return this.BadRequest("Invalid value of the member-id argument.");
 
-			if(!this.MemberProvider.Delete(id, memberId, memberType))
-				throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+			return this.MemberProvider.Delete(id, memberId, memberType) ?
+				(IHttpActionResult)this.StatusCode(System.Net.HttpStatusCode.NoContent) : this.NotFound();
 		}
 
 		[HttpDelete]
 		[ActionName("Members")]
-		public object RemoveMembers(uint id)
+		public IHttpActionResult RemoveMembers(uint id)
 		{
 			var count = this.MemberProvider.Delete(id);
-
-			if(count > 0)
-				return count;
-
-			return new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.NoContent);
+			return count > 0 ? (IHttpActionResult)this.Ok(count) : this.StatusCode(System.Net.HttpStatusCode.NoContent);
 		}
 		#endregion
 
