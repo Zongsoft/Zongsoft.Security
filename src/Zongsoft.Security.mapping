@@ -13,7 +13,7 @@
 			<property name="Namespace" type="string" length="50" nullable="false" />
 			<property name="Description" type="string" length="500" nullable="true" />
 
-			<complexProperty name="Members" role="Member" multiplicity="*">
+			<complexProperty name="Members" role="Member" multiplicity="*" immutable="false">
 				<link name="RoleId" role="RoleId" />
 			</complexProperty>
 
@@ -23,6 +23,22 @@
 
 			<complexProperty name="Roles" role="Member:MemberRole" multiplicity="*">
 				<link name="RoleId" role="RoleId" />
+			</complexProperty>
+
+			<complexProperty name="Permissions" role="Permission" multiplicity="*" immutable="false">
+				<link name="RoleId" role="MemberId" />
+
+				<constraints>
+					<constraint name="MemberType" value="1" />
+				</constraints>
+			</complexProperty>
+
+			<complexProperty name="PermissionFilters" role="PermissionFilter" multiplicity="*" immutable="false">
+				<link name="RoleId" role="MemberId" />
+
+				<constraints>
+					<constraint name="MemberType" value="1" />
+				</constraints>
 			</complexProperty>
 		</entity>
 
@@ -50,6 +66,30 @@
 			<property name="Creation" type="datetime" nullable="false" default="now()" />
 			<property name="Modification" type="datetime" nullable="true" />
 			<property name="Description" type="string" length="500" nullable="true" />
+
+			<complexProperty name="Roles" role="Member:Role" multiplicity="*">
+				<link name="UserId" role="MemberId" />
+
+				<constraints>
+					<constraint name="MemberType" value="0" />
+				</constraints>
+			</complexProperty>
+
+			<complexProperty name="Permissions" role="Permission" multiplicity="*" immutable="false">
+				<link name="UserId" role="MemberId" />
+
+				<constraints>
+					<constraint name="MemberType" value="0" />
+				</constraints>
+			</complexProperty>
+
+			<complexProperty name="PermissionFilters" role="PermissionFilter" multiplicity="*" immutable="false">
+				<link name="UserId" role="MemberId" />
+
+				<constraints>
+					<constraint name="MemberType" value="0" />
+				</constraints>
+			</complexProperty>
 		</entity>
 
 		<entity name="Member" table="security_member">
