@@ -38,6 +38,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [UX_Security_User_Phone]
     ON [dbo].[Security_User]([Namespace] ASC, [Phone] ASC) WHERE ([Phone] IS NOT NULL);
 CREATE UNIQUE NONCLUSTERED INDEX [UX_Security_User_Email]
     ON [dbo].[Security_User]([Namespace] ASC, [Email] ASC) WHERE ([Email] IS NOT NULL);
+GO
 
 CREATE TABLE [dbo].[Security_Member] (
   [RoleId] INT NOT NULL,
@@ -133,3 +134,19 @@ GO
 EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'主键，审查类名', @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Security_Censorship', @level2type=N'COLUMN',@level2name=N'Name'
 EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'主键，阻止词汇', @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Security_Censorship', @level2type=N'COLUMN',@level2name=N'Word'
 GO
+
+
+/* 添加系统内置角色 */
+INSERT INTO Security_Role (RoleId, Name, FullName, Description) VALUES (1, 'Administrators', N'系统管理', N'系统管理角色(系统内置角色)');
+INSERT INTO Security_Role (RoleId, Name, FullName, Description) VALUES (2, 'Security', N'安全管理', N'安全管理角色(系统内置角色)');
+
+/* 添加系统内置用户 */
+INSERT INTO Security_User (UserId, Name, FullName, Description, Status) VALUES (1, 'Administrator', N'系统管理员', N'系统管理员(系统内置帐号)', 0);
+INSERT INTO Security_User (UserId, Name, FullName, Description, Status) VALUES (2, 'Guest', N'来宾', N'来宾', 1);
+
+/* 添加系统内置保留名字 */
+INSERT INTO Security_Censorship (Name, Word) VALUES ('Names', 'Zongsoft');
+
+/* 添加非法关键字 */
+INSERT INTO Security_Censorship (Name, Word) VALUES ('Sensitives', 'fuck');
+INSERT INTO Security_Censorship (Name, Word) VALUES ('Sensitives', 'bitch');

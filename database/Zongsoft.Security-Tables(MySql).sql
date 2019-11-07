@@ -67,3 +67,19 @@ CREATE TABLE IF NOT EXISTS `Security_Censorship` (
   `Word` VARCHAR(50) NOT NULL COMMENT '主键，阻止词汇',
   PRIMARY KEY (`Name`, `Word`)
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='词汇审查表';
+
+
+/* 添加系统内置角色 */
+INSERT INTO Security_Role (RoleId, Name, FullName, Description) VALUES (1, 'Administrators', '系统管理', '系统管理角色(系统内置角色)');
+INSERT INTO Security_Role (RoleId, Name, FullName, Description) VALUES (2, 'Security', '安全管理', '安全管理角色(系统内置角色)');
+
+/* 添加系统内置用户 */
+INSERT INTO Security_User (UserId, Name, FullName, Description, Status) VALUES (1, 'Administrator', '系统管理员', '系统管理员(系统内置帐号)', 0);
+INSERT INTO Security_User (UserId, Name, FullName, Description, Status) VALUES (2, 'Guest', '来宾', '来宾', 1);
+
+/* 添加系统内置保留名字 */
+INSERT INTO Security_Censorship (Name, Word) VALUES ('Names', 'Zongsoft');
+
+/* 添加非法关键字 */
+INSERT INTO Security_Censorship (Name, Word) VALUES ('Sensitives', 'fuck');
+INSERT INTO Security_Censorship (Name, Word) VALUES ('Sensitives', 'bitch');
