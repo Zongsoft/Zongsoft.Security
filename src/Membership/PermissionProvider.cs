@@ -71,12 +71,12 @@ namespace Zongsoft.Security.Membership
 			return this.DataAccess.Select<Permission>(conditions);
 		}
 
-		public void SetPermissions(uint memberId, MemberType memberType, IEnumerable<Permission> permissions)
+		public int SetPermissions(uint memberId, MemberType memberType, IEnumerable<Permission> permissions, bool shouldResetting = false)
 		{
-			this.SetPermissions(memberId, memberType, null, permissions);
+			return this.SetPermissions(memberId, memberType, null, permissions, shouldResetting);
 		}
 
-		public void SetPermissions(uint memberId, MemberType memberType, string schemaId, IEnumerable<Permission> permissions)
+		public int SetPermissions(uint memberId, MemberType memberType, string schemaId, IEnumerable<Permission> permissions, bool shouldResetting = false)
 		{
 			var conditions = Condition.Equal(nameof(Permission.MemberId), memberId) & Condition.Equal(nameof(Permission.MemberType), memberType);
 
@@ -85,17 +85,31 @@ namespace Zongsoft.Security.Membership
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
-				//清空指定成员的所有权限设置
-				this.DataAccess.Delete<Permission>(conditions);
+				int count = 0;
 
-				//插入指定的权限设置集到数据库中
+				//清空指定成员的所有权限设置
+				if(shouldResetting || permissions == null)
+					count = this.DataAccess.Delete<Permission>(conditions);
+
+				//写入指定的权限设置集到数据库中
 				if(permissions != null)
-					this.DataAccess.InsertMany(
+					count = this.DataAccess.UpsertMany(
 						permissions.Select(p => new Permission(memberId, memberType, (string.IsNullOrEmpty(schemaId) ? p.SchemaId : schemaId), p.ActionId, p.Granted)));
 
 				//提交事务
 				transaction.Commit();
+
+				return count;
 			}
+		}
+
+		public bool RemovePermission(uint memberId, MemberType memberType, string schemaId, string actionId)
+		{
+			return this.DataAccess.Delete<Permission>(
+				Condition.Equal(nameof(Permission.MemberId), memberId) &
+				Condition.Equal(nameof(Permission.MemberType), memberType) &
+				Condition.Equal(nameof(Permission.SchemaId), schemaId) &
+				Condition.Equal(nameof(Permission.ActionId), actionId)) > 0;
 		}
 
 		public IEnumerable<PermissionFilter> GetPermissionFilters(uint memberId, MemberType memberType, string schemaId = null)
@@ -108,12 +122,12 @@ namespace Zongsoft.Security.Membership
 			return this.DataAccess.Select<PermissionFilter>(conditions);
 		}
 
-		public void SetPermissionFilters(uint memberId, MemberType memberType, IEnumerable<PermissionFilter> permissionFilters)
+		public int SetPermissionFilters(uint memberId, MemberType memberType, IEnumerable<PermissionFilter> permissionFilters, bool shouldResetting = false)
 		{
-			this.SetPermissionFilters(memberId, memberType, null, permissionFilters);
+			return this.SetPermissionFilters(memberId, memberType, null, permissionFilters, shouldResetting);
 		}
 
-		public void SetPermissionFilters(uint memberId, MemberType memberType, string schemaId, IEnumerable<PermissionFilter> permissionFilters)
+		public int SetPermissionFilters(uint memberId, MemberType memberType, string schemaId, IEnumerable<PermissionFilter> permissionFilters, bool shouldResetting = false)
 		{
 			var conditions = Condition.Equal(nameof(PermissionFilter.MemberId), memberId) & Condition.Equal(nameof(PermissionFilter.MemberType), memberType);
 
@@ -122,17 +136,31 @@ namespace Zongsoft.Security.Membership
 
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
+				int count = 0;
+
 				//清空指定成员的所有权限设置
-				this.DataAccess.Delete<PermissionFilter>(conditions);
+				if(shouldResetting || permissionFilters == null)
+					count = this.DataAccess.Delete<PermissionFilter>(conditions);
 
 				//插入指定的权限设置集到数据库中
 				if(permissionFilters != null)
-					this.DataAccess.InsertMany(
+					count = this.DataAccess.UpsertMany(
 						permissionFilters.Select(p => new PermissionFilter(memberId, memberType, (string.IsNullOrEmpty(schemaId) ? p.SchemaId : schemaId), p.ActionId, p.Filter)));
 
 				//提交事务
 				transaction.Commit();
+
+				return count;
 			}
+		}
+
+		public bool RemovePermissionFilter(uint memberId, MemberType memberType, string schemaId, string actionId)
+		{
+			return this.DataAccess.Delete<PermissionFilter>(
+				Condition.Equal(nameof(PermissionFilter.MemberId), memberId) &
+				Condition.Equal(nameof(PermissionFilter.MemberType), memberType) &
+				Condition.Equal(nameof(PermissionFilter.SchemaId), schemaId) &
+				Condition.Equal(nameof(PermissionFilter.ActionId), actionId)) > 0;
 		}
 		#endregion
 	}

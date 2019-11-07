@@ -42,6 +42,28 @@ namespace Zongsoft.Security.Membership
 		#endregion
 
 		#region 公共方法
+		public static bool InRoles(IDataAccess dataAccess, IUserIdentity user, params string[] roleNames)
+		{
+			if(user == null || user.Name == null || roleNames == null || roleNames.Length < 1)
+				return false;
+
+			//如果指定的用户编号对应的是系统内置管理员（即 Administrator），那么它拥有对任何角色的隶属判断
+			if(string.Equals(user.Name, Administrator, StringComparison.OrdinalIgnoreCase))
+				return true;
+
+			//处理非系统内置管理员账号
+			if(GetAncestors(dataAccess, user, out var flats, out var hierarchies) > 0)
+			{
+				//如果所属的角色中包括系统内置管理员，则该用户自然属于任何角色
+				return flats.Any(role =>
+					string.Equals(role.Name, Administrators, StringComparison.OrdinalIgnoreCase) ||
+					roleNames.Contains(role.Name)
+				);
+			}
+
+			return false;
+		}
+
 		public static int GetAncestors(IDataAccess dataAccess, IUserIdentity user, out ISet<IRole> flats, out IList<IEnumerable<IRole>> hierarchies)
 		{
 			flats = null;

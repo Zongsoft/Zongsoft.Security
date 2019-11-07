@@ -217,23 +217,7 @@ namespace Zongsoft.Security.Membership
 			if(ids == null || ids.Length < 1)
 				return 0;
 
-			int result = 0;
-
-			using(var transaction = new Zongsoft.Transactions.Transaction())
-			{
-				result = this.DataAccess.Delete<IRole>(Condition.In(nameof(IRole.RoleId), ids));
-
-				if(result > 0)
-				{
-					this.DataAccess.Delete<Member>(Condition.Equal(nameof(Member.MemberType), MemberType.Role) & Condition.In(nameof(Member.MemberId), ids));
-					this.DataAccess.Delete<Permission>(Condition.Equal(nameof(Permission.MemberType), MemberType.Role) & Condition.In(nameof(Permission.MemberId), ids));
-					this.DataAccess.Delete<PermissionFilter>(Condition.Equal(nameof(PermissionFilter.MemberType), MemberType.Role) & Condition.In(nameof(PermissionFilter.MemberId), ids));
-				}
-
-				transaction.Commit();
-			}
-
-			return result;
+			return this.DataAccess.Delete<IRole>(Condition.In(nameof(IRole.RoleId), ids), "Members,Permissions,PermissionFilters");
 		}
 
 		public IRole Create(string name, string @namespace, string fullName = null, string description = null)
@@ -273,7 +257,9 @@ namespace Zongsoft.Security.Membership
 					role.Name = "R" + Randomizer.GenerateString();
 
 				//如果当前用户的命名空间不为空，则新增角色的命名空间必须与当前用户一致
-				if(!string.IsNullOrEmpty(this.Credential.User.Namespace))
+				if(string.IsNullOrEmpty(this.Credential.User.Namespace))
+					role.Namespace = string.IsNullOrWhiteSpace(role.Namespace) ? null : role.Namespace.Trim();
+				else
 					role.Namespace = this.Credential.User.Namespace;
 
 				//验证指定的名称是否合法
@@ -298,14 +284,14 @@ namespace Zongsoft.Security.Membership
 		#region 成员管理
 		public IEnumerable<IRole> GetRoles(uint memberId, MemberType memberType)
 		{
-			var members = this.DataAccess.Select<Member>(Condition.Equal("MemberId", memberId) & Condition.Equal("MemberType", memberType), "*, Role{*}");
-
-			return members.Select(m => m.Role);
+			return this.DataAccess.Select<Member>(
+				Condition.Equal(nameof(Member.MemberId), memberId) & Condition.Equal(nameof(Member.MemberType), memberType),
+				"*, Role{*}").Map(p => p.Role);
 		}
 
 		public IEnumerable<Member> GetMembers(uint roleId, string schema = null)
 		{
-			return this.DataAccess.Select<Member>(Condition.Equal("RoleId", roleId), schema);
+			return this.DataAccess.Select<Member>(Condition.Equal(nameof(Member.RoleId), roleId), schema);
 		}
 
 		public int SetMembers(uint roleId, params Member[] members)
@@ -322,30 +308,26 @@ namespace Zongsoft.Security.Membership
 			if(!this.DataAccess.Exists<IRole>(Condition.Equal(nameof(IRole.RoleId), roleId)))
 				return -1;
 
-			int count = 0;
-
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
-				//清空指定角色的所有成员
-				if(shouldResetting)
-					this.DataAccess.Delete<Member>(Condition.Equal(nameof(Member.RoleId), roleId));
+				int count = 0;
 
-				//插入指定的角色成员集到数据库中
-				this.DataAccess.InsertMany<Member>(members.Select(m => new Member(roleId, m.MemberId, m.MemberType)));
+				//清空指定角色的所有成员
+				if(shouldResetting || members == null)
+					count = this.DataAccess.Delete<Member>(Condition.Equal(nameof(Member.RoleId), roleId));
+
+				//写入指定的角色成员集到数据库中
+				if(members != null)
+					count = this.DataAccess.UpsertMany<Member>(members.Select(m => new Member(roleId, m.MemberId, m.MemberType)));
 
 				//提交事务
 				transaction.Commit();
+
+				return count;
 			}
-
-			return count;
 		}
 
-		public int Delete(uint roleId)
-		{
-			return this.DataAccess.Delete<Member>(Condition.Equal(nameof(Member.RoleId), roleId));
-		}
-
-		public bool Delete(uint roleId, uint memberId, MemberType memberType)
+		public bool RemoveMember(uint roleId, uint memberId, MemberType memberType)
 		{
 			return this.DataAccess.Delete<Member>(
 				Condition.Equal(nameof(Member.RoleId), roleId) &

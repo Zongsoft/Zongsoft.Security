@@ -358,23 +358,16 @@ namespace Zongsoft.Security.Membership
 			if(ids == null || ids.Length < 1)
 				return 0;
 
-			int result = 0;
-
 			using(var transaction = new Zongsoft.Transactions.Transaction())
 			{
-				result = this.DataAccess.Delete<IUser>(Condition.In(nameof(IUser.UserId), ids));
+				var result = this.DataAccess.Delete<IUser>(Condition.In(nameof(IUser.UserId), ids), "Permissions,PermissionFilters") +
+				             this.DataAccess.Delete<Member>(Condition.Equal(nameof(Member.MemberType), MemberType.User) & Condition.In(nameof(Member.MemberId), ids));
 
-				if(result > 0)
-				{
-					this.DataAccess.Delete<Member>(Condition.Equal(nameof(Member.MemberType), MemberType.User) & Condition.In(nameof(Member.MemberId), ids));
-					this.DataAccess.Delete<Permission>(Condition.Equal(nameof(Permission.MemberType), MemberType.User) & Condition.In(nameof(Permission.MemberId), ids));
-					this.DataAccess.Delete<PermissionFilter>(Condition.Equal(nameof(PermissionFilter.MemberType), MemberType.User) & Condition.In(nameof(PermissionFilter.MemberId), ids));
-				}
-
+				//提交事务
 				transaction.Commit();
-			}
 
-			return result;
+				return result;
+			}
 		}
 
 		public IUser Create(string identity, string @namespace, UserStatus status = UserStatus.Active, string description = null)
@@ -422,6 +415,12 @@ namespace Zongsoft.Security.Membership
 				//虽然用户名为空但是指定了绑定的“Phone”或“Email”，则将用户名设置为随机值
 				user.Name = "$U" + Randomizer.GenerateString();
 			}
+
+			//如果当前用户的命名空间不为空，则新增用户的命名空间必须与当前用户一致
+			if(string.IsNullOrEmpty(this.Credential.User.Namespace))
+				user.Namespace = string.IsNullOrWhiteSpace(user.Namespace) ? null : user.Namespace.Trim();
+			else
+				user.Namespace = this.Credential.User.Namespace;
 
 			//验证指定的名称是否合法
 			this.OnValidateName(user.Name);
@@ -504,6 +503,12 @@ namespace Zongsoft.Security.Membership
 					//虽然用户名为空但是指定了绑定的“Phone”或“Email”，则将用户名设置为随机值
 					user.Name = "$U" + Randomizer.GenerateString();
 				}
+
+				//如果当前用户的命名空间不为空，则新增用户的命名空间必须与当前用户一致
+				if(string.IsNullOrEmpty(this.Credential.User.Namespace))
+					user.Namespace = string.IsNullOrWhiteSpace(user.Namespace) ? null : user.Namespace.Trim();
+				else
+					user.Namespace = this.Credential.User.Namespace;
 
 				//验证指定的名称是否合法
 				this.OnValidateName(user.Name);
@@ -930,7 +935,7 @@ namespace Zongsoft.Security.Membership
 			 *   1) 指定的用户就是当前用户自己；
 			 *   2) 当前用户是系统管理员角色(Administrators)成员。
 			 */
-			if(this.Credential.User.UserId == userId || this.Principal.InRole(MembershipHelper.Administrators))
+			if(this.Credential.User.UserId == userId || MembershipHelper.InRoles(this.DataAccess, this.Credential.User, MembershipHelper.Administrators))
 				return userId;
 
 			throw new AuthorizationException($"The current user cannot operate on other user information.");
