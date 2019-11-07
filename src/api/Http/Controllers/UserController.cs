@@ -499,9 +499,29 @@ namespace Zongsoft.Security.Web.Http.Controllers
 
 		[HttpPost]
 		[ActionName("Permissions")]
-		public void SetPermissions(uint id, [FromRoute("args")]string schemaId, [FromBody]IEnumerable<Permission> permissions)
+		public IHttpActionResult SetPermissions(uint id, [FromRoute("args")]string schemaId, [FromBody]IEnumerable<Permission> permissions, [FromUri]bool reset = false)
 		{
-			this.PermissionProvider.SetPermissions(id, MemberType.User, schemaId, permissions);
+			var count = this.PermissionProvider.SetPermissions(id, MemberType.User, schemaId, permissions, reset);
+			return count > 0 ? (IHttpActionResult)this.Created(this.Request.RequestUri, count) : this.StatusCode(System.Net.HttpStatusCode.NoContent);
+		}
+
+		[HttpDelete]
+		[ActionName("Permission")]
+		public IHttpActionResult RemovePermission(uint id, [FromRoute("args")]string schemaId, [FromRoute("args")]string actionId)
+		{
+			if(string.IsNullOrEmpty(schemaId) || string.IsNullOrEmpty(actionId))
+				return this.BadRequest();
+
+			return this.PermissionProvider.RemovePermission(id, MemberType.User, schemaId, actionId) ?
+				(IHttpActionResult)this.StatusCode(System.Net.HttpStatusCode.NoContent) : this.NotFound();
+		}
+
+		[HttpDelete]
+		[ActionName("Permissions")]
+		public IHttpActionResult RemovePermissions(uint id, [FromRoute("args")]string schemaId = null)
+		{
+			var count = this.PermissionProvider.SetPermissions(id, MemberType.User, schemaId, null, true);
+			return count > 0 ? (IHttpActionResult)this.Ok(count) : this.NotFound();
 		}
 
 		[HttpGet]
@@ -513,9 +533,29 @@ namespace Zongsoft.Security.Web.Http.Controllers
 
 		[HttpPost]
 		[ActionName("PermissionFilters")]
-		public void SetPermissionFilters(uint id, [FromRoute("args")]string schemaId, [FromBody]IEnumerable<PermissionFilter> permissions)
+		public IHttpActionResult SetPermissionFilters(uint id, [FromRoute("args")]string schemaId, [FromBody]IEnumerable<PermissionFilter> permissions, [FromUri]bool reset = false)
 		{
-			this.PermissionProvider.SetPermissionFilters(id, MemberType.User, schemaId, permissions);
+			var count = this.PermissionProvider.SetPermissionFilters(id, MemberType.User, schemaId, permissions, reset);
+			return count > 0 ? (IHttpActionResult)this.Created(this.Request.RequestUri, count) : this.StatusCode(System.Net.HttpStatusCode.NoContent);
+		}
+
+		[HttpDelete]
+		[ActionName("PermissionFilter")]
+		public IHttpActionResult RemovePermissionFilter(uint id, [FromRoute("args")]string schemaId, [FromRoute("args")]string actionId)
+		{
+			if(string.IsNullOrEmpty(schemaId) || string.IsNullOrEmpty(actionId))
+				return this.BadRequest();
+
+			return this.PermissionProvider.RemovePermissionFilter(id, MemberType.User, schemaId, actionId) ?
+				(IHttpActionResult)this.StatusCode(System.Net.HttpStatusCode.NoContent) : this.NotFound();
+		}
+
+		[HttpDelete]
+		[ActionName("PermissionFilters")]
+		public IHttpActionResult RemovePermissionFilters(uint id, [FromRoute("args")]string schemaId = null)
+		{
+			var count = this.PermissionProvider.SetPermissionFilters(id, MemberType.User, schemaId, null, true);
+			return count > 0 ? (IHttpActionResult)this.Ok(count) : this.NotFound();
 		}
 		#endregion
 

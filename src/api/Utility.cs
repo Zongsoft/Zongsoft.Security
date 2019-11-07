@@ -109,5 +109,10 @@ namespace Zongsoft.Security.Web
 
 			throw new System.Web.Http.HttpResponseException(System.Net.HttpStatusCode.Forbidden);
 		}
+
+		public static Uri Relative(this Uri baseUri, string relativeUri)
+		{
+			return Uri.TryCreate(baseUri, relativeUri, out var url) ? url : null;
+		}
 	}
 }
