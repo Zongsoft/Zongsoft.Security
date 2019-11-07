@@ -3,7 +3,7 @@ SET TIME_ZONE='+08:00';
 
 CREATE TABLE IF NOT EXISTS `Security_Role` (
   `RoleId` int unsigned NOT NULL COMMENT '主键，角色编号',
-  `Namespace` VARCHAR(100) NULL COMMENT '角色所属的命名空间，该字段表示应用或组织机构的标识',
+  `Namespace` VARCHAR(50) NULL COMMENT '角色所属的命名空间，该字段表示应用或组织机构的标识',
   `Name` VARCHAR(50) NOT NULL COMMENT '角色名称，该名称在所属命名空间内具有唯一性',
   `FullName` VARCHAR(50) NULL COMMENT '角色全称',
   `Description` VARCHAR(500) NULL COMMENT '描述信息',
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS `Security_Role` (
 
 CREATE TABLE IF NOT EXISTS `Security_User` (
   `UserId` int unsigned NOT NULL COMMENT '主键，用户编号',
-  `Namespace` VARCHAR(100) NULL COMMENT '用户所属的命名空间，该字段表示应用或组织机构的标识',
+  `Namespace` VARCHAR(50) NULL COMMENT '用户所属的命名空间，该字段表示应用或组织机构的标识',
   `Name` VARCHAR(50) NOT NULL COMMENT '用户名称，该名称在所属命名空间内具有唯一性',
   `FullName` VARCHAR(50) NULL COMMENT '用户全称',
   `Password` BINARY(64) NULL COMMENT '用户的登录口令',
@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS `Security_User` (
   `Description` VARCHAR(500) NULL COMMENT '描述信息',
   PRIMARY KEY (`UserId`),
   UNIQUE INDEX `UX_Security_User_Name` (`Namespace`, `Name`),
-	UNIQUE INDEX `UX_Security_User_Email` (`Namespace`, `Email`),
-	UNIQUE INDEX `UX_Security_User_Phone` (`Namespace`, `Phone`)
+  UNIQUE INDEX `UX_Security_User_Email` (`Namespace`, `Email`),
+  UNIQUE INDEX `UX_Security_User_Phone` (`Namespace`, `Phone`)
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表';
 
 CREATE TABLE IF NOT EXISTS `Security_Member` (

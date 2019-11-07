@@ -1,6 +1,6 @@
 CREATE TABLE [dbo].[Security_Role] (
   [RoleId] INT NOT NULL,
-  [Namespace] VARCHAR(100) NULL,
+  [Namespace] VARCHAR(50) NULL,
   [Name] VARCHAR(50) NOT NULL,
   [FullName] NVARCHAR(50) NULL,
   [Description] NVARCHAR(500) NULL,
@@ -11,7 +11,7 @@ GO
 
 CREATE TABLE [dbo].[Security_User] (
   [UserId] INT NOT NULL,
-  [Namespace] VARCHAR(100) NULL,
+  [Namespace] VARCHAR(50) NULL,
   [Name] VARCHAR(50) NOT NULL,
   [FullName] NVARCHAR(50) NULL,
   [Password] VARBINARY(64) NULL,
