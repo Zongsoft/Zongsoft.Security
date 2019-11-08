@@ -512,7 +512,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			if(string.IsNullOrEmpty(schemaId) || string.IsNullOrEmpty(actionId))
 				return this.BadRequest();
 
-			return this.PermissionProvider.RemovePermission(id, MemberType.User, schemaId, actionId) ?
+			return this.PermissionProvider.RemovePermissions(id, MemberType.User, schemaId, actionId) > 0 ?
 				(IHttpActionResult)this.StatusCode(System.Net.HttpStatusCode.NoContent) : this.NotFound();
 		}
 
@@ -520,7 +520,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		[ActionName("Permissions")]
 		public IHttpActionResult RemovePermissions(uint id, [FromRoute("args")]string schemaId = null)
 		{
-			var count = this.PermissionProvider.SetPermissions(id, MemberType.User, schemaId, null, true);
+			var count = this.PermissionProvider.RemovePermissions(id, MemberType.User, schemaId);
 			return count > 0 ? (IHttpActionResult)this.Ok(count) : this.NotFound();
 		}
 
@@ -546,7 +546,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 			if(string.IsNullOrEmpty(schemaId) || string.IsNullOrEmpty(actionId))
 				return this.BadRequest();
 
-			return this.PermissionProvider.RemovePermissionFilter(id, MemberType.User, schemaId, actionId) ?
+			return this.PermissionProvider.RemovePermissionFilters(id, MemberType.User, schemaId, actionId) > 0 ?
 				(IHttpActionResult)this.StatusCode(System.Net.HttpStatusCode.NoContent) : this.NotFound();
 		}
 
@@ -554,7 +554,7 @@ namespace Zongsoft.Security.Web.Http.Controllers
 		[ActionName("PermissionFilters")]
 		public IHttpActionResult RemovePermissionFilters(uint id, [FromRoute("args")]string schemaId = null)
 		{
-			var count = this.PermissionProvider.SetPermissionFilters(id, MemberType.User, schemaId, null, true);
+			var count = this.PermissionProvider.RemovePermissionFilters(id, MemberType.User, schemaId);
 			return count > 0 ? (IHttpActionResult)this.Ok(count) : this.NotFound();
 		}
 		#endregion

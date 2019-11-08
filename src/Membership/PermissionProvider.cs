@@ -103,13 +103,18 @@ namespace Zongsoft.Security.Membership
 			}
 		}
 
-		public bool RemovePermission(uint memberId, MemberType memberType, string schemaId, string actionId)
+		public int RemovePermissions(uint memberId, MemberType memberType, string schemaId = null, string actionId = null)
 		{
-			return this.DataAccess.Delete<Permission>(
-				Condition.Equal(nameof(Permission.MemberId), memberId) &
-				Condition.Equal(nameof(Permission.MemberType), memberType) &
-				Condition.Equal(nameof(Permission.SchemaId), schemaId) &
-				Condition.Equal(nameof(Permission.ActionId), actionId)) > 0;
+			var criteria = Condition.Equal(nameof(Permission.MemberId), memberId) &
+			               Condition.Equal(nameof(Permission.MemberType), memberType);
+
+			if(schemaId != null && schemaId.Length > 0)
+				criteria.Add(Condition.Equal(nameof(Permission.SchemaId), schemaId));
+
+			if(actionId != null && actionId.Length > 0)
+				criteria.Add(Condition.Equal(nameof(Permission.ActionId), actionId));
+
+			return this.DataAccess.Delete<Permission>(criteria);
 		}
 
 		public IEnumerable<PermissionFilter> GetPermissionFilters(uint memberId, MemberType memberType, string schemaId = null)
@@ -154,13 +159,18 @@ namespace Zongsoft.Security.Membership
 			}
 		}
 
-		public bool RemovePermissionFilter(uint memberId, MemberType memberType, string schemaId, string actionId)
+		public int RemovePermissionFilters(uint memberId, MemberType memberType, string schemaId = null, string actionId = null)
 		{
-			return this.DataAccess.Delete<PermissionFilter>(
-				Condition.Equal(nameof(PermissionFilter.MemberId), memberId) &
-				Condition.Equal(nameof(PermissionFilter.MemberType), memberType) &
-				Condition.Equal(nameof(PermissionFilter.SchemaId), schemaId) &
-				Condition.Equal(nameof(PermissionFilter.ActionId), actionId)) > 0;
+			var criteria = Condition.Equal(nameof(Permission.MemberId), memberId) &
+			               Condition.Equal(nameof(Permission.MemberType), memberType);
+
+			if(schemaId != null && schemaId.Length > 0)
+				criteria.Add(Condition.Equal(nameof(Permission.SchemaId), schemaId));
+
+			if(actionId != null && actionId.Length > 0)
+				criteria.Add(Condition.Equal(nameof(Permission.ActionId), actionId));
+
+			return this.DataAccess.Delete<PermissionFilter>(criteria);
 		}
 		#endregion
 	}

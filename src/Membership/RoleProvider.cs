@@ -334,6 +334,12 @@ namespace Zongsoft.Security.Membership
 				Condition.Equal(nameof(Member.MemberId), memberId) &
 				Condition.Equal(nameof(Member.MemberType), memberType)) > 0;
 		}
+
+		public int RemoveMembers(uint roleId)
+		{
+			return this.DataAccess.Delete<Member>(
+				Condition.Equal(nameof(Member.RoleId), roleId));
+		}
 		#endregion
 
 		#region 虚拟方法
