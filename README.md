@@ -122,7 +122,7 @@ README: [English](https://github.com/Zongsoft/Zongsoft.Security/blob/master/READ
 
 
 <a name="sponsor"></a>
-### 支持赞助
+## 支持赞助
 
 非常期待您的支持与赞助，可以通过下面几种方式为我们提供必要的资金支持：
 
