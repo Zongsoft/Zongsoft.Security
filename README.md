@@ -20,7 +20,7 @@ README: [English](https://github.com/Zongsoft/Zongsoft.Security/blob/master/READ
 3. `Zongsoft.Security.mdf` 和 `Zongsoft.Security_log.ldf` 为 SQL Server 本地数据库文件，方便进行开发调试之用。
 
 ### 插件文件
-位于 `src` 目录中的 [`Zongsoft.Security.plugin`](https://github.com/Zongsoft/Zongsoft.Security/blob/master/src/Zongsoft.Security.plugin) 文件。如果你不了解 **Zongsoft** 插件开发的话，暂时将它简单理解为依赖注入容器的配置文件即可。
+位于 `src` 目录中的 [`Zongsoft.Security.plugin`](https://github.com/Zongsoft/Zongsoft.Security/blob/master/src/Zongsoft.Security.plugin) 文件，如果你不了解 **Zongsoft** 插件开发的话，暂时将它简单理解为依赖注入容器的配置文件即可。
 
 ### 配置文件
 位于 `src` 目录中的 [`Zongsoft.Security.option`](https://github.com/Zongsoft/Zongsoft.Security/blob/master/src/Zongsoft.Security.option) 文件，它定义了安全模块的数据库连接字符串及相关运行配置信息。
@@ -29,7 +29,7 @@ README: [English](https://github.com/Zongsoft/Zongsoft.Security/blob/master/READ
 位于 `src` 目录中的 [`Zongsoft.Security.mapping`](https://github.com/Zongsoft/Zongsoft.Security/blob/master/src/Zongsoft.Security.mapping) 文件，它是 [Zongsoft.Data](https://github.com/Zongsoft/Zongsoft.Data) 数据引擎的映射文件，是该项目数据访问的基础结构，更多有关数据访问及数据映射文件的信息请参考 [Zongsoft.Data](https://github.com/Zongsoft/Zongsoft.Data) 项目。
 
 ### 部署文件
-位于 `src` 目录中的 [`.deploy`](https://github.com/Zongsoft/Zongsoft.Security/blob/master/src/.deploy) 文件，这是一个 `INI` 格式的配置文件，它定义了该项目内需要发布的文件，由 [Zongsoft.Utilities.Deployer](https://github.com/Zongsoft/Zongsoft.Utilities.Deployer) 部署工具解析使用。
+位于 `src` 目录中的 [`.deploy`](https://github.com/Zongsoft/Zongsoft.Security/blob/master/src/.deploy) 文件，这是一个 `INI` 格式的配置文件，它定义了该项目内需要发布的文件，供 [Zongsoft.Utilities.Deployer](https://github.com/Zongsoft/Zongsoft.Utilities.Deployer) 部署工具解析使用。
 > 提示：可以参考 [Zongsoft.CoreLibrary](https://github.com/Zongsoft/Zongsoft.CoreLibrary) 核心库的 `Zongsoft.Options.Profiles` 命名空间了解 `INI` 配置文件的解析。
 
 <a name="usage"></a>
@@ -37,24 +37,24 @@ README: [English](https://github.com/Zongsoft/Zongsoft.Security/blob/master/READ
 
 ### 编译
 
-如果你是首次运行这些项目，那么需要确保下面的依赖项都已存在，否则根据实际情况执行或忽略它们。
+如果你是首次加载这些项目，那么需要确保下面的依赖项都已存在，否则根据实际情况选择或忽略它们。
 
 1. 必须的依赖项目：
 	* [**Zongsoft.CoreLibrary**](https://github.com/Zongsoft/Zongsoft.CoreLibrary)
 	* [**Zongsoft.Plugins**](https://github.com/Zongsoft/Zongsoft.Plugins)
 
-2. 如果是Web后端应用，那么还需要依次编译如下依赖项目：
+2. 对于Web后端应用，那么还需要依次编译如下依赖项目：
 	* [**Zongsoft.Web**](https://github.com/Zongsoft/Zongsoft.Web)
 	* [**Zongsoft.Plugins.Web**](https://github.com/Zongsoft/Zongsoft.Plugins.Web)
 
-3. 因为要完整运行本模块所以还需要数据访问引擎、Redis缓存服务等，那么请确保以下项目已编译完成：
+3. 要完整运行本模块所以还需要数据访问引擎、Redis缓存服务等，那么请确保以下项目已编译完成：
 	* [**Zongsoft.Data**](https://github.com/Zongsoft/Zongsoft.Data)
-	* [**Zongsoft.Data.MsSql**](https://github.com/Zongsoft/drivers/Zongsoft.Data.MsSql) _(取决于你的数据库版本)_
-	* [**Zongsoft.Data.MySql**](https://github.com/Zongsoft/drivers/Zongsoft.Data.MySql) _(取决于你的数据库版本)_
+	* [**Zongsoft.Data.MsSql**](https://github.com/Zongsoft/drivers/Zongsoft.Data.MsSql) _(根据你的数据库版本)_
+	* [**Zongsoft.Data.MySql**](https://github.com/Zongsoft/drivers/Zongsoft.Data.MySql) _(根据你的数据库版本)_
 	* [**Zongsoft.Externals.Json**](https://github.com/Zongsoft/Zongsoft.Externals.Json)
 	* [**Zongsoft.Externals.Redis**](https://github.com/Zongsoft/Zongsoft.Externals.Redis)
 
-4. 如果还从来没有编译过部署工具，那么必须完成对 [**Zongsoft.Utilities.Deployer**](https://github.com/Zongsoft/Zongsoft.Utilities.Deployer) 项目的编译，否则忽略该步骤。
+4. 如果还从来没有编译过部署工具，必须确保 [**Zongsoft.Utilities.Deployer**](https://github.com/Zongsoft/Zongsoft.Utilities.Deployer) 项目已经编译完成。
 
 ### 依赖环境
 
@@ -80,7 +80,7 @@ README: [English](https://github.com/Zongsoft/Zongsoft.Security/blob/master/READ
 
 2. 打开你想要调试的代码文件，然后设置调试断点(F9)，等待测试请求进入断点即可。
 
-3. 在 Postman 中找到 “**Zongsoft.Security**” 集合中的 “**Authentication.Signin**” 请求项进行登录测试吧，如果顺利的话将会得到返回的凭证对象，大致如下所示：
+3. 在 **Postman** 中找到 “**Zongsoft.Security**” 集合中的 “**Authentication.Signin**” 请求项进行登录测试吧，如果顺利的话将会得到返回的凭证对象，大致如下所示：
 ```json
 {
     "credentialId": "6260000000ABCDEFG",
