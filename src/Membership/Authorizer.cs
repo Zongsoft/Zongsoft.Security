@@ -194,10 +194,10 @@ namespace Zongsoft.Security.Membership
 			}
 
 			//获取指定条件的所有权限定义（注：禁止分页查询，并即时加载到数组中）
-			var permissions = this.DataAccess.Select<Permission>(conditions, Paging.Disable).ToArray();
+			var permissions = this.DataAccess.Select<Permission>(conditions, Paging.Disabled).ToArray();
 
 			//获取指定条件的所有权限过滤定义（注：禁止分页查询，并即时加载到数组中）
-			var permissionFilters = this.DataAccess.Select<PermissionFilter>(conditions, Paging.Disable).ToArray();
+			var permissionFilters = this.DataAccess.Select<PermissionFilter>(conditions, Paging.Disabled).ToArray();
 
 			var states = new HashSet<AuthorizationState>();
 			IEnumerable<Permission> prepares;
