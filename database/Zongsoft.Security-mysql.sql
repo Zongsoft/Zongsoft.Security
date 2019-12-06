@@ -1,4 +1,4 @@
-﻿SET NAMES utf8;
+SET NAMES utf8;
 SET TIME_ZONE='+08:00';
 
 CREATE TABLE IF NOT EXISTS `Security_Role` (
