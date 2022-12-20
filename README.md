@@ -5,6 +5,8 @@
 README: [English](https://github.com/Zongsoft/Zongsoft.Security/blob/master/README.md) | [简体中文](https://github.com/Zongsoft/Zongsoft.Security/blob/master/README-zh_CN.md)
 
 -----
+注：该项目为.NET Framework版本，已归档不再维护，请参考最新的版本：https://github.com/Zongsoft/Framework/blob/master/Zongsoft.Security/Zongsoft.Security.sln
+-----
 
 [Zongsoft.Security](https://github.com/Zongsoft/Zongsoft.Security) 提供身份验证、访问授权、基于角色的访问控制(RBAC)等安全相关功能的实现。
 
